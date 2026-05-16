@@ -7,7 +7,7 @@ import HeroOrbs from '@/components/hero/HeroOrbs'
 import Button from '@/components/ui/button'
 import Footer from '@/components/layout/Footer'
 import Navbar from '@/components/layout/Navbar'
-import { plans } from '@/data/mockData'
+import { plans, exampleCreators } from '@/data/mockData'
 
 /* ── Browser mockup ─────────────────────────────────────── */
 const BrowserMockup = () => (
@@ -143,48 +143,6 @@ const profiles = [
 ]
 
 /* ── Exemples section ───────────────────────────────────── */
-const exCreators = [
-  {
-    initials: 'AP',
-    name: 'AlexPlays',
-    niches: ['Gaming', 'Minecraft', 'FPS'],
-    color: '#16a34a',
-    subs: '87 400',
-    platform: 'YouTube',
-    platformColor: '#ef4444',
-    engagement: '4,2%',
-    viewers: '12 300',
-    viewersPlatform: 'Twitch',
-    slug: 'alexplays',
-  },
-  {
-    initials: 'ZS',
-    name: 'ZoéStream',
-    niches: ['Lifestyle', 'Vlog', 'IRL'],
-    color: '#db2777',
-    subs: '210 000',
-    platform: 'TikTok',
-    platformColor: '#000',
-    engagement: '6,8%',
-    viewers: '45 200',
-    viewersPlatform: 'Instagram',
-    slug: 'zoestream',
-  },
-  {
-    initials: 'MG',
-    name: 'MathieuGG',
-    niches: ['Esport', 'CS2', 'Valorant'],
-    color: '#7c3aed',
-    subs: '320 000',
-    platform: 'YouTube',
-    platformColor: '#ef4444',
-    engagement: '5,1%',
-    viewers: '28 900',
-    viewersPlatform: 'Twitch',
-    slug: 'mathieugg',
-  },
-]
-
 const ExemplesSection = () => (
   <section id="exemples" style={{ background: '#ffffff', padding: '96px 24px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
     <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
@@ -198,66 +156,72 @@ const ExemplesSection = () => (
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-        {exCreators.map(c => (
-          <div
-            key={c.name}
-            style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', transition: 'all 200ms ease' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 40px rgba(0,0,0,0.12)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
-          >
-            {/* Header bar */}
-            <div style={{ height: '4px', background: c.color }} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+        {exampleCreators.map(c => {
+          const t = c.theme
+          return (
+            <div
+              key={c.id}
+              style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: '20px', overflow: 'hidden', boxShadow: t.boxShadow || '0 2px 12px rgba(0,0,0,0.06)', transition: 'transform 200ms ease' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
+            >
+              <div style={{ padding: '24px' }}>
 
-            {/* Content */}
-            <div style={{ padding: '28px 24px' }}>
-              {/* Avatar + name */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: c.color, color: 'white', fontSize: '17px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 0 0 3px ${c.color}22` }}>
-                  {c.initials}
-                </div>
-                <div>
-                  <p style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>{c.name}</p>
-                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                    {c.niches.map(n => (
-                      <span key={n} style={{ background: '#f1f5f9', color: '#475569', borderRadius: '9999px', padding: '2px 8px', fontSize: '11px', fontWeight: 500 }}>{n}</span>
-                    ))}
+                {/* Style label */}
+                {t.styleLabel && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: t.accent, letterSpacing: '0.08em', textTransform: 'uppercase', background: `${t.accent}18`, border: `1px solid ${t.accent}30`, borderRadius: '9999px', padding: '3px 10px' }}>
+                      {t.styleLabel}
+                    </span>
+                  </div>
+                )}
+
+                {/* Avatar + nom */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: c.avatarColor, color: c.id === 'mono' ? '#000' : 'white', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: t.avatarGlow !== 'none' ? t.avatarGlow : undefined }}>
+                    {c.initials}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '15px', fontWeight: 700, color: t.text, marginBottom: '3px' }}>{c.pseudo}</p>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      {c.niches.slice(0, 2).map(n => (
+                        <span key={n} style={{ fontSize: '10px', fontWeight: 500, color: t.subtext, background: t.statBg, border: `1px solid ${t.statBorder}`, borderRadius: '9999px', padding: '2px 8px' }}>{n}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Stats grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-                <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', borderLeft: `3px solid ${c.platformColor}` }}>
-                  <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{c.platform}</p>
-                  <p style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1 }}>{c.subs}</p>
-                  <p style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>abonnés</p>
+                {/* Stat principale */}
+                <div style={{ background: t.cardBg, border: `1px solid ${t.border}`, borderLeft: `3px solid ${t.accent}`, borderRadius: '12px', padding: '14px 16px', marginBottom: '10px' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 500, color: t.subtext, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '4px' }}>{c.platform}</p>
+                  <p style={{ fontSize: '26px', fontWeight: 800, color: t.text, letterSpacing: '-0.03em', lineHeight: 1 }}>{c.mainStat.value}</p>
+                  <p style={{ fontSize: '10px', color: t.subtext, marginTop: '2px' }}>{c.mainStat.label}</p>
                 </div>
-                <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px' }}>
-                  <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{c.viewersPlatform}</p>
-                  <p style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1 }}>{c.viewers}</p>
-                  <p style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>abonnés</p>
-                </div>
-              </div>
 
-              {/* Engagement + CTA */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#16a34a' }}>{c.engagement}</span>
-                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>engagement</span>
+                {/* Stats secondaires */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+                  {c.stats.slice(0, 2).map(s => (
+                    <div key={s.label} style={{ background: t.statBg, border: `1px solid ${t.statBorder}`, borderRadius: '10px', padding: '10px 12px' }}>
+                      <p style={{ fontSize: '14px', fontWeight: 700, color: t.accent, letterSpacing: '-0.01em' }}>{s.value}</p>
+                      <p style={{ fontSize: '9px', color: t.subtext, marginTop: '2px' }}>{s.label}</p>
+                    </div>
+                  ))}
                 </div>
+
+                {/* CTA */}
                 <a
-                  href={`/p/${c.slug}`}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, color: '#16a34a', textDecoration: 'none', background: 'rgba(22,163,74,0.06)', border: '1px solid rgba(22,163,74,0.15)', borderRadius: '8px', padding: '7px 14px', transition: 'all 150ms ease' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(22,163,74,0.12)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(22,163,74,0.06)' }}
+                  href={`/${c.pseudo}`}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, color: t.accent, textDecoration: 'none', background: `${t.accent}14`, border: `1px solid ${t.accent}30`, borderRadius: '8px', padding: '8px 14px', transition: 'background 150ms' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${t.accent}22` }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${t.accent}14` }}
                 >
                   Voir le kit →
                 </a>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div style={{ textAlign: 'center', marginTop: '48px' }}>
