@@ -3,6 +3,7 @@
 import { Copy, ExternalLink, RefreshCw, X } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Sidebar from '@/components/layout/Sidebar'
 import Button from '@/components/ui/button'
 import MetricCard from '@/components/ui/MetricCard'
@@ -74,6 +75,7 @@ const blurStyle = (e: React.FocusEvent<HTMLInputElement>) => { e.target.style.bo
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [connected, setConnected] = useState<string[]>(loadConnected)
   const [ytData, setYtData] = useState<YTData | null>(loadYTData)
   const [showYTSetup, setShowYTSetup] = useState(false)
@@ -139,7 +141,7 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
-              Bonjour {ytData ? ytData.title : 'AlexPlays'} 👋
+              Bonjour {ytData ? ytData.title : (session?.user?.name ?? 'toi')} 👋
             </h1>
             <p style={{ fontSize: '14px', color: '#94a3b8' }}>
               {lastSync ? `Données YouTube synchronisées ${lastSync}` : `Mis à jour ${creator.last_sync}`} · {creator.url}

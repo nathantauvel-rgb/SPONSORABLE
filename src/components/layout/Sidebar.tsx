@@ -4,6 +4,8 @@ import { BarChart2, FileText, LayoutDashboard, LogOut, Settings, Star, Zap } fro
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useSession, signOut } from 'next-auth/react'
+import Image from 'next/image'
 
 const navItems = [
   { label: 'Tableau de bord', icon: LayoutDashboard, to: '/dashboard' },
@@ -13,35 +15,58 @@ const navItems = [
   { label: 'Paramètres', icon: Settings, to: '/dashboard/settings' },
 ]
 
-const Avatar = ({ initials, size }: { initials: string; size: number }) => (
-  <div
-    style={{
-      width: size,
-      height: size,
-      borderRadius: '50%',
-      background: '#16a34a',
-      color: 'white',
-      fontSize: size * 0.38,
-      fontWeight: 700,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0,
-    }}
-  >
-    {initials}
-  </div>
-)
+const getInitials = (name: string | null | undefined) => {
+  if (!name) return '?'
+  return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+}
+
+const Avatar = ({ name, image, size }: { name: string | null | undefined; image: string | null | undefined; size: number }) => {
+  if (image) {
+    return (
+      <Image
+        src={image}
+        alt={name ?? 'avatar'}
+        width={size}
+        height={size}
+        style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+      />
+    )
+  }
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: '#16a34a',
+        color: 'white',
+        fontSize: size * 0.38,
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}
+    >
+      {getInitials(name)}
+    </div>
+  )
+}
 
 const Sidebar = () => {
   const pathname = usePathname()
   const [isPro, setIsPro] = useState(false)
+  const { data: session } = useSession()
 
   useEffect(() => {
     try {
       setIsPro(localStorage.getItem('sponsorable_plan') === 'pro')
     } catch {}
   }, [])
+
+  const userName = session?.user?.name
+  const userEmail = session?.user?.email
+  const userImage = session?.user?.image
 
   return (
     <aside
@@ -121,15 +146,18 @@ const Sidebar = () => {
           </Link>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-          <Avatar initials="AP" size={32} />
-          <div>
-            <p style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', lineHeight: 1.2 }}>
-              AlexPlays
+          <Avatar name={userName} image={userImage} size={32} />
+          <div style={{ overflow: 'hidden' }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {userName ?? '—'}
             </p>
-            <p style={{ fontSize: '11px', color: '#94a3b8' }}>alex@alexplays.fr</p>
+            <p style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {userEmail ?? ''}
+            </p>
           </div>
         </div>
         <button
+          onClick={() => signOut({ callbackUrl: '/' })}
           style={{
             display: 'flex',
             alignItems: 'center',
