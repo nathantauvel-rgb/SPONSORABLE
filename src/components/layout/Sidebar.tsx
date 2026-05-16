@@ -1,6 +1,6 @@
 'use client'
 
-import { BarChart2, FileText, LayoutDashboard, LogOut, Settings, Zap } from 'lucide-react'
+import { BarChart2, FileText, LayoutDashboard, LogOut, Settings, Star, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -9,6 +9,7 @@ const navItems = [
   { label: 'Tableau de bord', icon: LayoutDashboard, to: '/dashboard' },
   { label: 'Mon media kit', icon: FileText, to: '/dashboard/mediakit' },
   { label: 'Statistiques', icon: BarChart2, to: '/dashboard/stats' },
+  { label: 'Sponsors', icon: Star, to: '/dashboard/sponsors' },
   { label: 'Paramètres', icon: Settings, to: '/dashboard/settings' },
 ]
 
