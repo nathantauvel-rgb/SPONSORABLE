@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes scrollMockup {
+  0%, 15% { transform: translateY(0); }
+  45%, 55% { transform: translateY(-200px); }
+  85%, 100% { transform: translateY(0); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@layer utilities {
+  .font-hero {
+    font-size: clamp(48px, 6vw, 76px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+
+  .card-glass {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+
+  .card-standard {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: all 200ms ease;
+  }
+
+  .card-standard:hover {
+    border-color: rgba(0, 0, 0, 0.16);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .btn-primary {
+    background: #16a34a;
+    color: white;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-weight: 600;
+    font-size: 15px;
+    box-shadow: 0 1px 3px rgba(22, 163, 74, 0.3);
+    transition: all 150ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    border: none;
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover {
+    background: #15803d;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+  }
+
+  .btn-primary:hover .arrow-icon {
+    transform: translateX(4px);
+  }
+
+  .arrow-icon {
+    transition: transform 150ms ease;
+  }
+
+  .btn-dark {
+    background: #0f172a;
+    color: white;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 150ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    border: none;
+    white-space: nowrap;
+  }
+
+  .btn-dark:hover {
+    background: #1e293b;
+  }
+
+  .btn-outline {
+    background: transparent;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    color: #0f172a;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 150ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-outline:hover {
+    background: #f8fafc;
+  }
+}
