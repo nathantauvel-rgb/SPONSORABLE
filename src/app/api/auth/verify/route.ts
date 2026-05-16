@@ -44,8 +44,7 @@ export async function GET(req: Request) {
       },
     })
 
-    // Rediriger vers la page d'accueil avec un paramètre de succès
-    return NextResponse.redirect(new URL("/?verified=1", req.url))
+    return NextResponse.redirect(new URL(`/login?verified=1&email=${encodeURIComponent(email)}`, req.url))
   } catch (error) {
     console.error("Erreur lors de la vérification:", error)
     return new NextResponse("Erreur interne", { status: 500 })

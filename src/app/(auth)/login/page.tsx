@@ -23,6 +23,9 @@ function LoginForm() {
     if (searchParams.get('register') === '1') setMode('register')
     const emailParam = searchParams.get('email')
     if (emailParam) setEmail(emailParam)
+    if (searchParams.get('verified') === '1') {
+      setSuccess('Email confirmé ✓ Entre ton mot de passe pour accéder à ton dashboard.')
+    }
   }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
