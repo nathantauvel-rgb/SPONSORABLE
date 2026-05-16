@@ -308,7 +308,11 @@ export default function LandingPage() {
               La prochaine fois qu'un sponsor te contacte, t'as quelque chose de pro à lui envoyer en 2 minutes.
             </p>
             <form
-              onSubmit={e => { e.preventDefault(); router.push('/dashboard') }}
+              onSubmit={e => {
+                e.preventDefault()
+                const params = email ? `?email=${encodeURIComponent(email)}&register=1` : '?register=1'
+                router.push(`/login${params}`)
+              }}
               style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', maxWidth: '420px' }}
             >
               <input

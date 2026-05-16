@@ -74,21 +74,36 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
           ))}
         </div>
 
-        {/* CTA — toujours visible */}
-        <button
-          onClick={() => router.push('/dashboard')}
-          style={{
-            padding: '10px 20px', fontSize: '14px', fontWeight: 600,
-            borderRadius: '10px', border: 'none', cursor: 'pointer',
-            transition: 'all 150ms ease',
-            background: isDark ? 'rgba(255,255,255,0.10)' : '#0f172a',
-            color: 'white',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(255,255,255,0.18)' : '#1e293b' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(255,255,255,0.10)' : '#0f172a' }}
-        >
-          Créer mon media kit →
-        </button>
+        {/* CTAs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Link
+            href="/login"
+            style={{
+              padding: '10px 16px', fontSize: '14px', fontWeight: 500,
+              borderRadius: '10px', textDecoration: 'none',
+              color: isDark ? 'rgba(255,255,255,0.65)' : '#475569',
+              transition: 'all 150ms ease',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = isDark ? '#ffffff' : '#0f172a' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = isDark ? 'rgba(255,255,255,0.65)' : '#475569' }}
+          >
+            Se connecter
+          </Link>
+          <Link
+            href="/login?register=1"
+            style={{
+              padding: '10px 20px', fontSize: '14px', fontWeight: 600,
+              borderRadius: '10px', textDecoration: 'none',
+              background: isDark ? 'rgba(255,255,255,0.10)' : '#0f172a',
+              color: 'white',
+              transition: 'all 150ms ease',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(255,255,255,0.18)' : '#1e293b' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(255,255,255,0.10)' : '#0f172a' }}
+          >
+            S&apos;inscrire →
+          </Link>
+        </div>
       </div>
     </nav>
   )
