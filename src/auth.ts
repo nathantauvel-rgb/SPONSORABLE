@@ -29,7 +29,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             allowDangerousEmailAccountLinking: true,
             authorization: {
                 params: {
-                    scope: "openid user:read:email user:read:follows",
+                    scope: "openid user:read:email user:read:follows moderator:read:followers",
                 },
             },
         }),

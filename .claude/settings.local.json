@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(del \"C:\\\\Users\\\\natha\\\\Documents\\\\SPONSORABLE NEXT\\\\postcss.config.mjs\")",
+      "Bash(node -e \"const p = require\\('postcss'\\); console.log\\('postcss:', p.version\\)\")",
+      "Bash(node -e \"const p = require\\('./node_modules/next/node_modules/postcss/package.json'\\); console.log\\('next/postcss:', p.version\\)\")",
+      "Bash(Get-ChildItem -Path src -Recurse -Name)",
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\natha\\\\Documents\\\\SPONSORABLE NEXT\\\\src\\\\app\")",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\natha\\\\Documents\\\\SPONSORABLE NEXT\\\\src\\\\app\" -Force | ForEach-Object { \"$\\($_.PSIsContainer\\) $\\($_.Name\\)\" })",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('base64'\\)\\)\")",
+      "mcp__3567833f-8727-4443-b3a9-934112b34e04__list_teams",
+      "mcp__3567833f-8727-4443-b3a9-934112b34e04__list_projects"
+    ]
+  }
+}
