@@ -1,52 +1,54 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { z } from "zod"
+
+const QuerySchema = z.object({
+  token: z.string().min(1).max(128),
+  email: z.string().email().max(255),
+})
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const token = searchParams.get("token")
-  const email = searchParams.get("email")
+  const parsed = QuerySchema.safeParse({
+    token: searchParams.get("token"),
+    email: searchParams.get("email"),
+  })
 
-  if (!token || !email) {
-    return new NextResponse("Token ou email manquant", { status: 400 })
+  if (!parsed.success) {
+    return new NextResponse("Paramètres invalides", { status: 400 })
   }
 
+  const { token, email } = parsed.data
+
   try {
-    const verificationToken = await prisma.verificationToken.findUnique({
-      where: {
-        identifier_token: {
-          identifier: email,
-          token: token,
-        },
-      },
-    })
+    await prisma.$transaction(
+      async (tx) => {
+        const verificationToken = await tx.verificationToken.findUnique({
+          where: { identifier_token: { identifier: email, token } },
+        })
 
-    if (!verificationToken) {
-      return new NextResponse("Token invalide", { status: 400 })
+        if (!verificationToken) throw new Error("TOKEN_INVALID")
+        if (new Date() > verificationToken.expires) throw new Error("TOKEN_EXPIRED")
+
+        await tx.verificationToken.delete({
+          where: { identifier_token: { identifier: email, token } },
+        })
+
+        await tx.user.update({
+          where: { email },
+          data: { emailVerified: new Date() },
+        })
+      },
+      { isolationLevel: "Serializable" }
+    )
+
+    return NextResponse.redirect(new URL("/login?verified=1", req.url))
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message === "TOKEN_INVALID") return new NextResponse("Token invalide", { status: 400 })
+      if (err.message === "TOKEN_EXPIRED") return new NextResponse("Token expiré", { status: 400 })
     }
-
-    if (new Date() > verificationToken.expires) {
-      return new NextResponse("Token expiré", { status: 400 })
-    }
-
-    await prisma.user.update({
-      where: { email },
-      data: {
-        emailVerified: new Date(),
-      },
-    })
-
-    await prisma.verificationToken.delete({
-      where: {
-        identifier_token: {
-          identifier: email,
-          token: token,
-        },
-      },
-    })
-
-    return NextResponse.redirect(new URL(`/login?verified=1&email=${encodeURIComponent(email)}`, req.url))
-  } catch (error) {
-    console.error("Erreur lors de la vérification:", error)
+    console.error("[verify] error", err)
     return new NextResponse("Erreur interne", { status: 500 })
   }
 }

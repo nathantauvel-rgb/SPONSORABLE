@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
 
-export async function GET(req: NextRequest) {
+const PostSchema = z.object({
+  channelId: z.string().max(64).optional(),
+  handle: z.string().max(64).optional(),
+}).refine(d => d.channelId || d.handle, { message: 'channelId ou handle requis' })
+
+export async function GET() {
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
@@ -10,6 +16,7 @@ export async function GET(req: NextRequest) {
 
   const platform = await prisma.platform.findUnique({
     where: { userId_type: { userId: session.user.id, type: 'youtube' } },
+    select: { id: true, type: true, platformId: true, username: true, displayName: true, avatarUrl: true, stats: true, lastFetched: true },
   })
 
   if (!platform) {
@@ -25,16 +32,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
   }
 
-  const { channelId, handle } = await req.json()
-  if (!channelId && !handle) {
-    return NextResponse.json({ error: 'channelId ou handle requis' }, { status: 400 })
+  const body = await req.json()
+  const parsed = PostSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Paramètres invalides' }, { status: 400 })
   }
 
-  // Les clés API YouTube restent côté serveur — jamais exposées au client
-  const apiKey = process.env.GOOGLE_CLIENT_SECRET
+  const { channelId, handle } = parsed.data
+
+  const apiKey = process.env.YOUTUBE_API_KEY
+  if (!apiKey) {
+    return NextResponse.json({ error: 'YouTube API non configurée' }, { status: 503 })
+  }
+
   const param = handle
     ? `forHandle=${encodeURIComponent(handle)}`
-    : `id=${channelId}`
+    : `id=${encodeURIComponent(channelId!)}`
 
   const res = await fetch(
     `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&${param}&key=${apiKey}`
@@ -50,15 +63,31 @@ export async function POST(req: NextRequest) {
 
   const ch = data.items[0]
   const stats = {
-    subscriberCount: ch.statistics.subscriberCount,
-    viewCount: ch.statistics.viewCount,
-    videoCount: ch.statistics.videoCount,
+    subscriberCount: ch.statistics.subscriberCount as string,
+    viewCount: ch.statistics.viewCount as string,
+    videoCount: ch.statistics.videoCount as string,
   }
 
   const platform = await prisma.platform.upsert({
     where: { userId_type: { userId: session.user.id, type: 'youtube' } },
-    update: { stats, lastFetched: new Date(), displayName: ch.snippet.title, platformId: ch.id, username: ch.snippet.customUrl || ch.id, avatarUrl: ch.snippet.thumbnails?.default?.url },
-    create: { userId: session.user.id, type: 'youtube', platformId: ch.id, username: ch.snippet.customUrl || ch.id, displayName: ch.snippet.title, avatarUrl: ch.snippet.thumbnails?.default?.url, stats, lastFetched: new Date() },
+    update: {
+      stats,
+      lastFetched: new Date(),
+      displayName: ch.snippet.title as string,
+      platformId: ch.id as string,
+      username: (ch.snippet.customUrl || ch.id) as string,
+      avatarUrl: ch.snippet.thumbnails?.default?.url as string | undefined,
+    },
+    create: {
+      userId: session.user.id,
+      type: 'youtube',
+      platformId: ch.id as string,
+      username: (ch.snippet.customUrl || ch.id) as string,
+      displayName: ch.snippet.title as string,
+      avatarUrl: ch.snippet.thumbnails?.default?.url as string | undefined,
+      stats,
+      lastFetched: new Date(),
+    },
   })
 
   return NextResponse.json({ platform })

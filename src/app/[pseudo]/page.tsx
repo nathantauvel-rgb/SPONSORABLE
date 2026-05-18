@@ -11,8 +11,9 @@ import {
   exampleCreators,
   pastPartners,
   platforms,
-  type Platform,
 } from '@/data/mockData'
+import type { Platform } from '@/types'
+import { safeUrl, safeCalendlyUrl } from '@/lib/safeUrl'
 
 /* ── Template theme loader ───────────────────────────────── */
 
@@ -290,9 +291,9 @@ const PublicMediaKitPage = () => {
     <div style={{ background: theme.bg, minHeight: '100vh' }}>
 
       {/* ── BANNIÈRE ──────────────────────────────────────── */}
-      {bannerUrl && (
+      {safeUrl(bannerUrl) && (
         <div style={{ width: '100%', aspectRatio: '1546 / 423', overflow: 'hidden', maxHeight: '420px' }}>
-          <img src={bannerUrl} alt="Bannière" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
+          <img src={safeUrl(bannerUrl)} alt="Bannière" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
         </div>
       )}
 
@@ -340,9 +341,9 @@ const PublicMediaKitPage = () => {
               >
                 Proposer un partenariat →
               </button>
-              {calendlyUrl && (
+              {safeCalendlyUrl(calendlyUrl) && (
                 <a
-                  href={calendlyUrl} target="_blank" rel="noopener noreferrer"
+                  href={safeCalendlyUrl(calendlyUrl)} target="_blank" rel="noopener noreferrer"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', color: theme.accent, border: `2px solid ${theme.accent}`, borderRadius: '8px', padding: '12px 24px', fontSize: '14px', fontWeight: 700, letterSpacing: '0.02em', cursor: 'pointer', textDecoration: 'none', transition: 'all 150ms ease' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${theme.accent}12` }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
@@ -399,9 +400,9 @@ const PublicMediaKitPage = () => {
               >
                 Proposer un partenariat →
               </button>
-              {calendlyUrl && (
+              {safeCalendlyUrl(calendlyUrl) && (
                 <a
-                  href={calendlyUrl} target="_blank" rel="noopener noreferrer"
+                  href={safeCalendlyUrl(calendlyUrl)} target="_blank" rel="noopener noreferrer"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', color: '#ffffff', border: '2px solid rgba(255,255,255,0.3)', borderRadius: '4px', padding: '12px 24px', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'none', transition: 'all 150ms ease' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.7)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.3)' }}
@@ -451,9 +452,9 @@ const PublicMediaKitPage = () => {
               >
                 Proposer un partenariat →
               </button>
-              {calendlyUrl && (
+              {safeCalendlyUrl(calendlyUrl) && (
                 <a
-                  href={calendlyUrl} target="_blank" rel="noopener noreferrer"
+                  href={safeCalendlyUrl(calendlyUrl)} target="_blank" rel="noopener noreferrer"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', color: theme.accent, border: `2px solid ${theme.accent}60`, borderRadius: '9999px', padding: '12px 24px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', transition: 'all 150ms ease' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${theme.accent}12` }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
@@ -661,7 +662,7 @@ const PublicMediaKitPage = () => {
 
           <div style={{ background: theme.cardBg, borderRadius: '20px', padding: '48px', border: `1px solid ${theme.border}` }}>
             {sent ? (
-              <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <div role="alert" style={{ textAlign: 'center', padding: '24px 0' }}>
                 <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: `${theme.accent}30`, border: `2px solid ${theme.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '24px', color: theme.accent }}>
                   ✓
                 </div>
@@ -681,14 +682,16 @@ const PublicMediaKitPage = () => {
                   Réponse sous 48h · Traité personnellement par {displayCreator.pseudo}
                 </p>
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} noValidate>
                   <div>
-                    <label style={labelStyle}>Entreprise / marque</label>
+                    <label htmlFor="partnership-company" style={labelStyle}>Entreprise / marque</label>
                     <input
+                      id="partnership-company"
                       required
                       placeholder="NordVPN, Corsair..."
                       value={form.company}
                       onChange={e => setForm({ ...form, company: e.target.value })}
+                      aria-invalid={form.company === '' ? undefined : undefined}
                       style={inputStyle}
                       onFocus={focusStyle}
                       onBlur={blurStyle}
@@ -696,8 +699,9 @@ const PublicMediaKitPage = () => {
                   </div>
 
                   <div>
-                    <label style={labelStyle}>Budget estimé</label>
+                    <label htmlFor="partnership-budget" style={labelStyle}>Budget estimé</label>
                     <select
+                      id="partnership-budget"
                       required
                       value={form.budget}
                       onChange={e => setForm({ ...form, budget: e.target.value })}
@@ -715,8 +719,9 @@ const PublicMediaKitPage = () => {
                   </div>
 
                   <div>
-                    <label style={labelStyle}>Type de collaboration</label>
+                    <label htmlFor="partnership-type" style={labelStyle}>Type de collaboration</label>
                     <select
+                      id="partnership-type"
                       required
                       value={form.type}
                       onChange={e => setForm({ ...form, type: e.target.value })}
@@ -734,8 +739,9 @@ const PublicMediaKitPage = () => {
                   </div>
 
                   <div>
-                    <label style={labelStyle}>Message</label>
+                    <label htmlFor="partnership-message" style={labelStyle}>Message</label>
                     <textarea
+                      id="partnership-message"
                       required
                       rows={4}
                       placeholder={`Bonjour ${displayCreator.pseudo}, je représente... et je souhaite vous proposer...`}
@@ -766,14 +772,15 @@ const PublicMediaKitPage = () => {
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '28px', paddingTop: '24px', borderTop: `1px solid ${theme.border}` }}>
               {[
-                { Icon: Youtube, color: '#ef4444' },
-                { Icon: Twitter, color: isDark ? '#ffffff' : '#0f172a' },
-                { Icon: Instagram, color: '#e1306c' },
-                { Icon: Mail, color: '#0284c7' },
-              ].map(({ Icon, color }, i) => (
+                { Icon: Youtube, color: '#ef4444', label: 'YouTube' },
+                { Icon: Twitter, color: isDark ? '#ffffff' : '#0f172a', label: 'Twitter / X' },
+                { Icon: Instagram, color: '#e1306c', label: 'Instagram' },
+                { Icon: Mail, color: '#0284c7', label: 'Email' },
+              ].map(({ Icon, color, label }, i) => (
                 <a
                   key={i}
                   href="#"
+                  aria-label={label}
                   style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, background: isDark ? 'rgba(255,255,255,0.06)' : 'white', transition: 'all 150ms ease' }}
                   onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.accent; ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)' }}
                   onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.border; ;(e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
@@ -783,11 +790,12 @@ const PublicMediaKitPage = () => {
               ))}
               <a
                 href="#"
+                aria-label="Twitch"
                 style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDark ? 'rgba(255,255,255,0.06)' : 'white', transition: 'all 150ms ease' }}
                 onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.accent; ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)' }}
                 onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.border; ;(e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#9146ff">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#9146ff" aria-hidden="true">
                   <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
                 </svg>
               </a>
@@ -822,7 +830,7 @@ const PublicMediaKitPage = () => {
         </button>
       </div>
 
-      <footer style={{ padding: '24px', textAlign: 'center', color: mutedText, fontSize: '12px', borderTop: `1px solid ${theme.border}` }}>
+      <footer role="contentinfo" style={{ padding: '24px', textAlign: 'center', color: mutedText, fontSize: '12px', borderTop: `1px solid ${theme.border}` }}>
         Media kit généré par{' '}
         <span style={{ color: '#16a34a', fontWeight: 600 }}>Sponsorable</span>
       </footer>

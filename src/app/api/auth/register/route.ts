@@ -3,102 +3,136 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import nodemailer from "nodemailer"
+import { Resend } from "resend"
+import { z } from "zod"
 
-// Configuration Nodemailer (utilise Ethereal en mode dev pour tester gratuitement sans config)
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_SERVER_HOST || 'smtp.ethereal.email',
-  port: parseInt(process.env.EMAIL_SERVER_PORT || '587'),
-  auth: {
-    user: process.env.EMAIL_SERVER_USER || 'leola.steuber@ethereal.email',
-    pass: process.env.EMAIL_SERVER_PASSWORD || 'E7XpU2gqZK7TqG8YyW',
-  },
+const RegisterSchema = z.object({
+  name: z.string().max(100).optional(),
+  email: z.string().email().max(255),
+  password: z
+    .string()
+    .min(8)
+    .max(128)
+    .refine(p => /[A-Z]/.test(p), { message: "Doit contenir une majuscule" })
+    .refine(p => /[a-z]/.test(p), { message: "Doit contenir une minuscule" })
+    .refine(p => /[0-9]/.test(p), { message: "Doit contenir un chiffre" })
+    .refine(p => /[^A-Za-z0-9]/.test(p), { message: "Doit contenir un caractère spécial" }),
 })
+
+function getAppUrl(reqUrl: string) {
+  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  return new URL(reqUrl).origin
+}
+
+const emailHtml = (verifyUrl: string) => `
+  <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+    <h2 style="color:#16a34a;margin-bottom:8px">Bienvenue sur Sponsorable !</h2>
+    <p style="color:#475569;line-height:1.6">
+      Clique sur le bouton ci-dessous pour confirmer ton adresse email.<br>
+      Le lien expire dans <strong>24h</strong>.
+    </p>
+    <a href="${verifyUrl}"
+       style="display:inline-block;margin:24px 0;padding:12px 28px;background:#16a34a;color:white;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px">
+      Confirmer mon email →
+    </a>
+    <p style="color:#94a3b8;font-size:12px">Si tu n'as pas créé de compte, ignore cet email.</p>
+  </div>
+`
+
+async function sendVerificationEmail(email: string, verifyUrl: string) {
+  // Production : Resend
+  if (process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM ?? "onboarding@resend.dev",
+      to: email,
+      subject: "Confirmez votre adresse email — Sponsorable",
+      html: emailHtml(verifyUrl),
+    })
+    if (error) {
+      console.error("[resend] erreur envoi email:", JSON.stringify(error))
+    } else {
+      console.log("[resend] email envoyé, id:", data?.id)
+    }
+    return
+  }
+
+  // Dev : Ethereal (aperçu en ligne, aucune config requise)
+  const testAccount = await nodemailer.createTestAccount()
+  const transporter = nodemailer.createTransport({
+    host: "smtp.ethereal.email",
+    port: 587,
+    auth: { user: testAccount.user, pass: testAccount.pass },
+  })
+  const info = await transporter.sendMail({
+    from: '"Sponsorable" <noreply@sponsorable.gg>',
+    to: email,
+    subject: "Confirmez votre adresse email — Sponsorable",
+    html: emailHtml(verifyUrl),
+  })
+  console.log("    Aperçu Ethereal :", nodemailer.getTestMessageUrl(info))
+}
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json()
-
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email et mot de passe requis" }, { status: 400 })
+    const body = await req.json()
+    const parsed = RegisterSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Données invalides" },
+        { status: 400 }
+      )
     }
 
-    // Password validation
-    const minLength = 8;
-    const hasUpper = /[A-Z]/.test(password);
-    const hasLower = /[a-z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    const hasSpecial = /[^A-Za-z0-9]/.test(password);
-    if (!(password.length >= minLength && hasUpper && hasLower && hasNumber && hasSpecial)) {
-      return NextResponse.json({ 
-        error: "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial." 
-      }, { status: 400 })
-    }
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    })
-
-    if (existingUser) {
-      return NextResponse.json({ error: "Cet email est déjà utilisé" }, { status: 400 })
-    }
-
+    const { name, email, password } = parsed.data
     const hashedPassword = await bcrypt.hash(password, 10)
-
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
-    })
-
-    // Génération du token
-    const token = crypto.randomUUID()
-    await prisma.verificationToken.create({
-      data: {
-        identifier: email,
-        token,
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 heures
-      },
-    })
-
-    // Envoi de l'email
-    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/verify?token=${token}&email=${encodeURIComponent(email)}`
-    
-    const mailOptions = {
-      from: '"Sponsorable" <noreply@sponsorable.gg>',
-      to: email,
-      subject: "Confirmez votre adresse email - Sponsorable",
-      html: `
-        <h1>Bienvenue sur Sponsorable !</h1>
-        <p>Merci de vous être inscrit. Veuillez cliquer sur le lien ci-dessous pour confirmer votre adresse email :</p>
-        <a href="${verificationUrl}" style="display:inline-block;padding:10px 20px;background-color:#16a34a;color:white;text-decoration:none;border-radius:5px;">Confirmer mon email</a>
-        <p>Si vous n'avez pas créé de compte, vous pouvez ignorer cet email.</p>
-      `,
-    }
+    const token = crypto.randomBytes(32).toString("hex")
+    const expires = new Date(Date.now() + 24 * 3600 * 1000)
 
     try {
-      const info = await transporter.sendMail(mailOptions)
-      
-      // En dev (Ethereal), on log l'URL pour voir l'email sans boîte mail
-      if (!process.env.EMAIL_SERVER_HOST || process.env.EMAIL_SERVER_HOST.includes('ethereal')) {
-        console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info))
+      await prisma.$transaction(async (tx) => {
+        const existing = await tx.user.findUnique({ where: { email } })
+        if (existing) throw new Error("EMAIL_TAKEN")
+
+        await tx.user.create({
+          data: { name, email, password: hashedPassword, emailVerified: null },
+        })
+
+        await tx.verificationToken.create({
+          data: { identifier: email, token, expires },
+        })
+      })
+    } catch (err) {
+      if (err instanceof Error && err.message === "EMAIL_TAKEN") {
+        return NextResponse.json({ error: "Cet email est déjà utilisé" }, { status: 400 })
       }
-    } catch (emailError: any) {
-      console.error("Erreur d'envoi d'email:", emailError)
-      // Si l'envoi échoue (ex: port bloqué), on renvoie le lien directement en mode dev pour ne pas bloquer l'utilisateur
-      if (process.env.NODE_ENV !== "production") {
-         console.log("LIEN DE VALIDATION DE SECOURS : ", verificationUrl)
-         return NextResponse.json({ 
-           message: "Compte créé. L'envoi d'email a échoué mais vous êtes en mode dev. Regardez le terminal pour le lien de validation." 
-         }, { status: 201 })
-      }
-      return NextResponse.json({ error: "Compte créé mais impossible d'envoyer l'email de confirmation." }, { status: 500 })
+      throw err
     }
 
-    return NextResponse.json({ message: "Compte créé. Veuillez vérifier vos emails." }, { status: 201 })
-  } catch (error: any) {
-    console.error("Erreur lors de l'inscription:", error)
-    return NextResponse.json({ error: error.message || "Erreur interne du serveur" }, { status: 500 })
+    const verifyUrl = `${getAppUrl(req.url)}/api/auth/verify?token=${token}&email=${encodeURIComponent(email)}`
+
+    const isDev = process.env.NODE_ENV !== "production"
+
+    if (isDev) {
+      console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+      console.log("📧  LIEN DE CONFIRMATION (mode dev)")
+      console.log("   ", verifyUrl)
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+    }
+
+    await sendVerificationEmail(email, verifyUrl).catch(err => {
+      console.error("[register] sendMail failed", err)
+    })
+
+    return NextResponse.json(
+      {
+        message: "Compte créé ! Vérifie ta boîte mail pour confirmer ton adresse.",
+        ...(isDev && { devVerifyUrl: verifyUrl }),
+      },
+      { status: 201 }
+    )
+  } catch {
+    return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 })
   }
 }

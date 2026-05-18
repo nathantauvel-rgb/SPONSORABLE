@@ -1,13 +1,25 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
+if (!STRIPE_SECRET_KEY) throw new Error('Missing env var: STRIPE_SECRET_KEY')
+
+const stripe = new Stripe(STRIPE_SECRET_KEY)
+
+function getBaseUrl(request: Request): string {
+  const envUrl = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_URL
+  if (envUrl) {
+    try {
+      return new URL(envUrl).origin
+    } catch { /* fall through */ }
+  }
+  return 'http://localhost:3000'
+}
 
 export async function POST(request: Request) {
   try {
-    const origin = request.headers.get('origin') || request.headers.get('referer')?.replace(/\/[^/]*$/, '') || 'http://localhost:3001'
-    const envUrl = process.env.NEXT_PUBLIC_URL
-    const baseUrl = (envUrl && !envUrl.includes('localhost')) ? envUrl : origin
+    const baseUrl = getBaseUrl(request)
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
@@ -31,9 +43,7 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ url: session.url })
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Stripe error'
-    console.error('Stripe error:', message)
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'Erreur lors de la création de la session de paiement' }, { status: 500 })
   }
 }

@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, Lock, Plus, Trash2, X, Zap } from 'lucide-react
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import Sidebar from '@/components/layout/Sidebar'
-import Button from '@/components/ui/Button'
+import Button from '@/components/ui/button'
 import { creator, exampleCreators, pastPartners } from '@/data/mockData'
 
 type Partnership = {

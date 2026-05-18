@@ -18,6 +18,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [devVerifyUrl, setDevVerifyUrl] = useState('')
 
   useEffect(() => {
     if (searchParams.get('register') === '1') setMode('register')
@@ -45,7 +46,8 @@ function LoginForm() {
         if (!res.ok) {
           setError(data.error || 'Une erreur est survenue.')
         } else {
-          setSuccess('Compte créé ! Vérifie ta boîte mail (ou le terminal en dev) pour confirmer ton email, puis connecte-toi.')
+          setSuccess('Compte créé ! Vérifie ta boîte mail pour confirmer ton email, puis connecte-toi.')
+          if (data.devVerifyUrl) setDevVerifyUrl(data.devVerifyUrl)
           setMode('login')
         }
       } else {
@@ -187,6 +189,14 @@ function LoginForm() {
           {success && (
             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#16a34a', lineHeight: 1.5 }}>
               {success}
+              {devVerifyUrl && (
+                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #bbf7d0' }}>
+                  <span style={{ color: '#15803d', fontWeight: 600 }}>Mode dev — </span>
+                  <a href={devVerifyUrl} style={{ color: '#15803d', fontWeight: 600, wordBreak: 'break-all' }}>
+                    Clique ici pour confirmer ton email →
+                  </a>
+                </div>
+              )}
             </div>
           )}
 

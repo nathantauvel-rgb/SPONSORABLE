@@ -1,22 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
+
+const PostSchema = z.object({
+  username: z.string().min(1).max(64),
+})
+
+const TWITCH_CLIENT_ID = process.env.AUTH_TWITCH_ID
+const TWITCH_CLIENT_SECRET = process.env.AUTH_TWITCH_SECRET
 
 async function getTwitchToken(): Promise<string> {
+  if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) {
+    throw new Error('Twitch credentials not configured')
+  }
   const res = await fetch('https://id.twitch.tv/oauth2/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: process.env.TWITCH_CLIENT_ID!,
-      client_secret: process.env.TWITCH_CLIENT_SECRET!,
+      client_id: TWITCH_CLIENT_ID,
+      client_secret: TWITCH_CLIENT_SECRET,
       grant_type: 'client_credentials',
     }),
   })
   const data = await res.json()
-  return data.access_token
+  return data.access_token as string
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
@@ -24,6 +35,7 @@ export async function GET(req: NextRequest) {
 
   const platform = await prisma.platform.findUnique({
     where: { userId_type: { userId: session.user.id, type: 'twitch' } },
+    select: { id: true, type: true, platformId: true, username: true, displayName: true, avatarUrl: true, stats: true, lastFetched: true },
   })
 
   if (!platform) {
@@ -39,36 +51,60 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
   }
 
-  const { username } = await req.json()
-  if (!username) {
-    return NextResponse.json({ error: 'username requis' }, { status: 400 })
+  const body = await req.json()
+  const parsed = PostSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Paramètres invalides' }, { status: 400 })
   }
 
-  const token = await getTwitchToken()
+  const { username } = parsed.data
+
+  let token: string
+  try {
+    token = await getTwitchToken()
+  } catch {
+    return NextResponse.json({ error: 'Twitch API non configurée' }, { status: 503 })
+  }
 
   const userRes = await fetch(
     `https://api.twitch.tv/helix/users?login=${encodeURIComponent(username)}`,
-    { headers: { 'Client-Id': process.env.TWITCH_CLIENT_ID!, Authorization: `Bearer ${token}` } }
+    { headers: { 'Client-Id': TWITCH_CLIENT_ID!, Authorization: `Bearer ${token}` } }
   )
   const userData = await userRes.json()
   if (!userData.data?.length) {
     return NextResponse.json({ error: 'Utilisateur Twitch introuvable' }, { status: 404 })
   }
 
-  const user = userData.data[0]
+  const twitchUser = userData.data[0]
   const channelRes = await fetch(
-    `https://api.twitch.tv/helix/channels?broadcaster_id=${user.id}`,
-    { headers: { 'Client-Id': process.env.TWITCH_CLIENT_ID!, Authorization: `Bearer ${token}` } }
+    `https://api.twitch.tv/helix/channels?broadcaster_id=${twitchUser.id}`,
+    { headers: { 'Client-Id': TWITCH_CLIENT_ID!, Authorization: `Bearer ${token}` } }
   )
   const channelData = await channelRes.json()
   const channel = channelData.data?.[0] ?? {}
 
-  const stats = { followersCount: 0, game: channel.game_name }
+  const stats = { followersCount: 0, game: channel.game_name as string | undefined }
 
   const platform = await prisma.platform.upsert({
     where: { userId_type: { userId: session.user.id, type: 'twitch' } },
-    update: { stats, lastFetched: new Date(), displayName: user.display_name, platformId: user.id, username: user.login, avatarUrl: user.profile_image_url },
-    create: { userId: session.user.id, type: 'twitch', platformId: user.id, username: user.login, displayName: user.display_name, avatarUrl: user.profile_image_url, stats, lastFetched: new Date() },
+    update: {
+      stats,
+      lastFetched: new Date(),
+      displayName: twitchUser.display_name as string,
+      platformId: twitchUser.id as string,
+      username: twitchUser.login as string,
+      avatarUrl: twitchUser.profile_image_url as string | undefined,
+    },
+    create: {
+      userId: session.user.id,
+      type: 'twitch',
+      platformId: twitchUser.id as string,
+      username: twitchUser.login as string,
+      displayName: twitchUser.display_name as string,
+      avatarUrl: twitchUser.profile_image_url as string | undefined,
+      stats,
+      lastFetched: new Date(),
+    },
   })
 
   return NextResponse.json({ platform })

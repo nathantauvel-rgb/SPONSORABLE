@@ -11,7 +11,8 @@
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\natha\\\\Documents\\\\SPONSORABLE NEXT\\\\src\\\\app\" -Force | ForEach-Object { \"$\\($_.PSIsContainer\\) $\\($_.Name\\)\" })",
       "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('base64'\\)\\)\")",
       "mcp__3567833f-8727-4443-b3a9-934112b34e04__list_teams",
-      "mcp__3567833f-8727-4443-b3a9-934112b34e04__list_projects"
+      "mcp__3567833f-8727-4443-b3a9-934112b34e04__list_projects",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\natha\\\\Desktop\\\\Sponsorable\" -Force)"
     ]
   }
 }
