@@ -150,9 +150,12 @@ export default function DashboardPage() {
       if (cachedYT) setYtData(JSON.parse(cachedYT))
       const cachedTwitch = localStorage.getItem('sponsorable_twitch_data')
       if (cachedTwitch) setTwitchData(JSON.parse(cachedTwitch))
-      const profile = localStorage.getItem('sponsorable_profile')
-      if (profile) setPublicPseudo(JSON.parse(profile)?.pseudo ?? '')
     } catch {}
+    // Load real slug from DB
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.profile?.slug) setPublicPseudo(data.profile.slug) })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -180,9 +183,11 @@ export default function DashboardPage() {
               {ytData ? `YouTube synchronisé ${timeSince(ytData.lastFetched)}` : 'Connecte tes plateformes pour voir tes stats'}
             </p>
           </div>
-          <Button variant="outline" arrow onClick={() => router.push('/p/alexplays')}>
-            Voir ma page
-          </Button>
+          {publicPseudo && (
+            <Button variant="outline" arrow onClick={() => router.push(`/${publicPseudo}`)}>
+              Voir ma page
+            </Button>
+          )}
         </div>
 
         {/* Metrics — uniquement données réelles */}

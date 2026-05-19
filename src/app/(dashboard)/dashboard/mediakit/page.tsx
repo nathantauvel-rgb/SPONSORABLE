@@ -185,11 +185,9 @@ export default function MediaKitEditorPage() {
                       <div
                         key={tmpl.id}
                         onClick={() => {
-                          const newProfile = { pseudo: tmpl.pseudo, niche: tmpl.niches.join(' · '), bio: tmpl.bio, country: 'France', email: tmpl.email }
-                          setProfile(newProfile)
+                          // Only apply the visual theme + formats, never overwrite the user's own profile content
                           setFormats(tmpl.formats)
                           setSelectedTemplateId(tmpl.id)
-                          localStorage.setItem('sponsorable_profile', JSON.stringify(newProfile))
                           localStorage.setItem('sponsorable_formats', JSON.stringify(tmpl.formats))
                           localStorage.setItem('sponsorable_template', tmpl.id)
                           setTimeout(() => { setProfileFlash(true); setTimeout(() => setProfileFlash(false), 1200) }, 150)
