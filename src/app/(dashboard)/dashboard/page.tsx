@@ -241,11 +241,11 @@ export default function DashboardPage() {
                 ) : !ytLoading && (
                   <button
                     onClick={() => signIn('google', { callbackUrl: '/dashboard' }, {
-                      scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly',
+                      scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
                       prompt: 'consent',
                       access_type: 'offline',
                     })}
-                    style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    style={{ fontSize: '12px', color: '#ef4444', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
                     Connecter →
                   </button>
