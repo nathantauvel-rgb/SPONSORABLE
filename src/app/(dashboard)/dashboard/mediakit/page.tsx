@@ -29,15 +29,27 @@ const EMPTY_PARTNERSHIP: Partnership = { name: '', category: '', result: '', dat
 
 export default function MediaKitEditorPage() {
   const [pro, setPro] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(() => {
+    try { return localStorage.getItem('sponsorable_template') || null } catch { return null }
+  })
 
   useEffect(() => {
     fetch('/api/me')
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.isPro) setPro(true) })
       .catch(() => {})
+    // Load saved theme from DB
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.profile?.theme) {
+          setSelectedTemplateId(data.profile.theme)
+          localStorage.setItem('sponsorable_template', data.profile.theme)
+        }
+      })
+      .catch(() => {})
   }, [])
-  const [showTemplates, setShowTemplates] = useState(false)
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(pro ? (localStorage.getItem('sponsorable_template') || null) : null)
   const [profile, setProfile] = useState(() => {
     try {
       const saved = localStorage.getItem('sponsorable_profile')
