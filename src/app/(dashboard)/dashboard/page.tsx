@@ -7,7 +7,6 @@ import { useSession, signIn } from 'next-auth/react'
 import Sidebar from '@/components/layout/Sidebar'
 import Button from '@/components/ui/button'
 import MetricCard from '@/components/ui/MetricCard'
-import { metrics } from '@/data/mockData'
 
 type YTData = {
   channelId: string
@@ -186,18 +185,23 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        {/* Metrics */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '40px' }}>
-          {metrics.map((m, i) => (
-            <MetricCard
-              key={m.label}
-              label={m.label}
-              value={i === 0 && ytData ? fmtNum(ytData.subscriberCount) : i === 1 && twitchData ? fmtNum(twitchData.followerCount) : m.value}
-              change={m.change}
-              positive={m.positive}
-            />
-          ))}
-        </div>
+        {/* Metrics — uniquement données réelles */}
+        {(ytData || twitchData) && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '40px' }}>
+            {ytData && (
+              <MetricCard label="Abonnés YouTube" value={fmtNum(ytData.subscriberCount)} change="YouTube" positive />
+            )}
+            {ytData && (
+              <MetricCard label="Vues totales" value={fmtNum(ytData.viewCount)} change={`${fmtNum(ytData.videoCount)} vidéos`} positive />
+            )}
+            {twitchData && (
+              <MetricCard label="Followers Twitch" value={fmtNum(twitchData.followerCount)} change="Twitch" positive />
+            )}
+            {twitchData && twitchData.viewCount > 0 && (
+              <MetricCard label="Vues canal Twitch" value={fmtNum(twitchData.viewCount)} change="Twitch" positive />
+            )}
+          </div>
+        )}
 
         {/* Platforms */}
         <div style={{ marginBottom: '40px' }}>

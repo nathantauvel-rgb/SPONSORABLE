@@ -309,6 +309,20 @@ const PublicMediaKitPage = () => {
 
   const effectiveLastFetched = remoteYt?.lastFetched ?? null
 
+  const remoteTwitch = remoteData?.platforms
+    ? (remoteData.platforms as Array<{ type: string; stats: Record<string, unknown> | null; lastFetched: string | null }>).find(p => p.type === 'twitch')
+    : null
+  const effectiveTwitchOverride: Platform | null = remoteTwitch?.stats ? {
+    id: 'twitch',
+    name: 'Twitch',
+    color: '#9146ff',
+    hero: false,
+    mainStat: { value: fmtNum(Number(remoteTwitch.stats.followerCount ?? 0)), label: 'followers' },
+    secondaryStats: [
+      { value: fmtNum(Number(remoteTwitch.stats.viewCount ?? 0)), label: 'vues canal' },
+    ],
+  } : null
+
   const collabFormats = effectiveFormats
   const showPartnerships = effectiveShowPartnerships
   const displayedPartnerships = effectivePartnerships
@@ -561,6 +575,18 @@ const PublicMediaKitPage = () => {
       <section style={{ padding: '64px 24px', background: theme.bg }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
 
+          {(() => {
+            const realPlatforms: Platform[] = []
+            if (effectiveYtOverride) realPlatforms.push({ ...effectiveYtOverride, hero: true })
+            if (effectiveTwitchOverride) realPlatforms.push({ ...effectiveTwitchOverride, hero: realPlatforms.length === 0 })
+            if (realPlatforms.length === 0) return null
+
+            const lastSync = effectiveLastFetched ?? remoteTwitch?.lastFetched ?? null
+
+            const hero = realPlatforms[0]
+            const secondary = realPlatforms.slice(1)
+
+            return (<>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
@@ -569,16 +595,8 @@ const PublicMediaKitPage = () => {
               </span>
               <span style={{ fontSize: '13px', fontWeight: 600, color: theme.accent }}>Stats en direct</span>
             </div>
-            <span style={{ fontSize: '12px', color: mutedText }}>Dernière synchronisation il y a 2h</span>
+            {lastSync && <span style={{ fontSize: '12px', color: mutedText }}>Dernière synchronisation {timeSince(lastSync)}</span>}
           </div>
-
-          {(() => {
-            const visible = platforms
-              .filter(p => connectedIds.includes(p.id))
-              .map(p => (p.id === 'youtube' && ytOverride ? ytOverride : p))
-            const hero = visible.find(p => p.hero) ?? visible[0]
-            if (!hero) return null
-            const secondary = visible.filter(p => p.id !== hero.id)
             return (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
                 <div style={{
@@ -648,63 +666,8 @@ const PublicMediaKitPage = () => {
                 </div>
               </div>
             )
+            </>)
           })()}
-        </div>
-      </section>
-
-      {/* ── AUDIENCE ──────────────────────────────────────── */}
-      <section style={{ padding: '80px 24px', background: theme.bg }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <SectionTitle color={theme.text}>Audience</SectionTitle>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
-            {/* Age */}
-            <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '28px' }}>
-              <p style={{ fontSize: '12px', fontWeight: 500, color: mutedText, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '20px' }}>
-                Répartition par âge
-              </p>
-              {audienceAge.map(a => (
-                <AgeBar key={a.label} label={a.label} pct={a.pct} accent={theme.accent} subtext={theme.subtext} />
-              ))}
-            </div>
-
-            {/* Gender + Countries */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '28px' }}>
-                <p style={{ fontSize: '12px', fontWeight: 500, color: mutedText, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px' }}>
-                  Genre
-                </p>
-                <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                  <div style={{ flex: 1, height: '10px', borderRadius: '9999px', overflow: 'hidden', background: femaleBarBg }}>
-                    <div style={{ height: '100%', width: `${audienceGender.male}%`, background: theme.accent, borderRadius: '9999px' }} />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: theme.accent }}>
-                    ♂ Hommes {audienceGender.male}%
-                  </span>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: femaleColor }}>
-                    ♀ Femmes {audienceGender.female}%
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '28px' }}>
-                <p style={{ fontSize: '12px', fontWeight: 500, color: mutedText, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px' }}>
-                  Top pays
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {audienceCountries.map(c => (
-                    <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Flag code={c.flag} size={22} />
-                      <span style={{ fontSize: '13px', color: theme.subtext, flex: 1, fontWeight: 500 }}>{c.name}</span>
-                      <span style={{ fontSize: '13px', color: theme.accent, fontWeight: 600 }}>{c.pct}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
