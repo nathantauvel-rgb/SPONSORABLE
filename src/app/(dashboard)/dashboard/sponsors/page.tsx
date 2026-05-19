@@ -104,25 +104,30 @@ export default function SponsorsPage() {
   const [brands, setBrands] = useState<Array<(typeof ALL_BRANDS)[0] & { compatibility: number }>>([])
 
   useEffect(() => {
-    try {
-      setPro(localStorage.getItem('sponsorable_plan') === 'pro')
+    fetch('/api/me')
+      .then(r => r.json())
+      .then(data => {
+        if (typeof data.isPro === 'boolean') setPro(data.isPro)
 
-      const saved = localStorage.getItem('sponsorable_connected_platforms')
-      const connectedList: string[] = saved ? JSON.parse(saved) : []
-      setConnected(connectedList)
+        const platforms: Array<{ type: string; stats: Record<string, unknown> | null }> = data.platforms ?? []
+        const connectedList = platforms.map((p: { type: string }) => p.type)
+        setConnected(connectedList)
 
-      const ytRaw = localStorage.getItem('sponsorable_yt_data')
-      const subs = ytRaw ? parseInt(JSON.parse(ytRaw).subscriberCount || '0') || 10000 : 10000
+        const ytPlatform = platforms.find((p: { type: string }) => p.type === 'youtube')
+        const subs = ytPlatform?.stats
+          ? parseInt(String((ytPlatform.stats as Record<string, unknown>).subscriberCount ?? '0')) || 0
+          : 0
 
-      setScoreData(calcScore(subs, connectedList.length))
+        setScoreData(calcScore(subs, connectedList.length))
 
-      setBrands(
-        ALL_BRANDS.map(b => ({ ...b, compatibility: getBrandCompatibility(b.minSubs, subs) }))
-          .filter(b => b.compatibility > 0)
-          .sort((a, b) => b.compatibility - a.compatibility)
-          .slice(0, 6)
-      )
-    } catch {}
+        setBrands(
+          ALL_BRANDS.map(b => ({ ...b, compatibility: getBrandCompatibility(b.minSubs, subs || 10000) }))
+            .filter(b => b.compatibility > 0)
+            .sort((a, b) => b.compatibility - a.compatibility)
+            .slice(0, 6)
+        )
+      })
+      .catch(() => {})
   }, [])
 
   const hasConnectedPlatforms = connected.length > 0

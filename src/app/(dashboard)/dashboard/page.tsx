@@ -1,6 +1,6 @@
 'use client'
 
-import { Copy, ExternalLink, RefreshCw } from 'lucide-react'
+import { Copy, ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
@@ -83,6 +83,10 @@ export default function DashboardPage() {
   const [twitchLoading, setTwitchLoading] = useState(false)
   const [twitchError, setTwitchError] = useState('')
 
+  const [ytDisconnecting, setYtDisconnecting] = useState(false)
+  const [twitchDisconnecting, setTwitchDisconnecting] = useState(false)
+  const [publicPseudo, setPublicPseudo] = useState('')
+
   const fetchYouTube = async () => {
     setYtLoading(true)
     setYtError('')
@@ -121,6 +125,25 @@ export default function DashboardPage() {
     }
   }
 
+  const disconnectPlatform = async (type: 'youtube' | 'twitch') => {
+    if (type === 'youtube') setYtDisconnecting(true)
+    else setTwitchDisconnecting(true)
+    try {
+      await fetch(`/api/platforms/${type}`, { method: 'DELETE' })
+      if (type === 'youtube') {
+        setYtData(null)
+        localStorage.removeItem('sponsorable_yt_data')
+        localStorage.removeItem('sponsorable_connected_platforms')
+      } else {
+        setTwitchData(null)
+        localStorage.removeItem('sponsorable_twitch_data')
+      }
+    } finally {
+      if (type === 'youtube') setYtDisconnecting(false)
+      else setTwitchDisconnecting(false)
+    }
+  }
+
   // On mount: load cached data then auto-fetch
   useEffect(() => {
     try {
@@ -128,6 +151,8 @@ export default function DashboardPage() {
       if (cachedYT) setYtData(JSON.parse(cachedYT))
       const cachedTwitch = localStorage.getItem('sponsorable_twitch_data')
       if (cachedTwitch) setTwitchData(JSON.parse(cachedTwitch))
+      const profile = localStorage.getItem('sponsorable_profile')
+      if (profile) setPublicPseudo(JSON.parse(profile)?.pseudo ?? '')
     } catch {}
   }, [])
 
@@ -196,12 +221,13 @@ export default function DashboardPage() {
                 <StatusBadge connected={!!ytData} />
                 {ytData ? (
                   <button
-                    onClick={fetchYouTube}
-                    disabled={ytLoading}
-                    title="Synchroniser"
-                    style={{ background: 'none', border: 'none', cursor: ytLoading ? 'wait' : 'pointer', color: '#94a3b8', display: 'flex', padding: '2px' }}
+                    onClick={() => disconnectPlatform('youtube')}
+                    disabled={ytDisconnecting}
+                    style={{ fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '9999px', border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.06)', color: '#dc2626', cursor: ytDisconnecting ? 'wait' : 'pointer', transition: 'all 150ms', whiteSpace: 'nowrap' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.12)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.06)' }}
                   >
-                    <RefreshCw size={14} style={{ animation: ytLoading ? 'spin 1s linear infinite' : 'none' }} />
+                    {ytDisconnecting ? '...' : '× Déconnecter'}
                   </button>
                 ) : !ytLoading && (
                   <button
@@ -239,12 +265,13 @@ export default function DashboardPage() {
                 <StatusBadge connected={!!twitchData} />
                 {twitchData ? (
                   <button
-                    onClick={fetchTwitch}
-                    disabled={twitchLoading}
-                    title="Synchroniser"
-                    style={{ background: 'none', border: 'none', cursor: twitchLoading ? 'wait' : 'pointer', color: '#94a3b8', display: 'flex', padding: '2px' }}
+                    onClick={() => disconnectPlatform('twitch')}
+                    disabled={twitchDisconnecting}
+                    style={{ fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '9999px', border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.06)', color: '#dc2626', cursor: twitchDisconnecting ? 'wait' : 'pointer', transition: 'all 150ms', whiteSpace: 'nowrap' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.12)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.06)' }}
                   >
-                    <RefreshCw size={14} style={{ animation: twitchLoading ? 'spin 1s linear infinite' : 'none' }} />
+                    {twitchDisconnecting ? '...' : '× Déconnecter'}
                   </button>
                 ) : !twitchLoading && (
                   <button
@@ -274,12 +301,25 @@ export default function DashboardPage() {
               <button onClick={() => router.push('/p/alexplays')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Ouvrir"><ExternalLink size={15} /></button>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <Button variant="primary" arrow onClick={() => router.push('/p/alexplays')}>Voir ma page</Button>
-            <Button variant="outline">
-              Télécharger PDF
-              <span style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.10)', borderRadius: '9999px', padding: '1px 8px', fontSize: '10px', fontWeight: 600, color: '#94a3b8', marginLeft: '4px' }}>Pro</span>
-            </Button>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <Button variant="primary" arrow onClick={() => publicPseudo ? router.push(`/${publicPseudo}`) : router.push('/dashboard/mediakit')}>Voir ma page</Button>
+            {publicPseudo ? (
+              <a
+                href={`/${publicPseudo}?print=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.12)', background: 'white', color: '#0f172a', fontSize: '14px', fontWeight: 600, textDecoration: 'none', cursor: 'pointer', transition: 'background 150ms' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
+              >
+                Télécharger PDF
+              </a>
+            ) : (
+              <Button variant="outline" onClick={() => router.push('/dashboard/mediakit')}>
+                Télécharger PDF
+                <span style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.10)', borderRadius: '9999px', padding: '1px 8px', fontSize: '10px', fontWeight: 600, color: '#94a3b8', marginLeft: '4px' }}>Configurer pseudo d&apos;abord</span>
+              </Button>
+            )}
           </div>
         </div>
 

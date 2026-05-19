@@ -68,13 +68,31 @@ export default function MediaKitEditorPage() {
   const removePartnership = (i: number) =>
     setPartnerships(partnerships.filter((_, idx) => idx !== i))
 
-  const handleSave = () => {
+  const handleSave = async () => {
     localStorage.setItem('sponsorable_profile', JSON.stringify(profile))
     localStorage.setItem('sponsorable_formats', JSON.stringify(formats))
     localStorage.setItem('sponsorable_show_partnerships', String(showPartnerships))
     localStorage.setItem('sponsorable_partnerships', JSON.stringify(partnerships))
     localStorage.setItem('sponsorable_banner', JSON.stringify(bannerUrl))
     localStorage.setItem('sponsorable_calendly', JSON.stringify(calendlyUrl))
+    try {
+      const slug = (profile.pseudo ?? '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'me'
+      await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug,
+          displayName: profile.pseudo,
+          bio: profile.bio,
+          niche: profile.niche,
+          formats,
+          showPartnerships,
+          partnerships,
+          bannerUrl: bannerUrl || undefined,
+          calendlyUrl: calendlyUrl || undefined,
+        }),
+      })
+    } catch { /* localStorage already saved */ }
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }
@@ -87,15 +105,20 @@ export default function MediaKitEditorPage() {
       `}</style>
       <Sidebar />
 
-      <main style={{ marginLeft: '240px', padding: '40px 48px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Mon media kit</h1>
-            <p style={{ fontSize: '14px', color: '#94a3b8' }}>Personnalise ce que voient les sponsors.</p>
-          </div>
-          <Button variant="primary" onClick={handleSave}>
-            Sauvegarder
-          </Button>
+      <div style={{ position: 'fixed', top: 0, left: '240px', right: 0, zIndex: 40, backdropFilter: 'blur(12px)', background: 'rgba(248,250,252,0.92)', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '12px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>Mon media kit</p>
+          <p style={{ fontSize: '12px', color: '#94a3b8' }}>Personnalise ce que voient les sponsors.</p>
+        </div>
+        <Button variant="primary" onClick={handleSave}>
+          Sauvegarder
+        </Button>
+      </div>
+
+      <main style={{ marginLeft: '240px', padding: '80px 48px 40px' }}>
+        <div style={{ marginBottom: '40px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Mon media kit</h1>
+          <p style={{ fontSize: '14px', color: '#94a3b8' }}>Personnalise ce que voient les sponsors.</p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '720px' }}>

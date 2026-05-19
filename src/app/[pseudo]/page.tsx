@@ -3,6 +3,7 @@
 import { Instagram, Mail, Twitter, Youtube } from 'lucide-react'
 import Flag from '@/components/ui/Flag'
 import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import {
   audienceAge,
   audienceCountries,
@@ -107,6 +108,14 @@ const AgeBar = ({ label, pct, accent = '#16a34a', subtext = '#475569' }: { label
   </div>
 )
 
+const timeSince = (iso: string) => {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "à l'instant"
+  if (mins < 60) return `il y a ${mins} min`
+  return `il y a ${Math.floor(mins / 60)}h`
+}
+
 /* ── Loader helpers ──────────────────────────────────────── */
 
 const loadConnectedPlatforms = (): string[] => {
@@ -197,7 +206,35 @@ const loadProfile = () => {
 /* ── Main page ───────────────────────────────────────────── */
 
 const PublicMediaKitPage = () => {
-  const theme = useState(() => loadTemplateTheme())[0]
+  const params = useParams()
+  const slug = typeof params?.pseudo === 'string' ? params.pseudo : ''
+
+  const [remoteData, setRemoteData] = useState<Record<string, unknown> | null>(null)
+
+  useEffect(() => {
+    if (!slug) return
+    fetch(`/api/public/${slug}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setRemoteData(data) })
+      .catch(() => {})
+  }, [slug])
+
+  useEffect(() => {
+    const isPrint = new URLSearchParams(window.location.search).get('print') === '1'
+    if (!isPrint) return
+    const t = setTimeout(() => window.print(), 800)
+    return () => clearTimeout(t)
+  }, [])
+
+  const resolvedTheme = (() => {
+    if (remoteData?.theme && typeof remoteData.theme === 'string') {
+      const found = exampleCreators.find(c => c.id === remoteData.theme)
+      if (found) return found.theme
+    }
+    return loadTemplateTheme()
+  })()
+
+  const theme = resolvedTheme
 
   // Derived theme helpers
   const isForest = theme.bg === '#eae5d8'
@@ -217,14 +254,20 @@ const PublicMediaKitPage = () => {
     : '#bfdbfe'
 
   const savedProfile = useState(() => loadProfile())[0]
+  const remoteProfile = remoteData ? {
+    pseudo: remoteData.displayName ?? undefined,
+    niche: remoteData.niche ?? undefined,
+    bio: remoteData.bio ?? undefined,
+  } : null
+  const effectiveProfile = remoteProfile ?? savedProfile
   const displayCreator = {
     ...creator,
-    ...(savedProfile || {}),
-    avatar_initials: savedProfile?.pseudo
-      ? savedProfile.pseudo.slice(0, 2).toUpperCase()
+    ...(effectiveProfile || {}),
+    avatar_initials: effectiveProfile?.pseudo
+      ? String(effectiveProfile.pseudo).slice(0, 2).toUpperCase()
       : creator.avatar_initials,
-    niches: savedProfile?.niche
-      ? savedProfile.niche.split(' · ').map((s: string) => s.trim())
+    niches: effectiveProfile?.niche
+      ? String(effectiveProfile.niche).split(' · ').map((s: string) => s.trim())
       : creator.niches,
   }
 
@@ -235,13 +278,46 @@ const PublicMediaKitPage = () => {
     message: '',
   })
   const [sent, setSent] = useState(false)
-  const [collabFormats] = useState<string[]>(loadFormats)
-  const [showPartnerships] = useState<boolean>(loadShowPartnerships)
-  const [displayedPartnerships] = useState(loadPartnerships)
-  const [connectedIds] = useState<string[]>(loadConnectedPlatforms)
-  const [bannerUrl] = useState<string>(loadBanner)
-  const [calendlyUrl] = useState<string>(loadCalendly)
-  const [ytOverride] = useState<Platform | null>(loadYTPlatform)
+  const localFormats = useState<string[]>(loadFormats)[0]
+  const localShowPartnerships = useState<boolean>(loadShowPartnerships)[0]
+  const localPartnerships = useState(loadPartnerships)[0]
+  const localConnectedIds = useState<string[]>(loadConnectedPlatforms)[0]
+  const localBannerUrl = useState<string>(loadBanner)[0]
+  const localCalendlyUrl = useState<string>(loadCalendly)[0]
+  const localYtOverride = useState<Platform | null>(loadYTPlatform)[0]
+
+  const effectiveFormats = remoteData?.formats ? remoteData.formats as string[] : localFormats
+  const effectiveShowPartnerships = remoteData != null ? Boolean(remoteData.showPartnerships) : localShowPartnerships
+  const effectivePartnerships = remoteData?.partnerships ? remoteData.partnerships as typeof localPartnerships : localPartnerships
+  const effectiveBannerUrl = remoteData?.bannerUrl ? String(remoteData.bannerUrl) : localBannerUrl
+  const effectiveCalendlyUrl = remoteData?.calendlyUrl ? String(remoteData.calendlyUrl) : localCalendlyUrl
+
+  const remoteYt = remoteData?.platforms
+    ? (remoteData.platforms as Array<{ type: string; stats: Record<string, unknown> | null; lastFetched: string | null }>).find(p => p.type === 'youtube')
+    : null
+  const effectiveYtOverride: Platform | null = remoteYt?.stats ? {
+    id: 'youtube',
+    name: 'YouTube',
+    color: '#ef4444',
+    hero: true,
+    mainStat: { value: String(remoteYt.stats.subscriberCount ?? '0'), label: 'abonnés' },
+    secondaryStats: [
+      { value: String(remoteYt.stats.viewCount ?? '0'), label: 'vues totales' },
+      { value: String(remoteYt.stats.videoCount ?? '0'), label: 'vidéos publiées' },
+    ],
+  } : localYtOverride
+
+  const effectiveLastFetched = remoteYt?.lastFetched ?? null
+
+  const collabFormats = effectiveFormats
+  const showPartnerships = effectiveShowPartnerships
+  const displayedPartnerships = effectivePartnerships
+  const connectedIds = remoteData?.platforms
+    ? (remoteData.platforms as Array<{ type: string }>).map(p => p.type)
+    : localConnectedIds
+  const bannerUrl = effectiveBannerUrl
+  const calendlyUrl = effectiveCalendlyUrl
+  const ytOverride = effectiveYtOverride
   const [stickyVisible, setStickyVisible] = useState(false)
 
   useEffect(() => {
@@ -289,6 +365,17 @@ const PublicMediaKitPage = () => {
 
   return (
     <div style={{ background: theme.bg, minHeight: '100vh' }}>
+      <style>{`
+        @media print {
+          @page { margin: 16mm 14mm; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+          #sticky-cta { display: none !important; }
+          #contact-form { display: none !important; }
+          footer[role="contentinfo"] { display: none !important; }
+          .pdf-export-date { display: block !important; text-align: right; font-size: 10px; color: #cbd5e1; padding: 8px 0 0; border-top: 1px solid #e2e8f0; margin-top: 8px; }
+        }
+        .pdf-export-date { display: none; }
+      `}</style>
 
       {/* ── BANNIÈRE ──────────────────────────────────────── */}
       {safeUrl(bannerUrl) && (
@@ -806,6 +893,7 @@ const PublicMediaKitPage = () => {
 
       {/* ── STICKY CTA ────────────────────────────────────── */}
       <div
+        id="sticky-cta"
         style={{
           position: 'fixed', bottom: '24px', right: '24px', zIndex: 50,
           transition: 'opacity 250ms ease, transform 250ms ease',
@@ -833,6 +921,14 @@ const PublicMediaKitPage = () => {
       <footer role="contentinfo" style={{ padding: '24px', textAlign: 'center', color: mutedText, fontSize: '12px', borderTop: `1px solid ${theme.border}` }}>
         Media kit généré par{' '}
         <span style={{ color: '#16a34a', fontWeight: 600 }}>Sponsorable</span>
+        {effectiveLastFetched && (
+          <span style={{ display: 'block', fontSize: '11px', color: mutedText, marginTop: '4px', opacity: 0.6 }}>
+            Dernière synchronisation {timeSince(effectiveLastFetched)}
+          </span>
+        )}
+        <span className="pdf-export-date">
+          Exporté le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </span>
       </footer>
     </div>
   )

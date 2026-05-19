@@ -51,7 +51,10 @@ export default function StatsPage() {
   const [pro, setPro] = useState(false)
 
   useEffect(() => {
-    try { setPro(localStorage.getItem('sponsorable_plan') === 'pro') } catch {}
+    fetch('/api/me')
+      .then(r => r.json())
+      .then(data => { if (typeof data.isPro === 'boolean') setPro(data.isPro) })
+      .catch(() => {})
   }, [])
 
   return (
