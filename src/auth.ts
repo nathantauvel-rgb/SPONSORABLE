@@ -21,7 +21,7 @@ if (AUTH_GOOGLE_ID && AUTH_GOOGLE_SECRET) {
         clientSecret: AUTH_GOOGLE_SECRET,
         authorization: {
             params: {
-                scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly",
+                scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly",
                 prompt: "consent",
                 access_type: "offline",
                 response_type: "code",
@@ -36,7 +36,7 @@ if (AUTH_TWITCH_ID && AUTH_TWITCH_SECRET) {
         clientSecret: AUTH_TWITCH_SECRET,
         authorization: {
             params: {
-                scope: "openid user:read:email user:read:follows moderator:read:followers",
+                scope: "openid user:read:email user:read:follows moderator:read:followers channel:read:subscriptions channel:read:analytics",
             },
         },
     }))

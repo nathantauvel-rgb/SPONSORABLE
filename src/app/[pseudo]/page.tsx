@@ -295,15 +295,19 @@ const PublicMediaKitPage = () => {
   const remoteYt = remoteData?.platforms
     ? (remoteData.platforms as Array<{ type: string; stats: Record<string, unknown> | null; lastFetched: string | null }>).find(p => p.type === 'youtube')
     : null
-  const effectiveYtOverride: Platform | null = remoteYt?.stats ? {
+  const ytStats = remoteYt?.stats ?? null
+  const ytAnalytics = ytStats?.analytics as Record<string, unknown> | undefined
+  const ytRecentVideos = ytStats?.recentVideos as Array<{ id: string; title: string; publishedAt: string; thumbnail: string | null; viewCount: string; likeCount: string; commentCount: string }> | undefined
+
+  const effectiveYtOverride: Platform | null = ytStats ? {
     id: 'youtube',
     name: 'YouTube',
     color: '#ef4444',
     hero: true,
-    mainStat: { value: String(remoteYt.stats.subscriberCount ?? '0'), label: 'abonnés' },
+    mainStat: { value: fmtNum(String(ytStats.subscriberCount ?? '0')), label: 'abonnés' },
     secondaryStats: [
-      { value: String(remoteYt.stats.viewCount ?? '0'), label: 'vues totales' },
-      { value: String(remoteYt.stats.videoCount ?? '0'), label: 'vidéos publiées' },
+      { value: fmtNum(String(ytStats.viewCount ?? '0')), label: 'vues totales' },
+      { value: fmtNum(String(ytStats.videoCount ?? '0')), label: 'vidéos publiées' },
     ],
   } : localYtOverride
 
@@ -312,15 +316,21 @@ const PublicMediaKitPage = () => {
   const remoteTwitch = remoteData?.platforms
     ? (remoteData.platforms as Array<{ type: string; stats: Record<string, unknown> | null; lastFetched: string | null }>).find(p => p.type === 'twitch')
     : null
-  const effectiveTwitchOverride: Platform | null = remoteTwitch?.stats ? {
+  const twitchStats = remoteTwitch?.stats ?? null
+  const twitchSecondaryStats: { value: string; label: string }[] = []
+  if (twitchStats) {
+    twitchSecondaryStats.push({ value: fmtNum(Number(twitchStats.viewCount ?? 0)), label: 'vues canal' })
+    if (twitchStats.subscriptionCount != null) {
+      twitchSecondaryStats.push({ value: fmtNum(Number(twitchStats.subscriptionCount)), label: 'abonnés payants' })
+    }
+  }
+  const effectiveTwitchOverride: Platform | null = twitchStats ? {
     id: 'twitch',
     name: 'Twitch',
     color: '#9146ff',
     hero: false,
-    mainStat: { value: fmtNum(Number(remoteTwitch.stats.followerCount ?? 0)), label: 'followers' },
-    secondaryStats: [
-      { value: fmtNum(Number(remoteTwitch.stats.viewCount ?? 0)), label: 'vues canal' },
-    ],
+    mainStat: { value: fmtNum(Number(twitchStats.followerCount ?? 0)), label: 'followers' },
+    secondaryStats: twitchSecondaryStats,
   } : null
 
   const collabFormats = effectiveFormats
@@ -597,7 +607,6 @@ const PublicMediaKitPage = () => {
             </div>
             {lastSync && <span style={{ fontSize: '12px', color: mutedText }}>Dernière synchronisation {timeSince(lastSync)}</span>}
           </div>
-            return (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
                 <div style={{
                   background: theme.cardBg,
@@ -665,11 +674,151 @@ const PublicMediaKitPage = () => {
                   ))}
                 </div>
               </div>
-            )
             </>)
           })()}
         </div>
       </section>
+
+      {/* ── YOUTUBE ANALYTICS ────────────────────────────── */}
+      {ytAnalytics && (effectiveYtOverride || ytStats) && (() => {
+        const topCountries = ytAnalytics.topCountries as Array<{ country: string; views: number }> | undefined
+        const ageGroups = ytAnalytics.ageGroups as Array<{ age: string; pct: number }> | undefined
+        const gender = ytAnalytics.gender as { male: number; female: number } | undefined
+        const avgViewDuration = ytAnalytics.avgViewDuration as number | null | undefined
+        const avgViewPercentage = ytAnalytics.avgViewPercentage as number | null | undefined
+        const estimatedMinutesWatched = ytAnalytics.estimatedMinutesWatched as number | null | undefined
+
+        const hasData = (topCountries?.length ?? 0) > 0 || (ageGroups?.length ?? 0) > 0 || avgViewDuration != null
+        if (!hasData) return null
+
+        const fmtDuration = (secs: number) => {
+          const m = Math.floor(secs / 60)
+          const s = secs % 60
+          return `${m}m${s > 0 ? ` ${s}s` : ''}`
+        }
+
+        return (
+          <section style={{ padding: '0 24px 80px', background: theme.bg }}>
+            <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+              <SectionTitle color={theme.text}>Statistiques d&apos;audience</SectionTitle>
+
+              {/* Watch time KPIs */}
+              {(avgViewDuration != null || avgViewPercentage != null || estimatedMinutesWatched != null) && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '32px' }}>
+                  {avgViewDuration != null && (
+                    <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '12px', padding: '20px 24px' }}>
+                      <p style={{ fontSize: '28px', fontWeight: 800, color: theme.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{fmtDuration(avgViewDuration)}</p>
+                      <p style={{ fontSize: '12px', color: mutedText, marginTop: '4px' }}>Durée moy. de visionnage</p>
+                    </div>
+                  )}
+                  {avgViewPercentage != null && (
+                    <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '12px', padding: '20px 24px' }}>
+                      <p style={{ fontSize: '28px', fontWeight: 800, color: theme.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{avgViewPercentage}%</p>
+                      <p style={{ fontSize: '12px', color: mutedText, marginTop: '4px' }}>% de la vidéo regardé</p>
+                    </div>
+                  )}
+                  {estimatedMinutesWatched != null && (
+                    <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '12px', padding: '20px 24px' }}>
+                      <p style={{ fontSize: '28px', fontWeight: 800, color: theme.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{fmtNum(estimatedMinutesWatched)}</p>
+                      <p style={{ fontSize: '12px', color: mutedText, marginTop: '4px' }}>minutes regardées (90j)</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: topCountries?.length ? '1fr 1fr' : '1fr', gap: '24px' }}>
+                {/* Demographics */}
+                {(ageGroups?.length || gender) && (
+                  <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '28px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 600, color: theme.subtext, marginBottom: '20px', letterSpacing: '0.02em' }}>Démographie</p>
+                    {ageGroups?.sort((a, b) => b.pct - a.pct).map(ag => (
+                      <AgeBar key={ag.age} label={ag.age} pct={ag.pct} accent={theme.accent} subtext={theme.subtext} />
+                    ))}
+                    {gender && (gender.male > 0 || gender.female > 0) && (
+                      <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: `1px solid ${theme.border}` }}>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <div style={{ flex: 1, background: `${theme.accent}22`, borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+                            <p style={{ fontSize: '22px', fontWeight: 700, color: theme.accent }}>{gender.male}%</p>
+                            <p style={{ fontSize: '11px', color: mutedText, marginTop: '2px' }}>Hommes</p>
+                          </div>
+                          <div style={{ flex: 1, background: femaleBarBg, borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+                            <p style={{ fontSize: '22px', fontWeight: 700, color: femaleColor }}>{gender.female}%</p>
+                            <p style={{ fontSize: '11px', color: mutedText, marginTop: '2px' }}>Femmes</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Top countries */}
+                {topCountries && topCountries.length > 0 && (
+                  <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '28px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 600, color: theme.subtext, marginBottom: '20px', letterSpacing: '0.02em' }}>Top pays (90 jours)</p>
+                    {topCountries.map((c, i) => {
+                      const maxViews = topCountries[0]?.views ?? 1
+                      const pct = Math.round((c.views / maxViews) * 100)
+                      return (
+                        <div key={c.country} style={{ marginBottom: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 700, color: mutedText, width: '16px' }}>{i + 1}</span>
+                              <Flag code={c.country} size={16} />
+                              <span style={{ fontSize: '13px', fontWeight: 500, color: theme.text }}>{c.country}</span>
+                            </div>
+                            <span style={{ fontSize: '13px', color: theme.accent, fontWeight: 600 }}>{fmtNum(c.views)}</span>
+                          </div>
+                          <div style={{ height: '4px', background: 'rgba(128,128,128,0.15)', borderRadius: '9999px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: theme.accent, borderRadius: '9999px' }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )
+      })()}
+
+      {/* ── VIDÉOS RÉCENTES ───────────────────────────────── */}
+      {ytRecentVideos && ytRecentVideos.length > 0 && (
+        <section style={{ padding: '0 24px 80px', background: theme.bg }}>
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+            <SectionTitle color={theme.text}>Vidéos récentes</SectionTitle>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+              {ytRecentVideos.map(v => (
+                <a
+                  key={v.id}
+                  href={`https://youtube.com/watch?v=${v.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: 'none', display: 'block', background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '14px', overflow: 'hidden', transition: 'box-shadow 150ms ease' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.10)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
+                >
+                  {v.thumbnail && (
+                    <div style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden' }}>
+                      <img src={v.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" />
+                    </div>
+                  )}
+                  <div style={{ padding: '14px 16px' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: theme.text, lineHeight: 1.4, marginBottom: '8px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      {v.title}
+                    </p>
+                    <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: mutedText }}>
+                      <span>👁 {fmtNum(v.viewCount)}</span>
+                      <span>👍 {fmtNum(v.likeCount)}</span>
+                      <span>💬 {fmtNum(v.commentCount)}</span>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── PARTENARIATS PASSÉS ───────────────────────────── */}
       {showPartnerships && (

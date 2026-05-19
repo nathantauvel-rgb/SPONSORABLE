@@ -70,7 +70,20 @@ export async function GET() {
     `https://api.twitch.tv/helix/channels/followers?broadcaster_id=${user.id}`,
     { headers }
   )
-  const followersData = await followersRes.json()
+  const followersData = followersRes.ok ? await followersRes.json() : null
+
+  // Subscription count — only available for Twitch affiliates/partners
+  let subscriptionCount: number | null = null
+  try {
+    const subsRes = await fetch(
+      `https://api.twitch.tv/helix/subscriptions?broadcaster_id=${user.id}`,
+      { headers }
+    )
+    if (subsRes.ok) {
+      const subsData = await subsRes.json()
+      subscriptionCount = subsData.total ?? null
+    }
+  } catch { /* non-affiliate channels don't have subscriptions */ }
 
   return NextResponse.json({
     userId: user.id,
@@ -78,7 +91,8 @@ export async function GET() {
     displayName: user.display_name,
     profileImageUrl: user.profile_image_url,
     viewCount: user.view_count ?? 0,
-    followerCount: followersData.total ?? 0,
+    followerCount: followersData?.total ?? 0,
+    subscriptionCount,
     lastFetched: new Date().toISOString(),
   })
 }

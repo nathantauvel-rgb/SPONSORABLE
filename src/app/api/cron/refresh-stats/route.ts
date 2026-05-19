@@ -50,18 +50,95 @@ export async function GET(req: NextRequest) {
         const account = (platform as typeof platform & { user: { accounts: { access_token: string | null; refresh_token: string | null }[] } }).user.accounts[0]
         if (!account?.access_token) { results[platform.id] = 'no_token'; return }
 
+        const headers = { Authorization: `Bearer ${account.access_token}` }
+
         const r = await fetch(
-          `https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true`,
-          { headers: { Authorization: `Bearer ${account.access_token}` } }
+          `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&mine=true`,
+          { headers }
         )
         if (!r.ok) { results[platform.id] = 'yt_error'; return }
         const data = await r.json()
-        const stats = data.items?.[0]?.statistics
-        if (!stats) { results[platform.id] = 'no_stats'; return }
+        const ch = data.items?.[0]
+        if (!ch) { results[platform.id] = 'no_stats'; return }
+
+        // Fetch recent videos
+        let recentVideos: unknown[] = []
+        try {
+          const uploadsId = ch.contentDetails?.relatedPlaylists?.uploads ?? ''
+          if (uploadsId) {
+            const plRes = await fetch(
+              `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${uploadsId}&maxResults=5`,
+              { headers }
+            )
+            const plData = plRes.ok ? await plRes.json() : null
+            if (plData?.items?.length) {
+              const ids = plData.items.map((i: { contentDetails: { videoId: string } }) => i.contentDetails.videoId).join(',')
+              const vRes = await fetch(
+                `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${ids}`,
+                { headers }
+              )
+              const vData = vRes.ok ? await vRes.json() : null
+              if (vData?.items?.length) {
+                recentVideos = vData.items.map((v: { id: string; snippet: { title: string; publishedAt: string; thumbnails?: { medium?: { url: string } } }; statistics: { viewCount?: string; likeCount?: string; commentCount?: string } }) => ({
+                  id: v.id, title: v.snippet.title, publishedAt: v.snippet.publishedAt,
+                  thumbnail: v.snippet.thumbnails?.medium?.url ?? null,
+                  viewCount: v.statistics.viewCount ?? '0', likeCount: v.statistics.likeCount ?? '0',
+                  commentCount: v.statistics.commentCount ?? '0',
+                }))
+              }
+            }
+          }
+        } catch { /* non-blocking */ }
+
+        // Fetch YouTube Analytics
+        let analytics: Record<string, unknown> = {}
+        try {
+          const end = new Date().toISOString().split('T')[0]
+          const start = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          const base = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==MINE&startDate=${start}&endDate=${end}`
+          const [ovRes, ctRes, dmRes] = await Promise.allSettled([
+            fetch(`${base}&metrics=views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage`, { headers }),
+            fetch(`${base}&metrics=views&dimensions=country&sort=-views&maxResults=5`, { headers }),
+            fetch(`${base}&metrics=viewerPercentage&dimensions=ageGroup,gender`, { headers }),
+          ])
+          const ov = ovRes.status === 'fulfilled' && ovRes.value.ok ? await ovRes.value.json() : null
+          const ct = ctRes.status === 'fulfilled' && ctRes.value.ok ? await ctRes.value.json() : null
+          const dm = dmRes.status === 'fulfilled' && dmRes.value.ok ? await dmRes.value.json() : null
+          const row = ov?.rows?.[0]
+          const ageMap: Record<string, number> = {}
+          const gMap = { male: 0, female: 0 }
+          if (dm?.rows) {
+            for (const [age, gender, pct] of dm.rows as [string, string, number][]) {
+              ageMap[age] = (ageMap[age] ?? 0) + pct
+              if (gender === 'male') gMap.male += pct
+              else if (gender === 'female') gMap.female += pct
+            }
+          }
+          analytics = {
+            avgViewDuration: row?.[2] ? Math.round(row[2]) : null,
+            avgViewPercentage: row?.[3] ? Math.round(row[3] * 10) / 10 : null,
+            estimatedMinutesWatched: row?.[1] ?? null,
+            topCountries: ct?.rows?.map((r: [string, number]) => ({ country: r[0], views: r[1] })) ?? [],
+            ageGroups: Object.entries(ageMap).map(([age, pct]) => ({ age, pct: Math.round(pct * 10) / 10 })),
+            gender: { male: Math.round(gMap.male * 10) / 10, female: Math.round(gMap.female * 10) / 10 },
+          }
+        } catch { /* non-blocking */ }
+
+        const stats = {
+          channelId: ch.id,
+          title: ch.snippet.title,
+          thumbnail: ch.snippet.thumbnails?.default?.url ?? null,
+          subscriberCount: ch.statistics.subscriberCount ?? '0',
+          viewCount: ch.statistics.viewCount ?? '0',
+          videoCount: ch.statistics.videoCount ?? '0',
+          recentVideos,
+          analytics,
+          lastFetched: new Date().toISOString(),
+        }
 
         await prisma.platform.update({
           where: { id: platform.id },
-          data: { stats, lastFetched: new Date() },
+          data: { stats: JSON.parse(JSON.stringify(stats)), lastFetched: new Date() },
         })
         results[platform.id] = 'ok'
       }
