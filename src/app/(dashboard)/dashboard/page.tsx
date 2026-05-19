@@ -2,7 +2,7 @@
 
 import { Copy, ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
 import Sidebar from '@/components/layout/Sidebar'
 import Button from '@/components/ui/button'
@@ -72,6 +72,7 @@ const StatusBadge = ({ connected }: { connected: boolean }) => (
 
 export default function DashboardPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: session } = useSession()
 
   const [ytData, setYtData] = useState<YTData | null>(null)
@@ -132,7 +133,6 @@ export default function DashboardPage() {
       if (type === 'youtube') {
         setYtData(null)
         localStorage.removeItem('sponsorable_yt_data')
-        localStorage.removeItem('sponsorable_connected_platforms')
       } else {
         setTwitchData(null)
         localStorage.removeItem('sponsorable_twitch_data')
@@ -143,28 +143,46 @@ export default function DashboardPage() {
     }
   }
 
-  // On mount: load cached data then auto-fetch
+  // On mount: load slug + only show platforms that have a Platform record in DB
   useEffect(() => {
-    try {
-      const cachedYT = localStorage.getItem('sponsorable_yt_data')
-      if (cachedYT) setYtData(JSON.parse(cachedYT))
-      const cachedTwitch = localStorage.getItem('sponsorable_twitch_data')
-      if (cachedTwitch) setTwitchData(JSON.parse(cachedTwitch))
-    } catch {}
-    // Load real slug from DB
     fetch('/api/profile')
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.profile?.slug) setPublicPseudo(data.profile.slug) })
       .catch(() => {})
+
+    // Check which platforms are explicitly connected (Platform record exists)
+    fetch('/api/platforms/youtube')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.platform?.stats) {
+          setYtData(data.platform.stats as YTData)
+          localStorage.setItem('sponsorable_yt_data', JSON.stringify(data.platform.stats))
+        }
+      }).catch(() => {})
+
+    fetch('/api/platforms/twitch')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.platform?.stats) {
+          setTwitchData(data.platform.stats as TwitchData)
+          localStorage.setItem('sponsorable_twitch_data', JSON.stringify(data.platform.stats))
+        }
+      }).catch(() => {})
   }, [])
 
+  // After OAuth redirect: fetch live data and create/update Platform record
   useEffect(() => {
-    if (session?.user?.id) {
+    if (!session?.user?.id) return
+    const connected = searchParams.get('connected')
+    if (connected === 'youtube') {
       fetchYouTube()
+      router.replace('/dashboard')
+    } else if (connected === 'twitch') {
       fetchTwitch()
+      router.replace('/dashboard')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id])
+  }, [session?.user?.id, searchParams])
 
   const displayName = session?.user?.name ?? ytData?.title ?? 'toi'
 
@@ -240,7 +258,7 @@ export default function DashboardPage() {
                   </button>
                 ) : !ytLoading && (
                   <button
-                    onClick={() => signIn('google', { callbackUrl: '/dashboard' }, {
+                    onClick={() => signIn('google', { callbackUrl: '/dashboard?connected=youtube' }, {
                       scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
                       prompt: 'consent',
                       access_type: 'offline',
@@ -284,7 +302,7 @@ export default function DashboardPage() {
                   </button>
                 ) : !twitchLoading && (
                   <button
-                    onClick={() => signIn('twitch', { callbackUrl: '/dashboard' })}
+                    onClick={() => signIn('twitch', { callbackUrl: '/dashboard?connected=twitch' })}
                     style={{ fontSize: '12px', color: '#9146ff', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
                     Connecter →
