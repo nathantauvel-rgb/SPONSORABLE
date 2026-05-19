@@ -51,8 +51,54 @@ export default function StatsPage() {
   const [pro, setPro] = useState(false)
 
   useEffect(() => {
-    try { setPro(localStorage.getItem('sponsorable_plan') === 'pro') } catch {}
+    fetch('/api/me')
+      .then(r => r.json())
+      .then(data => { if (typeof data.isPro === 'boolean') setPro(data.isPro) })
+      .catch(() => {})
   }, [])
+
+  const exportPDF = () => {
+    const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    const win = window.open('', '_blank')
+    if (!win) return
+    // Capture the stats section HTML, inject date, print
+    const content = document.getElementById('stats-printable')?.innerHTML ?? ''
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<title>Statistiques — Sponsorable</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #0f172a; padding: 40px 48px; }
+  h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 6px; }
+  p { font-size: 13px; color: #64748b; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 2px solid #0f172a; }
+  .logo { font-size: 13px; font-weight: 700; color: #16a34a; }
+  .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; }
+  .footer span { font-size: 11px; color: #cbd5e1; }
+  @media print { body { padding: 28px 36px; } }
+</style></head><body>
+<div class="header">
+  <div><h1>Statistiques</h1><p>Analytics de ton media kit · 30 derniers jours</p></div>
+  <div class="logo">Sponsorable</div>
+</div>
+${content}
+<div class="footer">
+  <span>Exporté le ${date}</span>
+  <span>sponsorable.gg</span>
+</div>
+</body></html>`
+
+    const iframe = document.createElement('iframe')
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;border:none;'
+    document.body.appendChild(iframe)
+    const doc = iframe.contentDocument ?? iframe.contentWindow?.document
+    if (!doc) { document.body.removeChild(iframe); return }
+    doc.open(); doc.write(html); doc.close()
+    setTimeout(() => {
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
+      setTimeout(() => { document.body.removeChild(iframe) }, 2000)
+    }, 300)
+  }
 
   return (
     <div style={{ background: '#f8fafc', minHeight: '100vh' }}>
@@ -83,7 +129,7 @@ export default function StatsPage() {
           </div>
           {pro ? (
             <button
-              onClick={() => window.print()}
+              onClick={exportPDF}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', color: '#0f172a', fontSize: '14px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', transition: 'all 150ms' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
@@ -97,6 +143,7 @@ export default function StatsPage() {
           )}
         </div>
 
+        <div id="stats-printable">
         <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px', filter: pro ? 'none' : 'blur(3px)', pointerEvents: pro ? 'auto' : 'none', userSelect: pro ? 'auto' : 'none' }}>
           <StatCard label="Vues du media kit" value="348" sub="↑ +23% vs mois dernier" positive />
           <StatCard label="Clics « Me contacter »" value="24" sub="6,9% des visiteurs ont cliqué" positive />
@@ -231,6 +278,8 @@ export default function StatsPage() {
           </div>
         </div>
         </div>
+
+        </div>{/* end stats-printable */}
 
         {!pro && (
           <div style={{ position: 'relative', marginTop: '-320px' }}>

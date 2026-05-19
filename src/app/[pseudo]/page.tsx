@@ -3,6 +3,7 @@
 import { Instagram, Mail, Twitter, Youtube } from 'lucide-react'
 import Flag from '@/components/ui/Flag'
 import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import {
   audienceAge,
   audienceCountries,
@@ -118,6 +119,14 @@ const loadConnectedPlatforms = (): string[] => {
   }
 }
 
+const timeSince = (iso: string) => {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "à l'instant"
+  if (mins < 60) return `il y a ${mins} min`
+  return `il y a ${Math.floor(mins / 60)}h`
+}
+
 const fmtNum = (n: string | number): string => {
   const num = typeof n === 'string' ? parseInt(n) : n
   if (isNaN(num)) return String(n)
@@ -194,17 +203,62 @@ const loadProfile = () => {
   } catch { return null }
 }
 
+/* ── Remote data types ───────────────────────────────────── */
+
+type RemoteStats = { stats: Record<string, unknown> | null; lastFetched: string | null; displayName: string | null; username: string }
+type RemoteData = {
+  slug: string
+  displayName: string | null
+  bio: string | null
+  niche: string | null
+  theme: string | null
+  formats: string[] | null
+  showPartnerships: boolean
+  partnerships: { name: string; category: string; result: string; date: string }[] | null
+  bannerUrl: string | null
+  calendlyUrl: string | null
+  isPro: boolean
+  platforms: { youtube?: RemoteStats; twitch?: RemoteStats }
+}
+
 /* ── Main page ───────────────────────────────────────────── */
 
 const PublicMediaKitPage = () => {
-  const theme = useState(() => loadTemplateTheme())[0]
+  const params = useParams()
+  const slug = typeof params?.pseudo === 'string' ? params.pseudo : null
 
-  // Derived theme helpers
-  const isForest = theme.bg === '#eae5d8'
-  const isMono   = theme.bg === '#111111'
-  const isDark   = !isForest && theme.bg !== '#ffffff' && theme.bg !== '#fff'
-  const btnTextColor = theme.accent === '#ffffff' ? theme.bg : '#ffffff'
-  const mutedText = isDark ? theme.subtext : (isForest ? theme.subtext : '#94a3b8')
+  const [remoteData, setRemoteData] = useState<RemoteData | null>(null)
+
+  useEffect(() => {
+    if (!slug) return
+    fetch(`/api/public/${encodeURIComponent(slug)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && !d.error) setRemoteData(d) })
+      .catch(() => {})
+  }, [slug])
+
+  // Auto-print mode when ?print=1
+  useEffect(() => {
+    const isPrint = new URLSearchParams(window.location.search).get('print') === '1'
+    if (!isPrint) return
+    const t = setTimeout(() => window.print(), 800)
+    return () => clearTimeout(t)
+  }, [])
+
+  // If remoteData is loaded, override localStorage theme with DB value
+  const theme = useState(() => loadTemplateTheme())[0]
+  const resolvedTheme = (() => {
+    if (!remoteData?.theme) return theme
+    const found = exampleCreators.find(c => c.id === remoteData.theme)
+    return (remoteData.isPro && found?.theme) ? found.theme : theme
+  })()
+
+  // Derived theme helpers (use resolvedTheme which may come from DB)
+  const isForest = resolvedTheme.bg === '#eae5d8'
+  const isMono   = resolvedTheme.bg === '#111111'
+  const isDark   = !isForest && resolvedTheme.bg !== '#ffffff' && resolvedTheme.bg !== '#fff'
+  const btnTextColor = resolvedTheme.accent === '#ffffff' ? resolvedTheme.bg : '#ffffff'
+  const mutedText = isDark ? resolvedTheme.subtext : (isForest ? resolvedTheme.subtext : '#94a3b8')
   const femaleColor =
     isForest ? '#b45309'
     : isMono ? '#525252'
@@ -217,14 +271,21 @@ const PublicMediaKitPage = () => {
     : '#bfdbfe'
 
   const savedProfile = useState(() => loadProfile())[0]
+  // Remote data overrides localStorage when available (allows sponsors to see real data)
+  const effectiveProfile = remoteData ?? savedProfile
   const displayCreator = {
     ...creator,
     ...(savedProfile || {}),
-    avatar_initials: savedProfile?.pseudo
-      ? savedProfile.pseudo.slice(0, 2).toUpperCase()
+    ...(remoteData ? {
+      pseudo: remoteData.displayName ?? remoteData.slug,
+      bio: remoteData.bio ?? creator.bio,
+      niche: remoteData.niche ?? creator.niches.join(' · '),
+    } : {}),
+    avatar_initials: (effectiveProfile?.pseudo ?? effectiveProfile?.displayName ?? effectiveProfile?.slug)
+      ? (effectiveProfile.pseudo ?? effectiveProfile.displayName ?? effectiveProfile.slug).slice(0, 2).toUpperCase()
       : creator.avatar_initials,
-    niches: savedProfile?.niche
-      ? savedProfile.niche.split(' · ').map((s: string) => s.trim())
+    niches: (remoteData?.niche ?? savedProfile?.niche)
+      ? (remoteData?.niche ?? savedProfile?.niche).split(' · ').map((s: string) => s.trim())
       : creator.niches,
   }
 
@@ -244,6 +305,37 @@ const PublicMediaKitPage = () => {
   const [ytOverride] = useState<Platform | null>(loadYTPlatform)
   const [stickyVisible, setStickyVisible] = useState(false)
 
+  // Effective values: remote DB data takes priority over localStorage
+  const effectiveFormats = remoteData?.formats ?? collabFormats
+  const effectiveShowPartnerships = remoteData ? remoteData.showPartnerships : showPartnerships
+  const effectivePartnerships = remoteData?.partnerships ?? displayedPartnerships
+  const effectiveBannerUrl = remoteData?.bannerUrl ?? bannerUrl
+  const effectiveCalendlyUrl = remoteData?.calendlyUrl ?? calendlyUrl
+
+  // Build YouTube platform override from remote DB stats
+  const remoteYtStats = remoteData?.platforms?.youtube?.stats as Record<string, string> | null | undefined
+  const remoteYtPlatform: Platform | null = remoteYtStats ? {
+    id: 'youtube',
+    name: 'YouTube',
+    color: '#ef4444',
+    hero: true,
+    mainStat: { value: fmtNum(remoteYtStats.subscriberCount ?? '0'), label: 'abonnés' },
+    secondaryStats: [
+      { value: fmtNum(remoteYtStats.viewCount ?? '0'), label: 'vues totales' },
+      { value: fmtNum(remoteYtStats.videoCount ?? '0'), label: 'vidéos publiées' },
+    ],
+  } : null
+  const effectiveYtOverride = remoteYtPlatform ?? ytOverride
+
+  // Effective connected platforms: derive from remote data or localStorage
+  const effectiveConnectedIds = remoteData
+    ? Object.keys(remoteData.platforms)
+    : connectedIds
+
+  const effectiveLastFetched = remoteData?.platforms?.youtube?.lastFetched
+    ?? remoteData?.platforms?.twitch?.lastFetched
+    ?? null
+
   useEffect(() => {
     const onScroll = () => setStickyVisible(window.scrollY > 320)
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -255,11 +347,13 @@ const PublicMediaKitPage = () => {
     setSent(true)
   }
 
+  const t = resolvedTheme
+
   const labelStyle: React.CSSProperties = {
     display: 'block',
     fontSize: '12px',
     fontWeight: 500,
-    color: theme.subtext,
+    color: t.subtext,
     letterSpacing: '0.04em',
     textTransform: 'uppercase',
     marginBottom: '6px',
@@ -268,32 +362,53 @@ const PublicMediaKitPage = () => {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     background: isDark ? 'rgba(255,255,255,0.06)' : 'white',
-    border: `1.5px solid ${theme.border}`,
+    border: `1.5px solid ${t.border}`,
     borderRadius: '10px',
     padding: '12px 14px',
     fontSize: '14px',
-    color: theme.text,
+    color: t.text,
     outline: 'none',
     transition: 'all 150ms ease',
   }
 
   const focusStyle = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    e.target.style.borderColor = theme.accent
-    e.target.style.boxShadow = `0 0 0 3px ${theme.accent}20`
+    e.target.style.borderColor = t.accent
+    e.target.style.boxShadow = `0 0 0 3px ${t.accent}20`
   }
 
   const blurStyle = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    e.target.style.borderColor = theme.border
+    e.target.style.borderColor = t.border
     e.target.style.boxShadow = 'none'
   }
 
   return (
-    <div style={{ background: theme.bg, minHeight: '100vh' }}>
+    <div style={{ background: t.bg, minHeight: '100vh' }}>
+      <style>{`
+        @media print {
+          @page { margin: 16mm 14mm; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+          #sticky-cta { display: none !important; }
+          #contact-form { display: none !important; }
+          footer[role="contentinfo"] { display: none !important; }
+          button[onclick] { display: none !important; }
+          a[href="#"] { display: none !important; }
+          .pdf-export-date {
+            display: block !important;
+            text-align: right;
+            font-size: 10px;
+            color: #cbd5e1;
+            padding: 8px 0 0;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 8px;
+          }
+        }
+        .pdf-export-date { display: none; }
+      `}</style>
 
       {/* ── BANNIÈRE ──────────────────────────────────────── */}
-      {safeUrl(bannerUrl) && (
+      {safeUrl(effectiveBannerUrl) && (
         <div style={{ width: '100%', aspectRatio: '1546 / 423', overflow: 'hidden', maxHeight: '420px' }}>
-          <img src={safeUrl(bannerUrl)} alt="Bannière" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
+          <img src={safeUrl(effectiveBannerUrl)} alt="Bannière" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
         </div>
       )}
 
@@ -308,26 +423,26 @@ const PublicMediaKitPage = () => {
           </div>
 
           <div style={{ position: 'relative', zIndex: 1, maxWidth: '860px', margin: '0 auto', padding: '80px 40px 60px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '56px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '20px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: theme.subtext }}>Media Kit</span>
-              <span style={{ fontSize: '11px', color: theme.subtext, letterSpacing: '0.06em' }}>sponsorable.gg</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '56px', borderBottom: `1px solid ${t.border}`, paddingBottom: '20px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: t.subtext }}>Media Kit</span>
+              <span style={{ fontSize: '11px', color: t.subtext, letterSpacing: '0.06em' }}>sponsorable.gg</span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '48px', alignItems: 'end', marginBottom: '48px' }}>
               <div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
                   {displayCreator.niches.map((n: string) => (
-                    <span key={n} style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: theme.accent, background: `${theme.accent}18`, border: `1px solid ${theme.accent}35`, borderRadius: '4px', padding: '3px 10px' }}>{n}</span>
+                    <span key={n} style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: t.accent, background: `${t.accent}18`, border: `1px solid ${t.accent}35`, borderRadius: '4px', padding: '3px 10px' }}>{n}</span>
                   ))}
                 </div>
-                <h1 style={{ fontSize: 'clamp(42px, 7vw, 72px)', fontWeight: 800, color: theme.text, lineHeight: 1.0, letterSpacing: '-0.03em', marginBottom: '24px' }}>
+                <h1 style={{ fontSize: 'clamp(42px, 7vw, 72px)', fontWeight: 800, color: t.text, lineHeight: 1.0, letterSpacing: '-0.03em', marginBottom: '24px' }}>
                   {displayCreator.pseudo}
                 </h1>
-                <p style={{ fontSize: '16px', color: theme.subtext, lineHeight: 1.75, maxWidth: '480px', borderLeft: `3px solid ${theme.accent}`, paddingLeft: '16px' }}>
+                <p style={{ fontSize: '16px', color: t.subtext, lineHeight: 1.75, maxWidth: '480px', borderLeft: `3px solid ${t.accent}`, paddingLeft: '16px' }}>
                   {displayCreator.bio}
                 </p>
               </div>
-              <div style={{ width: '110px', height: '130px', borderRadius: '12px', background: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '32px', fontWeight: 800, letterSpacing: '-0.02em', flexShrink: 0, boxShadow: `0 8px 32px ${theme.accent}40` }}>
+              <div style={{ width: '110px', height: '130px', borderRadius: '12px', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '32px', fontWeight: 800, letterSpacing: '-0.02em', flexShrink: 0, boxShadow: `0 8px 32px ${t.accent}40` }}>
                 {displayCreator.avatar_initials}
               </div>
             </div>
@@ -335,17 +450,17 @@ const PublicMediaKitPage = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <button
                 onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: theme.accent, color: '#fff', border: 'none', borderRadius: '8px', padding: '14px 28px', fontSize: '14px', fontWeight: 700, letterSpacing: '0.02em', cursor: 'pointer', transition: 'opacity 150ms ease' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: t.accent, color: '#fff', border: 'none', borderRadius: '8px', padding: '14px 28px', fontSize: '14px', fontWeight: 700, letterSpacing: '0.02em', cursor: 'pointer', transition: 'opacity 150ms ease' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.85' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
               >
                 Proposer un partenariat →
               </button>
-              {safeCalendlyUrl(calendlyUrl) && (
+              {safeCalendlyUrl(effectiveCalendlyUrl) && (
                 <a
-                  href={safeCalendlyUrl(calendlyUrl)} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', color: theme.accent, border: `2px solid ${theme.accent}`, borderRadius: '8px', padding: '12px 24px', fontSize: '14px', fontWeight: 700, letterSpacing: '0.02em', cursor: 'pointer', textDecoration: 'none', transition: 'all 150ms ease' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${theme.accent}12` }}
+                  href={safeCalendlyUrl(effectiveCalendlyUrl)} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', color: t.accent, border: `2px solid ${t.accent}`, borderRadius: '8px', padding: '12px 24px', fontSize: '14px', fontWeight: 700, letterSpacing: '0.02em', cursor: 'pointer', textDecoration: 'none', transition: 'all 150ms ease' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${t.accent}12` }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
                 >
                   📅 Réserver un appel
@@ -400,9 +515,9 @@ const PublicMediaKitPage = () => {
               >
                 Proposer un partenariat →
               </button>
-              {safeCalendlyUrl(calendlyUrl) && (
+              {safeCalendlyUrl(effectiveCalendlyUrl) && (
                 <a
-                  href={safeCalendlyUrl(calendlyUrl)} target="_blank" rel="noopener noreferrer"
+                  href={safeCalendlyUrl(effectiveCalendlyUrl)} target="_blank" rel="noopener noreferrer"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', color: '#ffffff', border: '2px solid rgba(255,255,255,0.3)', borderRadius: '4px', padding: '12px 24px', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'none', transition: 'all 150ms ease' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.7)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.3)' }}
@@ -420,43 +535,43 @@ const PublicMediaKitPage = () => {
         /* ── DEFAULT / ESPORT HERO ── */
         <section style={{ position: 'relative', paddingTop: '80px', paddingBottom: '64px', textAlign: 'center', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
-            <div style={{ position: 'absolute', top: '-20%', left: '-5%', width: '65%', height: '90%', borderRadius: '60% 40% 55% 45% / 50% 65% 35% 50%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '55' : theme.accent + '35'} 0%, transparent 65%)`, filter: 'blur(40px)' }} />
-            <div style={{ position: 'absolute', top: '5%', right: '-10%', width: '60%', height: '80%', borderRadius: '40% 60% 45% 55% / 60% 40% 60% 40%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '42' : theme.accent + '28'} 0%, transparent 65%)`, filter: 'blur(50px)' }} />
-            <div style={{ position: 'absolute', bottom: '-15%', left: '15%', width: '65%', height: '65%', borderRadius: '50% 50% 35% 65% / 40% 60% 40% 60%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '38' : theme.accent + '22'} 0%, transparent 70%)`, filter: 'blur(55px)' }} />
-            <div style={{ position: 'absolute', top: '30%', left: '30%', width: '45%', height: '55%', borderRadius: '55% 45% 60% 40% / 50% 50% 50% 50%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '28' : theme.accent + '18'} 0%, transparent 60%)`, filter: 'blur(35px)' }} />
+            <div style={{ position: 'absolute', top: '-20%', left: '-5%', width: '65%', height: '90%', borderRadius: '60% 40% 55% 45% / 50% 65% 35% 50%', background: `radial-gradient(ellipse, ${isDark ? t.accent + '55' : t.accent + '35'} 0%, transparent 65%)`, filter: 'blur(40px)' }} />
+            <div style={{ position: 'absolute', top: '5%', right: '-10%', width: '60%', height: '80%', borderRadius: '40% 60% 45% 55% / 60% 40% 60% 40%', background: `radial-gradient(ellipse, ${isDark ? t.accent + '42' : t.accent + '28'} 0%, transparent 65%)`, filter: 'blur(50px)' }} />
+            <div style={{ position: 'absolute', bottom: '-15%', left: '15%', width: '65%', height: '65%', borderRadius: '50% 50% 35% 65% / 40% 60% 40% 60%', background: `radial-gradient(ellipse, ${isDark ? t.accent + '38' : t.accent + '22'} 0%, transparent 70%)`, filter: 'blur(55px)' }} />
+            <div style={{ position: 'absolute', top: '30%', left: '30%', width: '45%', height: '55%', borderRadius: '55% 45% 60% 40% / 50% 50% 50% 50%', background: `radial-gradient(ellipse, ${isDark ? t.accent + '28' : t.accent + '18'} 0%, transparent 60%)`, filter: 'blur(35px)' }} />
           </div>
 
           <div style={{ position: 'relative', zIndex: 1, padding: '0 24px' }}>
-            <div style={{ width: '88px', height: '88px', borderRadius: '50%', background: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: btnTextColor, fontSize: '28px', fontWeight: 700, boxShadow: `0 0 0 4px ${theme.accent}26` }}>
+            <div style={{ width: '88px', height: '88px', borderRadius: '50%', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: btnTextColor, fontSize: '28px', fontWeight: 700, boxShadow: `0 0 0 4px ${t.accent}26` }}>
               {displayCreator.avatar_initials}
             </div>
-            <h1 style={{ fontSize: '32px', fontWeight: 700, color: theme.text, marginBottom: '12px', letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: '32px', fontWeight: 700, color: t.text, marginBottom: '12px', letterSpacing: '-0.02em' }}>
               {displayCreator.pseudo}
             </h1>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
               {displayCreator.niches.map((n: string) => (
-                <span key={n} style={{ background: `${theme.accent}30`, color: isDark ? theme.accent : theme.accent, border: `1px solid ${theme.accent}50`, borderRadius: '9999px', padding: '5px 14px', fontSize: '13px', fontWeight: 500 }}>
+                <span key={n} style={{ background: `${t.accent}30`, color: isDark ? t.accent : t.accent, border: `1px solid ${t.accent}50`, borderRadius: '9999px', padding: '5px 14px', fontSize: '13px', fontWeight: 500 }}>
                   {n}
                 </span>
               ))}
             </div>
-            <p style={{ fontSize: '16px', color: theme.subtext, maxWidth: '480px', margin: '0 auto 28px', lineHeight: 1.7 }}>
+            <p style={{ fontSize: '16px', color: t.subtext, maxWidth: '480px', margin: '0 auto 28px', lineHeight: 1.7 }}>
               {displayCreator.bio}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <button
                 onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: theme.accent, color: btnTextColor, border: 'none', borderRadius: '9999px', padding: '14px 28px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', transition: 'opacity 150ms ease' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: t.accent, color: btnTextColor, border: 'none', borderRadius: '9999px', padding: '14px 28px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', transition: 'opacity 150ms ease' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.85' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
               >
                 Proposer un partenariat →
               </button>
-              {safeCalendlyUrl(calendlyUrl) && (
+              {safeCalendlyUrl(effectiveCalendlyUrl) && (
                 <a
-                  href={safeCalendlyUrl(calendlyUrl)} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', color: theme.accent, border: `2px solid ${theme.accent}60`, borderRadius: '9999px', padding: '12px 24px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', transition: 'all 150ms ease' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${theme.accent}12` }}
+                  href={safeCalendlyUrl(effectiveCalendlyUrl)} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'transparent', color: t.accent, border: `2px solid ${t.accent}60`, borderRadius: '9999px', padding: '12px 24px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', transition: 'all 150ms ease' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${t.accent}12` }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
                 >
                   📅 Réserver un appel
@@ -471,55 +586,59 @@ const PublicMediaKitPage = () => {
       )}
 
       {/* ── STATS ─────────────────────────────────────────── */}
-      <section style={{ padding: '64px 24px', background: theme.bg }}>
+      <section style={{ padding: '64px 24px', background: t.bg }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: theme.accent, display: 'block' }} />
-                <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: theme.accent, opacity: 0.4, animation: 'ping 1.5s cubic-bezier(0,0,0.2,1) infinite' }} />
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: t.accent, display: 'block' }} />
+                <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: t.accent, opacity: 0.4, animation: 'ping 1.5s cubic-bezier(0,0,0.2,1) infinite' }} />
               </span>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: theme.accent }}>Stats en direct</span>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: t.accent }}>Stats en direct</span>
             </div>
-            <span style={{ fontSize: '12px', color: mutedText }}>Dernière synchronisation il y a 2h</span>
+            <span style={{ fontSize: '12px', color: mutedText }}>
+              {effectiveLastFetched
+                ? `Dernière sync ${timeSince(effectiveLastFetched)}`
+                : 'Dernière synchronisation il y a 2h'}
+            </span>
           </div>
 
           {(() => {
             const visible = platforms
-              .filter(p => connectedIds.includes(p.id))
-              .map(p => (p.id === 'youtube' && ytOverride ? ytOverride : p))
+              .filter(p => effectiveConnectedIds.includes(p.id))
+              .map(p => (p.id === 'youtube' && effectiveYtOverride ? effectiveYtOverride : p))
             const hero = visible.find(p => p.hero) ?? visible[0]
             if (!hero) return null
             const secondary = visible.filter(p => p.id !== hero.id)
             return (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
                 <div style={{
-                  background: theme.cardBg,
-                  border: `1px solid ${theme.border}`,
+                  background: t.cardBg,
+                  border: `1px solid ${t.border}`,
                   borderRadius: '16px',
                   padding: '36px',
                   borderTop: `4px solid ${hero.color}`,
-                  boxShadow: theme.boxShadow !== 'none' ? theme.boxShadow : '0 4px 24px rgba(0,0,0,0.07)',
+                  boxShadow: t.boxShadow !== 'none' ? t.boxShadow : '0 4px 24px rgba(0,0,0,0.07)',
                   display: 'flex',
                   flexDirection: 'column',
                   height: '100%',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '28px' }}>
                     <PlatformLogo id={hero.id} color={hero.color} size={20} />
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: theme.subtext }}>{hero.name}</span>
-                    <span style={{ marginLeft: 'auto', fontSize: '11px', color: mutedText, background: theme.statBg, border: `1px solid ${theme.border}`, borderRadius: '9999px', padding: '2px 8px' }}>via API</span>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: t.subtext }}>{hero.name}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', color: mutedText, background: t.statBg, border: `1px solid ${t.border}`, borderRadius: '9999px', padding: '2px 8px' }}>via API</span>
                   </div>
-                  <p style={{ fontSize: '64px', fontWeight: 800, color: theme.text, lineHeight: 1, letterSpacing: '-0.04em', marginBottom: '6px' }}>
+                  <p style={{ fontSize: '64px', fontWeight: 800, color: t.text, lineHeight: 1, letterSpacing: '-0.04em', marginBottom: '6px' }}>
                     {hero.mainStat.value}
                   </p>
                   <p style={{ fontSize: '15px', color: mutedText, fontWeight: 500, marginBottom: 'auto', paddingBottom: '28px' }}>
                     {hero.mainStat.label}
                   </p>
-                  <div style={{ display: 'flex', gap: '20px', paddingTop: '24px', borderTop: `1px solid ${theme.border}`, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '20px', paddingTop: '24px', borderTop: `1px solid ${t.border}`, flexWrap: 'wrap' }}>
                     {hero.secondaryStats.map(s => (
                       <div key={s.label}>
-                        <p style={{ fontSize: '22px', fontWeight: 700, color: theme.accent, letterSpacing: '-0.02em' }}>{s.value}</p>
+                        <p style={{ fontSize: '22px', fontWeight: 700, color: t.accent, letterSpacing: '-0.02em' }}>{s.value}</p>
                         <p style={{ fontSize: '12px', color: mutedText, marginTop: '2px' }}>{s.label}</p>
                       </div>
                     ))}
@@ -529,8 +648,8 @@ const PublicMediaKitPage = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: '100%' }}>
                   {secondary.map(p => (
                     <div key={p.id} style={{
-                      background: theme.cardBg,
-                      border: `1px solid ${theme.border}`,
+                      background: t.cardBg,
+                      border: `1px solid ${t.border}`,
                       borderRadius: '14px',
                       padding: '20px 24px',
                       borderLeft: `3px solid ${p.color}`,
@@ -545,13 +664,13 @@ const PublicMediaKitPage = () => {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: '12px', color: mutedText, fontWeight: 500, marginBottom: '2px' }}>{p.name}</p>
-                        <p style={{ fontSize: '26px', fontWeight: 800, color: theme.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{p.mainStat.value}</p>
+                        <p style={{ fontSize: '26px', fontWeight: 800, color: t.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{p.mainStat.value}</p>
                         <p style={{ fontSize: '12px', color: mutedText, marginTop: '2px' }}>{p.mainStat.label}</p>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
                         {p.secondaryStats.map(s => (
                           <div key={s.label} style={{ textAlign: 'right' }}>
-                            <p style={{ fontSize: '14px', fontWeight: 700, color: theme.accent }}>{s.value}</p>
+                            <p style={{ fontSize: '14px', fontWeight: 700, color: t.accent }}>{s.value}</p>
                             <p style={{ fontSize: '11px', color: mutedText }}>{s.label}</p>
                           </div>
                         ))}
@@ -566,34 +685,34 @@ const PublicMediaKitPage = () => {
       </section>
 
       {/* ── AUDIENCE ──────────────────────────────────────── */}
-      <section style={{ padding: '80px 24px', background: theme.bg }}>
+      <section style={{ padding: '80px 24px', background: t.bg }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <SectionTitle color={theme.text}>Audience</SectionTitle>
+          <SectionTitle color={t.text}>Audience</SectionTitle>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
             {/* Age */}
-            <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '28px' }}>
+            <div style={{ background: t.cardBg, border: `1px solid ${t.border}`, borderRadius: '16px', padding: '28px' }}>
               <p style={{ fontSize: '12px', fontWeight: 500, color: mutedText, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '20px' }}>
                 Répartition par âge
               </p>
               {audienceAge.map(a => (
-                <AgeBar key={a.label} label={a.label} pct={a.pct} accent={theme.accent} subtext={theme.subtext} />
+                <AgeBar key={a.label} label={a.label} pct={a.pct} accent={t.accent} subtext={t.subtext} />
               ))}
             </div>
 
             {/* Gender + Countries */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '28px' }}>
+              <div style={{ background: t.cardBg, border: `1px solid ${t.border}`, borderRadius: '16px', padding: '28px' }}>
                 <p style={{ fontSize: '12px', fontWeight: 500, color: mutedText, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px' }}>
                   Genre
                 </p>
                 <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
                   <div style={{ flex: 1, height: '10px', borderRadius: '9999px', overflow: 'hidden', background: femaleBarBg }}>
-                    <div style={{ height: '100%', width: `${audienceGender.male}%`, background: theme.accent, borderRadius: '9999px' }} />
+                    <div style={{ height: '100%', width: `${audienceGender.male}%`, background: t.accent, borderRadius: '9999px' }} />
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: theme.accent }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: t.accent }}>
                     ♂ Hommes {audienceGender.male}%
                   </span>
                   <span style={{ fontSize: '13px', fontWeight: 600, color: femaleColor }}>
@@ -602,7 +721,7 @@ const PublicMediaKitPage = () => {
                 </div>
               </div>
 
-              <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '28px' }}>
+              <div style={{ background: t.cardBg, border: `1px solid ${t.border}`, borderRadius: '16px', padding: '28px' }}>
                 <p style={{ fontSize: '12px', fontWeight: 500, color: mutedText, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px' }}>
                   Top pays
                 </p>
@@ -610,8 +729,8 @@ const PublicMediaKitPage = () => {
                   {audienceCountries.map(c => (
                     <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <Flag code={c.flag} size={22} />
-                      <span style={{ fontSize: '13px', color: theme.subtext, flex: 1, fontWeight: 500 }}>{c.name}</span>
-                      <span style={{ fontSize: '13px', color: theme.accent, fontWeight: 600 }}>{c.pct}%</span>
+                      <span style={{ fontSize: '13px', color: t.subtext, flex: 1, fontWeight: 500 }}>{c.name}</span>
+                      <span style={{ fontSize: '13px', color: t.accent, fontWeight: 600 }}>{c.pct}%</span>
                     </div>
                   ))}
                 </div>
@@ -622,22 +741,22 @@ const PublicMediaKitPage = () => {
       </section>
 
       {/* ── PARTENARIATS PASSÉS ───────────────────────────── */}
-      {showPartnerships && (
-        <section style={{ padding: '0 24px 80px', background: theme.bg }}>
+      {effectiveShowPartnerships && (
+        <section style={{ padding: '0 24px 80px', background: t.bg }}>
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <SectionTitle color={theme.text}>Partenariats précédents</SectionTitle>
+            <SectionTitle color={t.text}>Partenariats précédents</SectionTitle>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-              {displayedPartnerships.map((p: typeof pastPartners[0], i: number) => (
-                <div key={i} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '24px' }}>
+              {effectivePartnerships.map((p: typeof pastPartners[0], i: number) => (
+                <div key={i} style={{ background: t.cardBg, border: `1px solid ${t.border}`, borderRadius: '16px', padding: '24px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
                     <div>
-                      <p style={{ fontSize: '16px', fontWeight: 700, color: theme.text }}>{p.name}</p>
+                      <p style={{ fontSize: '16px', fontWeight: 700, color: t.text }}>{p.name}</p>
                       <p style={{ fontSize: '12px', color: mutedText, marginTop: '2px' }}>{p.category}</p>
                     </div>
                     <span style={{ fontSize: '12px', color: mutedText, flexShrink: 0, marginLeft: '8px' }}>{p.date}</span>
                   </div>
-                  <p style={{ fontSize: '13px', color: theme.subtext, lineHeight: 1.6, padding: '10px 14px', background: theme.statBg, borderRadius: '8px', borderLeft: `3px solid ${theme.accent}` }}>
+                  <p style={{ fontSize: '13px', color: t.subtext, lineHeight: 1.6, padding: '10px 14px', background: t.statBg, borderRadius: '8px', borderLeft: `3px solid ${t.accent}` }}>
                     {p.result}
                   </p>
                 </div>
@@ -648,34 +767,34 @@ const PublicMediaKitPage = () => {
       )}
 
       {/* ── FORMULAIRE DE CONTACT ─────────────────────────── */}
-      <section id="contact-form" style={{ padding: '0 24px 96px', background: theme.bg }}>
+      <section id="contact-form" style={{ padding: '0 24px 96px', background: t.bg }}>
         <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-          {collabFormats.length > 0 && (
+          {effectiveFormats.length > 0 && (
             <div style={{ marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
-              {collabFormats.map(f => (
-                <span key={f} style={{ background: `${theme.accent}26`, color: theme.accent, border: `1px solid ${theme.accent}50`, borderRadius: '9999px', padding: '5px 16px', fontSize: '13px', fontWeight: 500 }}>
+              {effectiveFormats.map(f => (
+                <span key={f} style={{ background: `${t.accent}26`, color: t.accent, border: `1px solid ${t.accent}50`, borderRadius: '9999px', padding: '5px 16px', fontSize: '13px', fontWeight: 500 }}>
                   {f}
                 </span>
               ))}
             </div>
           )}
 
-          <div style={{ background: theme.cardBg, borderRadius: '20px', padding: '48px', border: `1px solid ${theme.border}` }}>
+          <div style={{ background: t.cardBg, borderRadius: '20px', padding: '48px', border: `1px solid ${t.border}` }}>
             {sent ? (
               <div role="alert" style={{ textAlign: 'center', padding: '24px 0' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: `${theme.accent}30`, border: `2px solid ${theme.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '24px', color: theme.accent }}>
+                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: `${t.accent}30`, border: `2px solid ${t.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '24px', color: t.accent }}>
                   ✓
                 </div>
-                <h2 style={{ fontSize: '22px', fontWeight: 700, color: theme.text, marginBottom: '10px' }}>
+                <h2 style={{ fontSize: '22px', fontWeight: 700, color: t.text, marginBottom: '10px' }}>
                   Proposition envoyée !
                 </h2>
-                <p style={{ fontSize: '15px', color: theme.subtext, lineHeight: 1.6 }}>
+                <p style={{ fontSize: '15px', color: t.subtext, lineHeight: 1.6 }}>
                   {displayCreator.pseudo} traite les demandes sous 48h. Vous recevrez une réponse par email.
                 </p>
               </div>
             ) : (
               <>
-                <h2 style={{ fontSize: '24px', fontWeight: 700, color: theme.text, marginBottom: '8px', letterSpacing: '-0.02em' }}>
+                <h2 style={{ fontSize: '24px', fontWeight: 700, color: t.text, marginBottom: '8px', letterSpacing: '-0.02em' }}>
                   Proposer un partenariat
                 </h2>
                 <p style={{ fontSize: '14px', color: mutedText, marginBottom: '28px' }}>
@@ -757,7 +876,7 @@ const PublicMediaKitPage = () => {
                     type="submit"
                     style={{
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                      background: theme.accent, color: btnTextColor, border: 'none', borderRadius: '9999px',
+                      background: t.accent, color: btnTextColor, border: 'none', borderRadius: '9999px',
                       padding: '14px 28px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', width: '100%',
                       transition: 'opacity 150ms ease',
                     }}
@@ -770,7 +889,7 @@ const PublicMediaKitPage = () => {
               </>
             )}
 
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '28px', paddingTop: '24px', borderTop: `1px solid ${theme.border}` }}>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '28px', paddingTop: '24px', borderTop: `1px solid ${t.border}` }}>
               {[
                 { Icon: Youtube, color: '#ef4444', label: 'YouTube' },
                 { Icon: Twitter, color: isDark ? '#ffffff' : '#0f172a', label: 'Twitter / X' },
@@ -781,9 +900,9 @@ const PublicMediaKitPage = () => {
                   key={i}
                   href="#"
                   aria-label={label}
-                  style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, background: isDark ? 'rgba(255,255,255,0.06)' : 'white', transition: 'all 150ms ease' }}
-                  onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.accent; ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)' }}
-                  onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.border; ;(e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
+                  style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, background: isDark ? 'rgba(255,255,255,0.06)' : 'white', transition: 'all 150ms ease' }}
+                  onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.borderColor = t.accent; ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)' }}
+                  onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.borderColor = t.border; ;(e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
                 >
                   <Icon size={18} />
                 </a>
@@ -791,9 +910,9 @@ const PublicMediaKitPage = () => {
               <a
                 href="#"
                 aria-label="Twitch"
-                style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDark ? 'rgba(255,255,255,0.06)' : 'white', transition: 'all 150ms ease' }}
-                onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.accent; ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)' }}
-                onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.border; ;(e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
+                style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDark ? 'rgba(255,255,255,0.06)' : 'white', transition: 'all 150ms ease' }}
+                onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.borderColor = t.accent; ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)' }}
+                onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.borderColor = t.border; ;(e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="#9146ff" aria-hidden="true">
                   <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
@@ -806,6 +925,7 @@ const PublicMediaKitPage = () => {
 
       {/* ── STICKY CTA ────────────────────────────────────── */}
       <div
+        id="sticky-cta"
         style={{
           position: 'fixed', bottom: '24px', right: '24px', zIndex: 50,
           transition: 'opacity 250ms ease, transform 250ms ease',
@@ -818,21 +938,24 @@ const PublicMediaKitPage = () => {
           onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
-            background: theme.accent, color: btnTextColor, border: 'none', borderRadius: '9999px',
+            background: t.accent, color: btnTextColor, border: 'none', borderRadius: '9999px',
             padding: '14px 24px', fontSize: '14px', fontWeight: 600, cursor: 'pointer',
-            boxShadow: `0 4px 20px ${theme.accent}59`, whiteSpace: 'nowrap',
+            boxShadow: `0 4px 20px ${t.accent}59`, whiteSpace: 'nowrap',
             transition: 'opacity 150ms ease, box-shadow 150ms ease',
           }}
-          onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.opacity = '0.85'; ;(e.currentTarget as HTMLElement).style.boxShadow = `0 6px 28px ${theme.accent}73` }}
-          onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.opacity = '1'; ;(e.currentTarget as HTMLElement).style.boxShadow = `0 4px 20px ${theme.accent}59` }}
+          onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.opacity = '0.85'; ;(e.currentTarget as HTMLElement).style.boxShadow = `0 6px 28px ${t.accent}73` }}
+          onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.opacity = '1'; ;(e.currentTarget as HTMLElement).style.boxShadow = `0 4px 20px ${t.accent}59` }}
         >
           Proposer un partenariat →
         </button>
       </div>
 
-      <footer role="contentinfo" style={{ padding: '24px', textAlign: 'center', color: mutedText, fontSize: '12px', borderTop: `1px solid ${theme.border}` }}>
+      <footer role="contentinfo" style={{ padding: '24px', textAlign: 'center', color: mutedText, fontSize: '12px', borderTop: `1px solid ${t.border}` }}>
         Media kit généré par{' '}
         <span style={{ color: '#16a34a', fontWeight: 600 }}>Sponsorable</span>
+        <span className="pdf-export-date">
+          Exporté le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </span>
       </footer>
     </div>
   )

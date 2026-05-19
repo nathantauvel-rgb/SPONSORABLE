@@ -1,41 +1,80 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   const session = await auth()
-  if (!session?.user?.id) {
+  const userId = session?.user?.id
+  if (!userId) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
   }
 
-  const cookieHeader = req.headers.get('cookie') ?? ''
-  const baseUrl = process.env.NEXTAUTH_URL
-    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-
   const platforms = await prisma.platform.findMany({
-    where: { userId: session.user.id },
+    where: { userId },
     select: { type: true, platformId: true, username: true },
+    take: 20,
   })
 
   const results: Record<string, string> = {}
 
+  // Refresh directement sans passer par HTTP interne pour éviter la propagation du cookie client
   await Promise.all(platforms.map(async (platform) => {
     try {
       if (platform.type === 'youtube') {
-        const res = await fetch(`${baseUrl}/api/platforms/youtube`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Cookie: cookieHeader },
-          body: JSON.stringify({ channelId: platform.platformId }),
-        })
-        results.youtube = res.ok ? 'ok' : 'error'
+        const apiKey = process.env.YOUTUBE_API_KEY
+        if (!apiKey) { results.youtube = 'error'; return }
+        const param = `id=${encodeURIComponent(platform.platformId)}`
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&${param}&key=${apiKey}`)
+        const data = await res.json()
+        if (data.items?.length) {
+          const ch = data.items[0]
+          await prisma.platform.update({
+            where: { userId_type: { userId, type: 'youtube' } },
+            data: {
+              stats: {
+                subscriberCount: ch.statistics.subscriberCount,
+                viewCount: ch.statistics.viewCount,
+                videoCount: ch.statistics.videoCount,
+              },
+              lastFetched: new Date(),
+            },
+          })
+          results.youtube = 'ok'
+        } else {
+          results.youtube = 'error'
+        }
       }
       if (platform.type === 'twitch') {
-        const res = await fetch(`${baseUrl}/api/platforms/twitch`, {
+        const clientId = process.env.AUTH_TWITCH_ID
+        const clientSecret = process.env.AUTH_TWITCH_SECRET
+        if (!clientId || !clientSecret) { results.twitch = 'error'; return }
+        const tokenRes = await fetch('https://id.twitch.tv/oauth2/token', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Cookie: cookieHeader },
-          body: JSON.stringify({ username: platform.username }),
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,
         })
-        results.twitch = res.ok ? 'ok' : 'error'
+        const { access_token } = await tokenRes.json()
+        const userRes = await fetch(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(platform.username)}`, {
+          headers: { 'Client-ID': clientId, Authorization: `Bearer ${access_token}` },
+        })
+        const userData = await userRes.json()
+        if (userData.data?.[0]) {
+          const twitchUser = userData.data[0]
+          const followerRes = await fetch(`https://api.twitch.tv/helix/channels/followers?broadcaster_id=${twitchUser.id}`, {
+            headers: { 'Client-ID': clientId, Authorization: `Bearer ${access_token}` },
+          })
+          const followerData = await followerRes.json()
+          await prisma.platform.update({
+            where: { userId_type: { userId, type: 'twitch' } },
+            data: {
+              stats: { followerCount: followerData.total ?? 0, viewCount: twitchUser.view_count },
+              lastFetched: new Date(),
+            },
+          })
+          results.twitch = 'ok'
+        } else {
+          results.twitch = 'error'
+        }
       }
     } catch {
       results[platform.type] = 'error'

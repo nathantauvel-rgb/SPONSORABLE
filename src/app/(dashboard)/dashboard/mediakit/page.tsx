@@ -52,6 +52,8 @@ export default function MediaKitEditorPage() {
   const [draft, setDraft] = useState<Partnership>(EMPTY_PARTNERSHIP)
   const [saved, setSaved] = useState(false)
   const [profileFlash, setProfileFlash] = useState(false)
+  const [templateJustApplied, setTemplateJustApplied] = useState(false)
+  const [appliedTheme, setAppliedTheme] = useState<{ bg: string; accent: string; text: string } | null>(null)
   const profileCardRef = useRef<HTMLDivElement>(null)
   const [bannerUrl, setBannerUrl] = useState<string>(() => load('sponsorable_banner', ''))
   const [calendlyUrl, setCalendlyUrl] = useState<string>(() => load('sponsorable_calendly', ''))
@@ -68,13 +70,33 @@ export default function MediaKitEditorPage() {
   const removePartnership = (i: number) =>
     setPartnerships(partnerships.filter((_, idx) => idx !== i))
 
-  const handleSave = () => {
+  const handleSave = async () => {
     localStorage.setItem('sponsorable_profile', JSON.stringify(profile))
     localStorage.setItem('sponsorable_formats', JSON.stringify(formats))
     localStorage.setItem('sponsorable_show_partnerships', String(showPartnerships))
     localStorage.setItem('sponsorable_partnerships', JSON.stringify(partnerships))
     localStorage.setItem('sponsorable_banner', JSON.stringify(bannerUrl))
     localStorage.setItem('sponsorable_calendly', JSON.stringify(calendlyUrl))
+    if (selectedTemplateId) localStorage.setItem('sponsorable_template', selectedTemplateId)
+
+    // Persist to DB so public page reads fresh data for any visitor
+    fetch('/api/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slug: profile.pseudo?.trim().toLowerCase().replace(/\s+/g, '-') || 'creator',
+        displayName: profile.pseudo,
+        bio: profile.bio,
+        niche: profile.niche,
+        theme: selectedTemplateId ?? undefined,
+        formats,
+        showPartnerships,
+        partnerships,
+        bannerUrl: bannerUrl || undefined,
+        calendlyUrl: calendlyUrl || undefined,
+      }),
+    }).catch(() => { /* best effort */ })
+
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }
@@ -87,15 +109,27 @@ export default function MediaKitEditorPage() {
       `}</style>
       <Sidebar />
 
-      <main style={{ marginLeft: '240px', padding: '40px 48px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Mon media kit</h1>
-            <p style={{ fontSize: '14px', color: '#94a3b8' }}>Personnalise ce que voient les sponsors.</p>
-          </div>
-          <Button variant="primary" onClick={handleSave}>
-            Sauvegarder
-          </Button>
+      {/* Sticky save bar */}
+      <div style={{
+        position: 'fixed', top: 0, left: '240px', right: 0, zIndex: 40,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 48px',
+        background: 'rgba(248,250,252,0.85)', backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(0,0,0,0.07)',
+      }}>
+        <div>
+          <span style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>Mon media kit</span>
+          {saved && <span style={{ marginLeft: '12px', fontSize: '12px', color: '#16a34a', fontWeight: 500 }}>✓ Sauvegardé</span>}
+        </div>
+        <Button variant="primary" onClick={handleSave}>
+          Sauvegarder
+        </Button>
+      </div>
+
+      <main style={{ marginLeft: '240px', padding: '72px 48px 40px' }}>
+        <div style={{ marginBottom: '32px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Mon media kit</h1>
+          <p style={{ fontSize: '14px', color: '#94a3b8' }}>Personnalise ce que voient les sponsors.</p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '720px' }}>
@@ -108,14 +142,14 @@ export default function MediaKitEditorPage() {
             >
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', textAlign: 'left' }}>Partir d'un exemple</p>
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', textAlign: 'left' }}>Thème du media kit</p>
                   {!pro && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: '#16a34a', background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '9999px', padding: '2px 8px', letterSpacing: '0.04em' }}>
                       <Lock size={9} /> PRO
                     </span>
                   )}
                 </div>
-                <p style={{ fontSize: '13px', color: '#94a3b8', textAlign: 'left', marginTop: '2px' }}>Pré-remplis ton media kit à partir d'un profil type.</p>
+                <p style={{ fontSize: '13px', color: '#94a3b8', textAlign: 'left', marginTop: '2px' }}>Choisis le thème visuel de ton media kit.</p>
               </div>
               {pro
                 ? (showTemplates ? <ChevronUp size={18} color="#94a3b8" /> : <ChevronDown size={18} color="#94a3b8" />)
@@ -125,7 +159,7 @@ export default function MediaKitEditorPage() {
 
             {!pro && (
               <div style={{ marginTop: '14px', padding: '14px 16px', background: '#f8fafc', border: '1px dashed #e2e8f0', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <p style={{ fontSize: '13px', color: '#64748b' }}>Les templates de design sont réservés au plan Pro</p>
+                <p style={{ fontSize: '13px', color: '#64748b' }}>Les thèmes de media kit sont réservés au plan Pro</p>
                 <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: '#16a34a', textDecoration: 'none', background: 'rgba(22,163,74,0.08)', padding: '6px 12px', borderRadius: '8px' }}>
                   <Zap size={11} /> Upgrader
                 </Link>
@@ -152,6 +186,9 @@ export default function MediaKitEditorPage() {
                           localStorage.setItem('sponsorable_formats', JSON.stringify(tmpl.formats))
                           localStorage.setItem('sponsorable_template', tmpl.id)
                           setTimeout(() => { setProfileFlash(true); setTimeout(() => setProfileFlash(false), 1200) }, 150)
+                          setAppliedTheme({ bg: tmpl.theme.bg, accent: tmpl.theme.accent, text: tmpl.theme.text })
+                          setTemplateJustApplied(true)
+                          setTimeout(() => setTemplateJustApplied(false), 8000)
                         }}
                         style={{
                           borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', position: 'relative',
@@ -231,12 +268,6 @@ export default function MediaKitEditorPage() {
                     )
                   })}
                 </div>
-                {selectedTemplateId && (
-                  <div style={{ marginTop: '14px', padding: '12px 16px', background: 'rgba(134,239,172,0.12)', border: '1px solid rgba(134,239,172,0.4)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '13px', color: '#15803d', fontWeight: 500 }}>✓ Template appliqué — les champs ci-dessous sont mis à jour</span>
-                    <button onClick={() => setShowTemplates(false)} style={{ fontSize: '13px', fontWeight: 600, color: '#15803d', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}>Fermer ×</button>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -516,6 +547,21 @@ export default function MediaKitEditorPage() {
 
         </div>
       </main>
+
+      {templateJustApplied && appliedTheme && (
+        <div style={{
+          position:'fixed', bottom: saved ? '88px' : '32px', left:'50%',
+          transform:'translateX(-50%)', zIndex:100,
+          background: appliedTheme.bg, color: appliedTheme.text, borderRadius:'14px',
+          padding:'14px 24px', display:'flex', alignItems:'center', gap:'10px',
+          boxShadow:'0 8px 32px rgba(0,0,0,0.25)',
+          animation:'toastIn 220ms ease forwards', whiteSpace:'nowrap',
+          border: `1px solid ${appliedTheme.accent}40`,
+        }}>
+          <span style={{ width:'22px', height:'22px', borderRadius:'50%', background: appliedTheme.accent, color: appliedTheme.bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'13px', fontWeight:700, flexShrink:0 }}>✦</span>
+          <span style={{ fontSize:'14px', fontWeight:500 }}>Thème appliqué — pense à sauvegarder</span>
+        </div>
+      )}
 
       {saved && (
         <div style={{

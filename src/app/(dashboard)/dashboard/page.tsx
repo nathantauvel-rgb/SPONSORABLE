@@ -1,6 +1,6 @@
 'use client'
 
-import { Copy, ExternalLink, RefreshCw } from 'lucide-react'
+import { Copy, ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
@@ -75,13 +75,23 @@ export default function DashboardPage() {
   const router = useRouter()
   const { data: session } = useSession()
 
+  const [publicPseudo] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('sponsorable_profile')
+      const parsed = saved ? JSON.parse(saved) : null
+      return parsed?.pseudo || 'alexplays'
+    } catch { return 'alexplays' }
+  })
+
   const [ytData, setYtData] = useState<YTData | null>(null)
   const [ytLoading, setYtLoading] = useState(false)
   const [ytError, setYtError] = useState('')
+  const [ytDisconnecting, setYtDisconnecting] = useState(false)
 
   const [twitchData, setTwitchData] = useState<TwitchData | null>(null)
   const [twitchLoading, setTwitchLoading] = useState(false)
   const [twitchError, setTwitchError] = useState('')
+  const [twitchDisconnecting, setTwitchDisconnecting] = useState(false)
 
   const fetchYouTube = async () => {
     setYtLoading(true)
@@ -139,6 +149,29 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id])
 
+  const disconnectPlatform = async (type: 'youtube' | 'twitch') => {
+    const setDisconnecting = type === 'youtube' ? setYtDisconnecting : setTwitchDisconnecting
+    setDisconnecting(true)
+    try {
+      const res = await fetch(`/api/platforms/${type}`, { method: 'DELETE' })
+      if (res.ok) {
+        if (type === 'youtube') {
+          setYtData(null)
+          setYtError('')
+          localStorage.removeItem('sponsorable_yt_data')
+        } else {
+          setTwitchData(null)
+          setTwitchError('')
+          localStorage.removeItem('sponsorable_twitch_data')
+        }
+      }
+    } catch {
+      // silent
+    } finally {
+      setDisconnecting(false)
+    }
+  }
+
   const displayName = session?.user?.name ?? ytData?.title ?? 'toi'
 
   return (
@@ -156,7 +189,7 @@ export default function DashboardPage() {
               {ytData ? `YouTube synchronisé ${timeSince(ytData.lastFetched)}` : 'Connecte tes plateformes pour voir tes stats'}
             </p>
           </div>
-          <Button variant="outline" arrow onClick={() => router.push('/p/alexplays')}>
+          <Button variant="outline" arrow onClick={() => router.push(`/${publicPseudo}`)}>
             Voir ma page
           </Button>
         </div>
@@ -196,12 +229,21 @@ export default function DashboardPage() {
                 <StatusBadge connected={!!ytData} />
                 {ytData ? (
                   <button
-                    onClick={fetchYouTube}
-                    disabled={ytLoading}
-                    title="Synchroniser"
-                    style={{ background: 'none', border: 'none', cursor: ytLoading ? 'wait' : 'pointer', color: '#94a3b8', display: 'flex', padding: '2px' }}
+                    onClick={() => disconnectPlatform('youtube')}
+                    disabled={ytDisconnecting}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '5px',
+                      fontSize: '12px', fontWeight: 500, color: ytDisconnecting ? '#94a3b8' : '#dc2626',
+                      background: ytDisconnecting ? '#f8fafc' : 'rgba(220,38,38,0.06)',
+                      border: `1px solid ${ytDisconnecting ? '#e2e8f0' : 'rgba(220,38,38,0.2)'}`,
+                      borderRadius: '6px', padding: '5px 10px',
+                      cursor: ytDisconnecting ? 'wait' : 'pointer',
+                      transition: 'all 150ms ease', whiteSpace: 'nowrap',
+                    }}
+                    onMouseEnter={e => { if (!ytDisconnecting) { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.12)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.35)' }}}
+                    onMouseLeave={e => { if (!ytDisconnecting) { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.06)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.2)' }}}
                   >
-                    <RefreshCw size={14} style={{ animation: ytLoading ? 'spin 1s linear infinite' : 'none' }} />
+                    {ytDisconnecting ? '…' : <><span style={{ fontSize: '14px', lineHeight: 1 }}>×</span> Déconnecter</>}
                   </button>
                 ) : !ytLoading && (
                   <button
@@ -239,12 +281,21 @@ export default function DashboardPage() {
                 <StatusBadge connected={!!twitchData} />
                 {twitchData ? (
                   <button
-                    onClick={fetchTwitch}
-                    disabled={twitchLoading}
-                    title="Synchroniser"
-                    style={{ background: 'none', border: 'none', cursor: twitchLoading ? 'wait' : 'pointer', color: '#94a3b8', display: 'flex', padding: '2px' }}
+                    onClick={() => disconnectPlatform('twitch')}
+                    disabled={twitchDisconnecting}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '5px',
+                      fontSize: '12px', fontWeight: 500, color: twitchDisconnecting ? '#94a3b8' : '#dc2626',
+                      background: twitchDisconnecting ? '#f8fafc' : 'rgba(220,38,38,0.06)',
+                      border: `1px solid ${twitchDisconnecting ? '#e2e8f0' : 'rgba(220,38,38,0.2)'}`,
+                      borderRadius: '6px', padding: '5px 10px',
+                      cursor: twitchDisconnecting ? 'wait' : 'pointer',
+                      transition: 'all 150ms ease', whiteSpace: 'nowrap',
+                    }}
+                    onMouseEnter={e => { if (!twitchDisconnecting) { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.12)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.35)' }}}
+                    onMouseLeave={e => { if (!twitchDisconnecting) { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.06)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.2)' }}}
                   >
-                    <RefreshCw size={14} style={{ animation: twitchLoading ? 'spin 1s linear infinite' : 'none' }} />
+                    {twitchDisconnecting ? '…' : <><span style={{ fontSize: '14px', lineHeight: 1 }}>×</span> Déconnecter</>}
                   </button>
                 ) : !twitchLoading && (
                   <button
@@ -268,23 +319,31 @@ export default function DashboardPage() {
         <div style={{ maxWidth: '560px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', marginBottom: '16px' }}>Ton lien public</h3>
           <div style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500 }}>sponsorable.gg/alexplays</span>
+            <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500 }}>sponsorable.gg/{publicPseudo}</span>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => navigator.clipboard.writeText('https://sponsorable.gg/alexplays')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Copier"><Copy size={15} /></button>
-              <button onClick={() => router.push('/p/alexplays')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Ouvrir"><ExternalLink size={15} /></button>
+              <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.gg/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Copier"><Copy size={15} /></button>
+              <button onClick={() => router.push(`/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Ouvrir"><ExternalLink size={15} /></button>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <Button variant="primary" arrow onClick={() => router.push('/p/alexplays')}>Voir ma page</Button>
-            <Button variant="outline">
+            <Button variant="primary" arrow onClick={() => router.push(`/${publicPseudo}`)}>Voir ma page</Button>
+            <a
+              href={`/${publicPseudo}?print=1`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.12)', background: 'white', color: '#0f172a', fontSize: '14px', fontWeight: 600, textDecoration: 'none', cursor: 'pointer', transition: 'background 150ms' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
+            >
               Télécharger PDF
-              <span style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.10)', borderRadius: '9999px', padding: '1px 8px', fontSize: '10px', fontWeight: 600, color: '#94a3b8', marginLeft: '4px' }}>Pro</span>
-            </Button>
+            </a>
           </div>
         </div>
 
       </main>
+
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
+
     </div>
   )
 }

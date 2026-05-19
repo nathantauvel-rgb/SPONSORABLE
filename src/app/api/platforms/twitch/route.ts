@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const PostSchema = z.object({
-  username: z.string().min(1).max(64),
+  username: z.string().trim().min(1).max(64),
 })
 
 const TWITCH_CLIENT_ID = process.env.AUTH_TWITCH_ID

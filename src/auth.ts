@@ -19,6 +19,7 @@ if (AUTH_GOOGLE_ID && AUTH_GOOGLE_SECRET) {
     providers.push(Google({
         clientId: AUTH_GOOGLE_ID,
         clientSecret: AUTH_GOOGLE_SECRET,
+        allowDangerousEmailAccountLinking: true,
         authorization: {
             params: {
                 scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly",

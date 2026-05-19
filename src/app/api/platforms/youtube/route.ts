@@ -4,8 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const PostSchema = z.object({
-  channelId: z.string().max(64).optional(),
-  handle: z.string().max(64).optional(),
+  channelId: z.string().trim().min(1).max(64).optional(),
+  handle: z.string().trim().min(1).max(64).optional(),
 }).refine(d => d.channelId || d.handle, { message: 'channelId ou handle requis' })
 
 export async function GET() {
