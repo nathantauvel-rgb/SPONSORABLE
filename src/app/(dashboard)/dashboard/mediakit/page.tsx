@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronDown, ChevronUp, Lock, Plus, Trash2, X, Zap } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Sidebar from '@/components/layout/Sidebar'
 import Button from '@/components/ui/button'
@@ -27,10 +27,15 @@ const load = <T,>(key: string, fallback: T): T => {
 
 const EMPTY_PARTNERSHIP: Partnership = { name: '', category: '', result: '', date: '' }
 
-const isPro = () => { try { return localStorage.getItem('sponsorable_plan') === 'pro' } catch { return false } }
-
 export default function MediaKitEditorPage() {
-  const pro = isPro()
+  const [pro, setPro] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.isPro) setPro(true) })
+      .catch(() => {})
+  }, [])
   const [showTemplates, setShowTemplates] = useState(false)
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(pro ? (localStorage.getItem('sponsorable_template') || null) : null)
   const [profile, setProfile] = useState(() => {
@@ -85,6 +90,7 @@ export default function MediaKitEditorPage() {
           displayName: profile.pseudo,
           bio: profile.bio,
           niche: profile.niche,
+          theme: selectedTemplateId || undefined,
           formats,
           showPartnerships,
           partnerships,
