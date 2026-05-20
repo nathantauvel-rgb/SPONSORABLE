@@ -36,7 +36,7 @@ if (AUTH_TWITCH_ID && AUTH_TWITCH_SECRET) {
         clientSecret: AUTH_TWITCH_SECRET,
         authorization: {
             params: {
-                scope: "openid user:read:email user:read:follows moderator:read:followers channel:read:subscriptions channel:read:analytics",
+                scope: "openid user:read:email user:read:follows moderator:read:followers channel:read:subscriptions",
             },
         },
     }))
