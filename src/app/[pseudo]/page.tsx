@@ -391,8 +391,14 @@ const PublicMediaKitPage = () => {
     <div style={{ background: theme.bg, minHeight: '100vh' }}>
       <style>{`
         @media print {
-          @page { margin: 16mm 14mm; }
-          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+          @page { margin: 10mm 10mm; size: A4; }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            max-width: none !important;
+            box-sizing: border-box !important;
+          }
           #sticky-cta { display: none !important; }
           #contact-form { display: none !important; }
           footer[role="contentinfo"] { display: none !important; }
