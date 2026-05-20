@@ -630,7 +630,7 @@ const PublicMediaKitPage = () => {
             </div>
             {lastSync && <span style={{ fontSize: '12px', color: mutedText }}>Dernière synchronisation {timeSince(lastSync)}</span>}
           </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: secondary.length > 0 ? '1fr 1fr' : '1fr', gap: '16px', alignItems: 'stretch' }}>
                 <div style={{
                   background: theme.cardBg,
                   border: `1px solid ${theme.border}`,
@@ -869,18 +869,25 @@ const PublicMediaKitPage = () => {
         </section>
       )}
 
-      {/* ── FORMULAIRE DE CONTACT ─────────────────────────── */}
-      <section id="contact-form" style={{ padding: '0 24px 96px', background: theme.bg }}>
-        <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-          {collabFormats.length > 0 && (
-            <div style={{ marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+      {/* ── FORMATS DE COLLABORATION ─────────────────────── */}
+      {collabFormats.length > 0 && (
+        <section style={{ padding: '0 24px 40px', background: theme.bg }}>
+          <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+            <SectionTitle color={theme.text}>Formats de collaboration</SectionTitle>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
               {collabFormats.map(f => (
                 <span key={f} style={{ background: `${theme.accent}26`, color: theme.accent, border: `1px solid ${theme.accent}50`, borderRadius: '9999px', padding: '5px 16px', fontSize: '13px', fontWeight: 500 }}>
                   {f}
                 </span>
               ))}
             </div>
-          )}
+          </div>
+        </section>
+      )}
+
+      {/* ── FORMULAIRE DE CONTACT ─────────────────────────── */}
+      <section id="contact-form" style={{ padding: '0 24px 96px', background: theme.bg }}>
+        <div style={{ maxWidth: '640px', margin: '0 auto' }}>
 
           <div style={{ background: theme.cardBg, borderRadius: '20px', padding: '48px', border: `1px solid ${theme.border}` }}>
             {sent ? (
