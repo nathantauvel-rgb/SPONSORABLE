@@ -26,7 +26,27 @@ async function refreshGoogleToken(account: { id: string; refresh_token: string |
   return tokens.access_token as string
 }
 
-async function fetchRecentVideos(token: string, uploadsPlaylistId: string) {
+type VideoItem = {
+  id: string
+  title: string
+  publishedAt: string
+  thumbnail: string | null
+  viewCount: string
+  likeCount: string
+  commentCount: string
+}
+
+function computeEngagementRate(videos: VideoItem[]): number | null {
+  const valid = videos.filter(v => Number(v.viewCount) > 0)
+  if (!valid.length) return null
+  const rates = valid.map(v =>
+    (Number(v.likeCount) + Number(v.commentCount)) / Number(v.viewCount) * 100
+  )
+  const avg = rates.reduce((a, b) => a + b, 0) / rates.length
+  return Math.round(avg * 100) / 100
+}
+
+async function fetchRecentVideos(token: string, uploadsPlaylistId: string): Promise<VideoItem[]> {
   try {
     const playlistRes = await fetch(
       `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${uploadsPlaylistId}&maxResults=5`,
@@ -93,6 +113,7 @@ async function fetchYouTubeAnalytics(token: string) {
   }
 
   return {
+    views90d: overviewRow?.[0] ?? null,
     avgViewDuration: overviewRow?.[2] ? Math.round(overviewRow[2]) : null,
     avgViewPercentage: overviewRow?.[3] ? Math.round(overviewRow[3] * 10) / 10 : null,
     estimatedMinutesWatched: overviewRow?.[1] ?? null,
@@ -206,7 +227,16 @@ export async function GET() {
   return NextResponse.json(result)
 }
 
-function formatChannel(ch: { id: string; snippet: { title: string; thumbnails?: { default?: { url: string } } }; statistics: { subscriberCount?: string; viewCount?: string; videoCount?: string } }, videos: object[], analytics: object) {
+function formatChannel(
+  ch: { id: string; snippet: { title: string; thumbnails?: { default?: { url: string } } }; statistics: { subscriberCount?: string; viewCount?: string; videoCount?: string } },
+  videos: VideoItem[],
+  analytics: object,
+) {
+  const videoCount = Number(ch.statistics.videoCount ?? '0')
+  const totalViews = Number(ch.statistics.viewCount ?? '0')
+  const avgViewsPerVideo = videoCount > 0 ? Math.round(totalViews / videoCount) : null
+  const engagementRate = computeEngagementRate(videos)
+
   return {
     channelId: ch.id,
     title: ch.snippet.title,
@@ -214,6 +244,8 @@ function formatChannel(ch: { id: string; snippet: { title: string; thumbnails?: 
     subscriberCount: ch.statistics.subscriberCount ?? '0',
     viewCount: ch.statistics.viewCount ?? '0',
     videoCount: ch.statistics.videoCount ?? '0',
+    avgViewsPerVideo,
+    engagementRate,
     recentVideos: videos,
     analytics,
     lastFetched: new Date().toISOString(),

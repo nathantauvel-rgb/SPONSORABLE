@@ -313,6 +313,9 @@ const PublicMediaKitPage = () => {
   const ytStats = remoteYt?.stats ?? null
   const ytAnalytics = ytStats?.analytics as Record<string, unknown> | undefined
   const ytRecentVideos = ytStats?.recentVideos as Array<{ id: string; title: string; publishedAt: string; thumbnail: string | null; viewCount: string; likeCount: string; commentCount: string }> | undefined
+  const ytEngagementRate = ytStats?.engagementRate as number | null | undefined
+  const ytAvgViewsPerVideo = ytStats?.avgViewsPerVideo as number | null | undefined
+  const ytViews90d = ytAnalytics?.views90d as number | null | undefined
 
   const effectiveYtOverride: Platform | null = ytStats ? {
     id: 'youtube',
@@ -321,8 +324,12 @@ const PublicMediaKitPage = () => {
     hero: true,
     mainStat: { value: fmtNum(String(ytStats.subscriberCount ?? '0')), label: 'abonnés' },
     secondaryStats: [
-      { value: fmtNum(String(ytStats.viewCount ?? '0')), label: 'vues totales' },
-      { value: fmtNum(String(ytStats.videoCount ?? '0')), label: 'vidéos publiées' },
+      ...(ytViews90d != null
+        ? [{ value: fmtNum(ytViews90d), label: 'vues (90 derniers jours)' }]
+        : [{ value: fmtNum(String(ytStats.viewCount ?? '0')), label: 'vues totales' }]),
+      ...(ytAvgViewsPerVideo != null
+        ? [{ value: fmtNum(ytAvgViewsPerVideo), label: 'vues moy. par vidéo' }]
+        : [{ value: fmtNum(String(ytStats.videoCount ?? '0')), label: 'vidéos publiées' }]),
     ],
   } : localYtOverride
 
@@ -703,15 +710,17 @@ const PublicMediaKitPage = () => {
       </section>
 
       {/* ── YOUTUBE ANALYTICS ────────────────────────────── */}
-      {ytAnalytics && (effectiveYtOverride || ytStats) && (() => {
-        const topCountries = ytAnalytics.topCountries as Array<{ country: string; views: number }> | undefined
-        const ageGroups = ytAnalytics.ageGroups as Array<{ age: string; pct: number }> | undefined
-        const gender = ytAnalytics.gender as { male: number; female: number } | undefined
-        const avgViewDuration = ytAnalytics.avgViewDuration as number | null | undefined
-        const avgViewPercentage = ytAnalytics.avgViewPercentage as number | null | undefined
-        const estimatedMinutesWatched = ytAnalytics.estimatedMinutesWatched as number | null | undefined
+      {(ytAnalytics || ytEngagementRate != null) && (effectiveYtOverride || ytStats) && (() => {
+        const topCountries = ytAnalytics?.topCountries as Array<{ country: string; views: number }> | undefined
+        const ageGroups = ytAnalytics?.ageGroups as Array<{ age: string; pct: number }> | undefined
+        const gender = ytAnalytics?.gender as { male: number; female: number } | undefined
+        const avgViewDuration = ytAnalytics?.avgViewDuration as number | null | undefined
+        const avgViewPercentage = ytAnalytics?.avgViewPercentage as number | null | undefined
+        const estimatedMinutesWatched = ytAnalytics?.estimatedMinutesWatched as number | null | undefined
+        const views90d = ytAnalytics?.views90d as number | null | undefined
 
-        const hasData = (topCountries?.length ?? 0) > 0 || (ageGroups?.length ?? 0) > 0 || avgViewDuration != null
+        const hasData = (topCountries?.length ?? 0) > 0 || (ageGroups?.length ?? 0) > 0
+          || avgViewDuration != null || ytEngagementRate != null || views90d != null
         if (!hasData) return null
 
         const fmtDuration = (secs: number) => {
@@ -725,9 +734,21 @@ const PublicMediaKitPage = () => {
             <div style={{ maxWidth: '900px', margin: '0 auto' }}>
               <SectionTitle color={theme.text}>Statistiques d&apos;audience</SectionTitle>
 
-              {/* Watch time KPIs */}
-              {(avgViewDuration != null || avgViewPercentage != null || estimatedMinutesWatched != null) && (
+              {/* KPIs principaux */}
+              {(ytEngagementRate != null || views90d != null || avgViewDuration != null || avgViewPercentage != null || estimatedMinutesWatched != null) && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '32px' }}>
+                  {ytEngagementRate != null && (
+                    <div style={{ background: `${theme.accent}14`, border: `1px solid ${theme.accent}40`, borderRadius: '12px', padding: '20px 24px' }}>
+                      <p style={{ fontSize: '28px', fontWeight: 800, color: theme.accent, letterSpacing: '-0.02em', lineHeight: 1 }}>{ytEngagementRate}%</p>
+                      <p style={{ fontSize: '12px', color: mutedText, marginTop: '4px' }}>Taux d&apos;engagement</p>
+                    </div>
+                  )}
+                  {views90d != null && (
+                    <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '12px', padding: '20px 24px' }}>
+                      <p style={{ fontSize: '28px', fontWeight: 800, color: theme.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{fmtNum(views90d)}</p>
+                      <p style={{ fontSize: '12px', color: mutedText, marginTop: '4px' }}>Vues (90 derniers jours)</p>
+                    </div>
+                  )}
                   {avgViewDuration != null && (
                     <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '12px', padding: '20px 24px' }}>
                       <p style={{ fontSize: '28px', fontWeight: 800, color: theme.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{fmtDuration(avgViewDuration)}</p>
@@ -743,7 +764,7 @@ const PublicMediaKitPage = () => {
                   {estimatedMinutesWatched != null && (
                     <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '12px', padding: '20px 24px' }}>
                       <p style={{ fontSize: '28px', fontWeight: 800, color: theme.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{fmtNum(estimatedMinutesWatched)}</p>
-                      <p style={{ fontSize: '12px', color: mutedText, marginTop: '4px' }}>minutes regardées (90j)</p>
+                      <p style={{ fontSize: '12px', color: mutedText, marginTop: '4px' }}>Minutes regardées (90j)</p>
                     </div>
                   )}
                 </div>

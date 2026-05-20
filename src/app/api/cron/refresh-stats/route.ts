@@ -62,7 +62,8 @@ export async function GET(req: NextRequest) {
         if (!ch) { results[platform.id] = 'no_stats'; return }
 
         // Fetch recent videos
-        let recentVideos: unknown[] = []
+        type CronVideoItem = { id: string; title: string; publishedAt: string; thumbnail: string | null; viewCount: string; likeCount: string; commentCount: string }
+        let recentVideos: CronVideoItem[] = []
         try {
           const uploadsId = ch.contentDetails?.relatedPlaylists?.uploads ?? ''
           if (uploadsId) {
@@ -90,6 +91,14 @@ export async function GET(req: NextRequest) {
           }
         } catch { /* non-blocking */ }
 
+        // Compute engagement rate from recent videos
+        const engagementRate = (() => {
+          const valid = recentVideos.filter(v => Number(v.viewCount) > 0)
+          if (!valid.length) return null
+          const rates = valid.map(v => (Number(v.likeCount) + Number(v.commentCount)) / Number(v.viewCount) * 100)
+          return Math.round(rates.reduce((a, b) => a + b, 0) / rates.length * 100) / 100
+        })()
+
         // Fetch YouTube Analytics
         let analytics: Record<string, unknown> = {}
         try {
@@ -115,6 +124,7 @@ export async function GET(req: NextRequest) {
             }
           }
           analytics = {
+            views90d: row?.[0] ?? null,
             avgViewDuration: row?.[2] ? Math.round(row[2]) : null,
             avgViewPercentage: row?.[3] ? Math.round(row[3] * 10) / 10 : null,
             estimatedMinutesWatched: row?.[1] ?? null,
@@ -124,6 +134,8 @@ export async function GET(req: NextRequest) {
           }
         } catch { /* non-blocking */ }
 
+        const videoCount = Number(ch.statistics.videoCount ?? '0')
+        const totalViews = Number(ch.statistics.viewCount ?? '0')
         const stats = {
           channelId: ch.id,
           title: ch.snippet.title,
@@ -131,6 +143,8 @@ export async function GET(req: NextRequest) {
           subscriberCount: ch.statistics.subscriberCount ?? '0',
           viewCount: ch.statistics.viewCount ?? '0',
           videoCount: ch.statistics.videoCount ?? '0',
+          avgViewsPerVideo: videoCount > 0 ? Math.round(totalViews / videoCount) : null,
+          engagementRate,
           recentVideos,
           analytics,
           lastFetched: new Date().toISOString(),
