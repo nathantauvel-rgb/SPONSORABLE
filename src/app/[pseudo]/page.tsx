@@ -210,21 +210,36 @@ const PublicMediaKitPage = () => {
   const slug = typeof params?.pseudo === 'string' ? params.pseudo : ''
 
   const [remoteData, setRemoteData] = useState<Record<string, unknown> | null>(null)
+  const [printReady, setPrintReady] = useState(false)
+  const isPrintMode = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('print') === '1'
+    : false
 
   useEffect(() => {
     if (!slug) return
     fetch(`/api/public/${slug}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setRemoteData(data) })
-      .catch(() => {})
+      .then(data => {
+        if (data) setRemoteData(data)
+        // Mark ready whether data loaded or not
+        setPrintReady(true)
+      })
+      .catch(() => { setPrintReady(true) })
   }, [slug])
 
+  // Fallback: trigger print after 4s even if API never responds
   useEffect(() => {
-    const isPrint = new URLSearchParams(window.location.search).get('print') === '1'
-    if (!isPrint) return
-    const t = setTimeout(() => window.print(), 800)
+    if (!isPrintMode) return
+    const fallback = setTimeout(() => setPrintReady(true), 4000)
+    return () => clearTimeout(fallback)
+  }, [isPrintMode])
+
+  // Print once data is ready (API responded or fallback reached)
+  useEffect(() => {
+    if (!isPrintMode || !printReady) return
+    const t = setTimeout(() => window.print(), 400)
     return () => clearTimeout(t)
-  }, [])
+  }, [isPrintMode, printReady])
 
   const resolvedTheme = (() => {
     if (remoteData?.theme && typeof remoteData.theme === 'string') {
@@ -398,7 +413,9 @@ const PublicMediaKitPage = () => {
             color-adjust: exact !important;
             max-width: none !important;
             box-sizing: border-box !important;
+            overflow: visible !important;
           }
+          html, body { height: auto !important; }
           #sticky-cta { display: none !important; }
           #contact-form { display: none !important; }
           footer[role="contentinfo"] { display: none !important; }
