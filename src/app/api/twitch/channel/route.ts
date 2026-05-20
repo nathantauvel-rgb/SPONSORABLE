@@ -65,12 +65,24 @@ export async function GET() {
 
   const user = userData.data[0]
 
-  // Follower count (broadcaster reads own channel with moderator:read:followers)
-  const followersRes = await fetch(
-    `https://api.twitch.tv/helix/channels/followers?broadcaster_id=${user.id}`,
-    { headers }
-  )
-  const followersData = followersRes.ok ? await followersRes.json() : null
+  // Fetch all enriched data in parallel
+  const [followersRes, channelRes, vodsRes, clipsRes] = await Promise.allSettled([
+    fetch(`https://api.twitch.tv/helix/channels/followers?broadcaster_id=${user.id}`, { headers }),
+    fetch(`https://api.twitch.tv/helix/channels?broadcaster_id=${user.id}`, { headers }),
+    fetch(`https://api.twitch.tv/helix/videos?user_id=${user.id}&type=archive&first=5`, { headers }),
+    fetch(`https://api.twitch.tv/helix/clips?broadcaster_id=${user.id}&first=5`, { headers }),
+  ])
+
+  const followersData = followersRes.status === 'fulfilled' && followersRes.value.ok
+    ? await followersRes.value.json() : null
+  const channelData = channelRes.status === 'fulfilled' && channelRes.value.ok
+    ? await channelRes.value.json() : null
+  const vodsData = vodsRes.status === 'fulfilled' && vodsRes.value.ok
+    ? await vodsRes.value.json() : null
+  const clipsData = clipsRes.status === 'fulfilled' && clipsRes.value.ok
+    ? await clipsRes.value.json() : null
+
+  const channel = channelData?.data?.[0]
 
   // Subscription count — only available for Twitch affiliates/partners
   let subscriptionCount: number | null = null
@@ -85,7 +97,38 @@ export async function GET() {
     }
   } catch { /* non-affiliate channels don't have subscriptions */ }
 
-  return NextResponse.json({
+  type TwitchVod = { id: string; title: string; publishedAt: string; duration: string; thumbnail: string | null; viewCount: number }
+  type TwitchClip = { id: string; title: string; viewCount: number; thumbnail: string | null; createdAt: string; duration: number }
+
+  const recentStreams: TwitchVod[] = vodsData?.data?.map((v: {
+    id: string; title: string; published_at: string; duration: string;
+    thumbnail_url: string; view_count: number
+  }) => ({
+    id: v.id,
+    title: v.title,
+    publishedAt: v.published_at,
+    duration: v.duration,
+    thumbnail: v.thumbnail_url?.replace('%{width}', '320').replace('%{height}', '180') ?? null,
+    viewCount: v.view_count,
+  })) ?? []
+
+  const topClips: TwitchClip[] = clipsData?.data?.map((c: {
+    id: string; title: string; view_count: number;
+    thumbnail_url: string; created_at: string; duration: number
+  }) => ({
+    id: c.id,
+    title: c.title,
+    viewCount: c.view_count,
+    thumbnail: c.thumbnail_url ?? null,
+    createdAt: c.created_at,
+    duration: c.duration,
+  })) ?? []
+
+  // Total VOD views across recent streams
+  const totalVodViews = recentStreams.reduce((sum, v) => sum + v.viewCount, 0)
+  const avgVodViews = recentStreams.length > 0 ? Math.round(totalVodViews / recentStreams.length) : null
+
+  const result = {
     userId: user.id,
     login: user.login,
     displayName: user.display_name,
@@ -93,6 +136,30 @@ export async function GET() {
     viewCount: user.view_count ?? 0,
     followerCount: followersData?.total ?? 0,
     subscriptionCount,
+    gameName: channel?.game_name ?? null,
+    broadcasterLanguage: channel?.broadcaster_language ?? null,
+    tags: channel?.tags ?? [],
+    recentStreams,
+    topClips,
+    avgVodViews,
     lastFetched: new Date().toISOString(),
-  })
+  }
+
+  // Persist to Platform DB
+  await prisma.platform.upsert({
+    where: { userId_type: { userId: session.user.id, type: 'twitch' } },
+    update: { stats: JSON.parse(JSON.stringify(result)), lastFetched: new Date() },
+    create: {
+      userId: session.user.id,
+      type: 'twitch',
+      platformId: user.id,
+      username: user.login,
+      displayName: user.display_name,
+      avatarUrl: user.profile_image_url ?? undefined,
+      stats: JSON.parse(JSON.stringify(result)),
+      lastFetched: new Date(),
+    },
+  }).catch(err => console.error('[twitch/channel] upsert failed', err))
+
+  return NextResponse.json(result)
 }

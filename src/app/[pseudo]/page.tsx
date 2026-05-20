@@ -317,20 +317,22 @@ const PublicMediaKitPage = () => {
   const ytAvgViewsPerVideo = ytStats?.avgViewsPerVideo as number | null | undefined
   const ytViews90d = ytAnalytics?.views90d as number | null | undefined
 
+  const ytSecondaryStats: { value: string; label: string }[] = ytStats ? [
+    ytViews90d != null
+      ? { value: fmtNum(ytViews90d), label: 'vues (90 derniers jours)' }
+      : { value: fmtNum(String(ytStats.viewCount ?? '0')), label: 'vues totales' },
+    ytAvgViewsPerVideo != null
+      ? { value: fmtNum(ytAvgViewsPerVideo), label: 'vues moy. par vidéo' }
+      : { value: fmtNum(String(ytStats.videoCount ?? '0')), label: 'vidéos publiées' },
+  ] : []
+
   const effectiveYtOverride: Platform | null = ytStats ? {
     id: 'youtube',
     name: 'YouTube',
     color: '#ef4444',
     hero: true,
     mainStat: { value: fmtNum(String(ytStats.subscriberCount ?? '0')), label: 'abonnés' },
-    secondaryStats: [
-      ...(ytViews90d != null
-        ? [{ value: fmtNum(ytViews90d), label: 'vues (90 derniers jours)' }]
-        : [{ value: fmtNum(String(ytStats.viewCount ?? '0')), label: 'vues totales' }]),
-      ...(ytAvgViewsPerVideo != null
-        ? [{ value: fmtNum(ytAvgViewsPerVideo), label: 'vues moy. par vidéo' }]
-        : [{ value: fmtNum(String(ytStats.videoCount ?? '0')), label: 'vidéos publiées' }]),
-    ],
+    secondaryStats: ytSecondaryStats,
   } : localYtOverride
 
   const effectiveLastFetched = remoteYt?.lastFetched ?? null
@@ -339,9 +341,15 @@ const PublicMediaKitPage = () => {
     ? (remoteData.platforms as Array<{ type: string; stats: Record<string, unknown> | null; lastFetched: string | null }>).find(p => p.type === 'twitch')
     : null
   const twitchStats = remoteTwitch?.stats ?? null
+  const twitchRecentStreams = twitchStats?.recentStreams as Array<{ id: string; title: string; publishedAt: string; duration: string; thumbnail: string | null; viewCount: number }> | undefined
+  const twitchTopClips = twitchStats?.topClips as Array<{ id: string; title: string; viewCount: number; thumbnail: string | null; createdAt: string; duration: number }> | undefined
   const twitchSecondaryStats: { value: string; label: string }[] = []
   if (twitchStats) {
-    twitchSecondaryStats.push({ value: fmtNum(Number(twitchStats.viewCount ?? 0)), label: 'vues canal' })
+    if (twitchStats.avgVodViews != null) {
+      twitchSecondaryStats.push({ value: fmtNum(Number(twitchStats.avgVodViews)), label: 'vues moy. par stream' })
+    } else {
+      twitchSecondaryStats.push({ value: fmtNum(Number(twitchStats.viewCount ?? 0)), label: 'vues canal' })
+    }
     if (twitchStats.subscriptionCount != null) {
       twitchSecondaryStats.push({ value: fmtNum(Number(twitchStats.subscriptionCount)), label: 'abonnés payants' })
     }
@@ -623,7 +631,7 @@ const PublicMediaKitPage = () => {
 
             const lastSync = effectiveLastFetched ?? remoteTwitch?.lastFetched ?? null
 
-            const hero = realPlatforms[0]
+            const hero = realPlatforms[0] as Platform
             const secondary = realPlatforms.slice(1)
 
             return (<>
@@ -710,7 +718,7 @@ const PublicMediaKitPage = () => {
       </section>
 
       {/* ── YOUTUBE ANALYTICS ────────────────────────────── */}
-      {(ytAnalytics || ytEngagementRate != null) && (effectiveYtOverride || ytStats) && (() => {
+      {(ytAnalytics != null || ytEngagementRate != null) && (effectiveYtOverride != null || ytStats != null) && (() => {
         const topCountries = ytAnalytics?.topCountries as Array<{ country: string; views: number }> | undefined
         const ageGroups = ytAnalytics?.ageGroups as Array<{ age: string; pct: number }> | undefined
         const gender = ytAnalytics?.gender as { male: number; female: number } | undefined
@@ -863,6 +871,96 @@ const PublicMediaKitPage = () => {
           </div>
         </section>
       )}
+
+      {/* ── TWITCH SECTION ───────────────────────────────── */}
+      {twitchStats && (twitchRecentStreams?.length || twitchTopClips?.length || twitchStats.gameName != null) && (() => {
+        const fmtDuration = (s: string) => {
+          // Twitch format: "1h2m3s" or "45m10s" or "30s"
+          const h = s.match(/(\d+)h/)?.[1]
+          const m = s.match(/(\d+)m/)?.[1]
+          return h ? `${h}h${m ? ` ${m}m` : ''}` : m ? `${m}m` : s
+        }
+        return (
+          <section style={{ padding: '0 24px 80px', background: theme.bg }}>
+            <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <PlatformLogo id="twitch" color="#9146ff" size={20} />
+                <SectionTitle color={theme.text}>Twitch</SectionTitle>
+              </div>
+
+              {/* Game + tags */}
+              {(twitchStats.gameName != null || (twitchStats.tags as string[] | undefined)?.length) && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '28px' }}>
+                  {twitchStats.gameName != null && (
+                    <span style={{ background: '#9146ff22', color: '#9146ff', border: '1px solid #9146ff40', borderRadius: '9999px', padding: '4px 14px', fontSize: '13px', fontWeight: 600 }}>
+                      🎮 {String(twitchStats.gameName)}
+                    </span>
+                  )}
+                  {(twitchStats.tags as string[] | undefined)?.map((tag: string) => (
+                    <span key={tag} style={{ background: theme.statBg, border: `1px solid ${theme.border}`, borderRadius: '9999px', padding: '4px 14px', fontSize: '12px', color: mutedText }}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Streams récents */}
+              {twitchRecentStreams && twitchRecentStreams.length > 0 && (
+                <>
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: theme.subtext, marginBottom: '14px', letterSpacing: '0.02em' }}>Streams récents</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px', marginBottom: '36px' }}>
+                    {twitchRecentStreams.map(s => (
+                      <div key={s.id} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '14px', overflow: 'hidden' }}>
+                        {s.thumbnail && (
+                          <div style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', background: '#0e0e0e' }}>
+                            <img src={s.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" />
+                          </div>
+                        )}
+                        <div style={{ padding: '12px 14px' }}>
+                          <p style={{ fontSize: '13px', fontWeight: 600, color: theme.text, lineHeight: 1.4, marginBottom: '6px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                            {s.title}
+                          </p>
+                          <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: mutedText }}>
+                            <span>👁 {fmtNum(s.viewCount)}</span>
+                            <span>⏱ {fmtDuration(s.duration)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Top clips */}
+              {twitchTopClips && twitchTopClips.length > 0 && (
+                <>
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: theme.subtext, marginBottom: '14px', letterSpacing: '0.02em' }}>Top clips</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
+                    {twitchTopClips.map(c => (
+                      <div key={c.id} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '14px', overflow: 'hidden' }}>
+                        {c.thumbnail && (
+                          <div style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', background: '#0e0e0e' }}>
+                            <img src={c.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" />
+                          </div>
+                        )}
+                        <div style={{ padding: '12px 14px' }}>
+                          <p style={{ fontSize: '13px', fontWeight: 600, color: theme.text, lineHeight: 1.4, marginBottom: '6px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                            {c.title}
+                          </p>
+                          <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: mutedText }}>
+                            <span>👁 {fmtNum(c.viewCount)}</span>
+                            <span>⏱ {Math.round(c.duration)}s</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+        )
+      })()}
 
       {/* ── PARTENARIATS PASSÉS ───────────────────────────── */}
       {showPartnerships && (

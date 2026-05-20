@@ -158,29 +158,71 @@ export async function GET(req: NextRequest) {
       }
 
       if (platform.type === 'twitch' && twitchAppToken) {
+        const twitchHeaders = { 'Client-Id': process.env.AUTH_TWITCH_ID ?? '', Authorization: `Bearer ${twitchAppToken}` }
+
         const r = await fetch(
           `https://api.twitch.tv/helix/users?login=${platform.username}`,
-          { headers: { 'Client-Id': process.env.AUTH_TWITCH_ID ?? '', Authorization: `Bearer ${twitchAppToken}` } }
+          { headers: twitchHeaders }
         )
         if (!r.ok) { results[platform.id] = 'twitch_error'; return }
         const userData = await r.json()
         const user = userData.data?.[0]
         if (!user) { results[platform.id] = 'no_user'; return }
 
-        const fr = await fetch(
-          `https://api.twitch.tv/helix/channels/followers?broadcaster_id=${user.id}`,
-          { headers: { 'Client-Id': process.env.AUTH_TWITCH_ID ?? '', Authorization: `Bearer ${twitchAppToken}` } }
-        )
-        const followerData = fr.ok ? await fr.json() : null
+        const [frRes, chRes, vodsRes, clipsRes] = await Promise.allSettled([
+          fetch(`https://api.twitch.tv/helix/channels/followers?broadcaster_id=${user.id}`, { headers: twitchHeaders }),
+          fetch(`https://api.twitch.tv/helix/channels?broadcaster_id=${user.id}`, { headers: twitchHeaders }),
+          fetch(`https://api.twitch.tv/helix/videos?user_id=${user.id}&type=archive&first=5`, { headers: twitchHeaders }),
+          fetch(`https://api.twitch.tv/helix/clips?broadcaster_id=${user.id}&first=5`, { headers: twitchHeaders }),
+        ])
+
+        const followerData = frRes.status === 'fulfilled' && frRes.value.ok ? await frRes.value.json() : null
+        const channelData = chRes.status === 'fulfilled' && chRes.value.ok ? await chRes.value.json() : null
+        const vodsData = vodsRes.status === 'fulfilled' && vodsRes.value.ok ? await vodsRes.value.json() : null
+        const clipsData = clipsRes.status === 'fulfilled' && clipsRes.value.ok ? await clipsRes.value.json() : null
+
+        const channel = channelData?.data?.[0]
+
+        type CronTwitchVod = { id: string; title: string; publishedAt: string; duration: string; thumbnail: string | null; viewCount: number }
+        type CronTwitchClip = { id: string; title: string; viewCount: number; thumbnail: string | null; createdAt: string; duration: number }
+
+        const recentStreams: CronTwitchVod[] = vodsData?.data?.map((v: { id: string; title: string; published_at: string; duration: string; thumbnail_url: string; view_count: number }) => ({
+          id: v.id, title: v.title, publishedAt: v.published_at, duration: v.duration,
+          thumbnail: v.thumbnail_url?.replace('%{width}', '320').replace('%{height}', '180') ?? null,
+          viewCount: v.view_count,
+        })) ?? []
+
+        const topClips: CronTwitchClip[] = clipsData?.data?.map((c: { id: string; title: string; view_count: number; thumbnail_url: string; created_at: string; duration: number }) => ({
+          id: c.id, title: c.title, viewCount: c.view_count,
+          thumbnail: c.thumbnail_url ?? null, createdAt: c.created_at, duration: c.duration,
+        })) ?? []
+
+        const avgVodViews = recentStreams.length > 0
+          ? Math.round(recentStreams.reduce((s, v) => s + v.viewCount, 0) / recentStreams.length)
+          : null
+
+        // Subscription count (affiliate/partner only)
+        let subscriptionCount: number | null = null
+        try {
+          const subsRes = await fetch(`https://api.twitch.tv/helix/subscriptions?broadcaster_id=${user.id}`, { headers: twitchHeaders })
+          if (subsRes.ok) { subscriptionCount = (await subsRes.json()).total ?? null }
+        } catch { /* non-affiliate */ }
 
         await prisma.platform.update({
           where: { id: platform.id },
           data: {
-            stats: {
+            stats: JSON.parse(JSON.stringify({
               viewCount: user.view_count,
               followerCount: followerData?.total ?? 0,
               displayName: user.display_name,
-            },
+              subscriptionCount,
+              gameName: channel?.game_name ?? null,
+              broadcasterLanguage: channel?.broadcaster_language ?? null,
+              tags: channel?.tags ?? [],
+              recentStreams,
+              topClips,
+              avgVodViews,
+            })),
             lastFetched: new Date(),
           },
         })
