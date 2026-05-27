@@ -137,7 +137,11 @@ function DashboardContent() {
     if (type === 'youtube') setYtDisconnecting(true)
     else setTwitchDisconnecting(true)
     try {
-      await fetch(`/api/platforms/${type}`, { method: 'DELETE' })
+      const res = await fetch(`/api/platforms/${type}`, { method: 'DELETE' })
+      if (!res.ok) {
+        console.error(`[disconnect] ${type} failed:`, res.status)
+        return
+      }
       if (type === 'youtube') {
         setYtData(null)
         localStorage.removeItem('sponsorable_yt_data')
@@ -145,6 +149,8 @@ function DashboardContent() {
         setTwitchData(null)
         localStorage.removeItem('sponsorable_twitch_data')
       }
+    } catch (err) {
+      console.error(`[disconnect] ${type} error:`, err)
     } finally {
       if (type === 'youtube') setYtDisconnecting(false)
       else setTwitchDisconnecting(false)
