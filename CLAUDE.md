@@ -123,3 +123,34 @@ Toujours développer sur `Test`, merger vers `main` quand stable.
 - Commentaires en **français**
 - Commits en **anglais** (format conventionnel : feat/fix/chore)
 - Toujours vérifier avec `npx tsc --noEmit` avant de committer
+
+---
+
+## Comment travailler avec Claude (rappels session)
+
+### Réflexes à avoir
+- **Début de session** : rien à faire, Claude relit ce fichier automatiquement
+- **Décision importante** : dire "note ça dans le CLAUDE.md"
+- **Fin de session** : dire "mets à jour le CLAUDE.md et Notion"
+- **Bug** : décrire ce qu'on fait, ce qui se passe, ce qu'on attendait
+- **Avant de pusher sur main** : toujours tester en local d'abord
+
+### Comment formuler les demandes
+- Donner le contexte *pourquoi* (pas juste *quoi*)
+- Parler en vocal retranscrit / français familier, Claude s'adapte
+- Si le résultat ne convient pas → décrire ce qui cloche, on itère
+
+### Outils connectés à Claude
+| Outil | Capacité |
+|---|---|
+| Linear | Créer, modifier, lire des tickets |
+| Notion | Créer et mettre à jour des pages |
+| GitHub | Lire le code, pusher des commits |
+| Figma | Lire des designs (MCP connecté) |
+| Recherche web | Concurrents, marché, outils |
+
+### Ce que Claude ne peut PAS faire
+- Se souvenir entre sessions sans ce fichier CLAUDE.md
+- Tester sur téléphone ou en vrai (il voit le code, pas l'app)
+- Prendre des décisions business à ta place
+- Accéder à internet en temps réel sans recherche web explicite
