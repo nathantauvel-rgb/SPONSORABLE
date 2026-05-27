@@ -11,7 +11,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
         select: {
           stripeSubscriptionStatus: true,
           platforms: {
-            select: { type: true, stats: true, lastFetched: true },
+            select: { type: true, username: true, stats: true, lastFetched: true },
           },
         },
       },
@@ -35,6 +35,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     partnerships: profile.partnerships,
     bannerUrl: isPro ? profile.bannerUrl : null,
     calendlyUrl: isPro ? profile.calendlyUrl : null,
+    twitterHandle: profile.twitterHandle ?? null,
+    instagramHandle: profile.instagramHandle ?? null,
+    tiktokHandle: profile.tiktokHandle ?? null,
     platforms: profile.user.platforms,
     isPro,
   })

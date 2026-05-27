@@ -157,6 +157,15 @@ export async function GET() {
   const data = await res.json()
 
   if (data.error) {
+    const errMsg: string = data.error.message ?? ''
+    // Scopes insuffisants → le token Google stocké n'a pas les droits YouTube
+    if (
+      data.error.code === 403 ||
+      errMsg.toLowerCase().includes('insufficient') ||
+      errMsg.toLowerCase().includes('scope')
+    ) {
+      return NextResponse.json({ error: 'INSUFFICIENT_SCOPES' }, { status: 403 })
+    }
     if (data.error.code === 401) {
       const refreshed = await refreshGoogleToken(account)
       if (refreshed) {
@@ -165,6 +174,12 @@ export async function GET() {
           { headers: { Authorization: `Bearer ${refreshed}` } }
         )
         const retryData = await retry.json()
+        if (retryData.error) {
+          const retryMsg: string = retryData.error.message ?? ''
+          if (retryMsg.toLowerCase().includes('insufficient') || retryMsg.toLowerCase().includes('scope')) {
+            return NextResponse.json({ error: 'INSUFFICIENT_SCOPES' }, { status: 403 })
+          }
+        }
         if (!retryData.error && retryData.items?.length) {
           token = refreshed
           const ch = retryData.items[0]
@@ -191,7 +206,7 @@ export async function GET() {
         }
       }
     }
-    return NextResponse.json({ error: data.error.message }, { status: 400 })
+    return NextResponse.json({ error: errMsg || 'Erreur YouTube' }, { status: 400 })
   }
 
   if (!data.items?.length) {

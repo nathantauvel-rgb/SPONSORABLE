@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Sidebar from '@/components/layout/Sidebar'
 import Button from '@/components/ui/button'
-import { creator, exampleCreators, pastPartners } from '@/data/mockData'
+import { exampleCreators } from '@/data/mockData'
 
 type Partnership = {
   name: string
@@ -14,7 +14,7 @@ type Partnership = {
   date: string
 }
 
-const DEFAULT_FORMATS = ['FPS', 'Variety Gaming', 'Esport']
+const DEFAULT_FORMATS: string[] = []
 
 const load = <T,>(key: string, fallback: T): T => {
   try {
@@ -26,6 +26,63 @@ const load = <T,>(key: string, fallback: T): T => {
 }
 
 const EMPTY_PARTNERSHIP: Partnership = { name: '', category: '', result: '', date: '' }
+
+/* ── Banner uploader component ───────────────────────────────── */
+function BannerUploader({ onUrl }: { onUrl: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleFile = async (file: File) => {
+    setError('')
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('type', 'banner')
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Erreur lors de l\'upload'); return }
+      onUrl(data.url)
+    } catch {
+      setError('Erreur réseau, réessaie')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div>
+      <label
+        style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: '8px', height: '100px', border: '2px dashed rgba(0,0,0,0.12)', borderRadius: '10px',
+          cursor: uploading ? 'wait' : 'pointer', background: '#f8fafc', transition: 'all 150ms',
+          opacity: uploading ? 0.7 : 1,
+        }}
+      >
+        {uploading ? (
+          <>
+            <span style={{ width: '24px', height: '24px', border: '3px solid rgba(22,163,74,0.3)', borderTopColor: '#16a34a', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Upload en cours…</span>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: '24px' }}>🖼️</span>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Clique pour uploader une image</span>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>JPG, PNG, WebP · Max 5 Mo · Format 16:9 recommandé</span>
+          </>
+        )}
+        <input
+          type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+          style={{ display: 'none' }}
+          disabled={uploading}
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+        />
+      </label>
+      {error && <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '6px' }}>{error}</p>}
+    </div>
+  )
+}
 
 export default function MediaKitEditorPage() {
   const [pro, setPro] = useState(false)
@@ -47,24 +104,64 @@ export default function MediaKitEditorPage() {
           setSelectedTemplateId(data.profile.theme)
           localStorage.setItem('sponsorable_template', data.profile.theme)
         }
+        if (data?.profile?.twitterHandle != null) { setTwitterHandle(data.profile.twitterHandle); localStorage.setItem('sponsorable_twitter', JSON.stringify(data.profile.twitterHandle)) }
+        if (data?.profile?.instagramHandle != null) { setInstagramHandle(data.profile.instagramHandle); localStorage.setItem('sponsorable_instagram', JSON.stringify(data.profile.instagramHandle)) }
+        if (data?.profile?.tiktokHandle != null) { setTiktokHandle(data.profile.tiktokHandle); localStorage.setItem('sponsorable_tiktok', JSON.stringify(data.profile.tiktokHandle)) }
+        // Charger la bannière depuis la DB (URL réelle, pas base64)
+        if (data?.profile?.bannerUrl) {
+          setBannerUrl(data.profile.bannerUrl)
+          localStorage.setItem('sponsorable_banner', JSON.stringify(data.profile.bannerUrl))
+        }
+        // Charger le vrai profil depuis la DB (source de vérité, évite les données mock)
+        if (data?.profile) {
+          const dbProfile = {
+            pseudo: data.profile.displayName ?? '',
+            bio: data.profile.bio ?? '',
+            niche: data.profile.niche ?? '',
+            country: '',
+            email: '',
+          }
+          setProfile(dbProfile)
+
+          // Formats depuis DB
+          if (Array.isArray(data.profile.formats)) {
+            setFormats(data.profile.formats)
+            localStorage.setItem('sponsorable_formats', JSON.stringify(data.profile.formats))
+          }
+
+          // Partenariats depuis DB
+          if (Array.isArray(data.profile.partnerships)) {
+            setPartnerships(data.profile.partnerships)
+            localStorage.setItem('sponsorable_partnerships', JSON.stringify(data.profile.partnerships))
+          }
+
+          // Visibilité partenariats depuis DB
+          if (typeof data.profile.showPartnerships === 'boolean') {
+            setShowPartnerships(data.profile.showPartnerships)
+            localStorage.setItem('sponsorable_show_partnerships', String(data.profile.showPartnerships))
+          }
+
+          // Calendly depuis DB
+          if (data.profile.calendlyUrl != null) {
+            setCalendlyUrl(data.profile.calendlyUrl)
+            localStorage.setItem('sponsorable_calendly', JSON.stringify(data.profile.calendlyUrl))
+          }
+        }
       })
       .catch(() => {})
   }, [])
   const [profile, setProfile] = useState(() => {
     try {
       const saved = localStorage.getItem('sponsorable_profile')
-      return saved ? JSON.parse(saved) : {
-        pseudo: creator.pseudo, niche: creator.niche, bio: creator.bio,
-        country: creator.country, email: creator.email,
-      }
+      // Ne pas utiliser les données mock si localStorage est vide
+      return saved ? JSON.parse(saved) : { pseudo: '', niche: '', bio: '', country: '', email: '' }
     } catch {
-      return { pseudo: creator.pseudo, niche: creator.niche, bio: creator.bio,
-        country: creator.country, email: creator.email }
+      return { pseudo: '', niche: '', bio: '', country: '', email: '' }
     }
   })
   const [formats, setFormats] = useState<string[]>(() => load('sponsorable_formats', DEFAULT_FORMATS))
   const [showPartnerships, setShowPartnerships] = useState<boolean>(() => load('sponsorable_show_partnerships', true))
-  const [partnerships, setPartnerships] = useState<Partnership[]>(() => load('sponsorable_partnerships', pastPartners))
+  const [partnerships, setPartnerships] = useState<Partnership[]>(() => load('sponsorable_partnerships', []))
   const [addingPartnership, setAddingPartnership] = useState(false)
   const [draft, setDraft] = useState<Partnership>(EMPTY_PARTNERSHIP)
   const [saved, setSaved] = useState(false)
@@ -72,6 +169,9 @@ export default function MediaKitEditorPage() {
   const profileCardRef = useRef<HTMLDivElement>(null)
   const [bannerUrl, setBannerUrl] = useState<string>(() => load('sponsorable_banner', ''))
   const [calendlyUrl, setCalendlyUrl] = useState<string>(() => load('sponsorable_calendly', ''))
+  const [twitterHandle, setTwitterHandle] = useState<string>(() => load('sponsorable_twitter', ''))
+  const [instagramHandle, setInstagramHandle] = useState<string>(() => load('sponsorable_instagram', ''))
+  const [tiktokHandle, setTiktokHandle] = useState<string>(() => load('sponsorable_tiktok', ''))
 
   const removeFormat = (f: string) => setFormats(formats.filter(x => x !== f))
 
@@ -92,6 +192,9 @@ export default function MediaKitEditorPage() {
     localStorage.setItem('sponsorable_partnerships', JSON.stringify(partnerships))
     localStorage.setItem('sponsorable_banner', JSON.stringify(bannerUrl))
     localStorage.setItem('sponsorable_calendly', JSON.stringify(calendlyUrl))
+    localStorage.setItem('sponsorable_twitter', JSON.stringify(twitterHandle))
+    localStorage.setItem('sponsorable_instagram', JSON.stringify(instagramHandle))
+    localStorage.setItem('sponsorable_tiktok', JSON.stringify(tiktokHandle))
     try {
       const slug = (profile.pseudo ?? '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'me'
       await fetch('/api/profile', {
@@ -108,6 +211,9 @@ export default function MediaKitEditorPage() {
           partnerships,
           bannerUrl: bannerUrl || undefined,
           calendlyUrl: calendlyUrl || undefined,
+          twitterHandle: twitterHandle || null,
+          instagramHandle: instagramHandle || null,
+          tiktokHandle: tiktokHandle || null,
         }),
       })
     } catch { /* localStorage already saved */ }
@@ -495,18 +601,7 @@ export default function MediaKitEditorPage() {
                     <button onClick={() => setBannerUrl('')} style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer', padding: '4px 8px', fontSize: '12px', fontWeight: 600 }}>✕ Retirer</button>
                   </div>
                 ) : (
-                  <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '100px', border: '2px dashed rgba(0,0,0,0.12)', borderRadius: '10px', cursor: 'pointer', background: '#f8fafc', transition: 'all 150ms' }}>
-                    <span style={{ fontSize: '24px' }}>🖼️</span>
-                    <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Clique pour uploader une image</span>
-                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>Même format que ta bannière YouTube · 2560×1440px</span>
-                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
-                      const file = e.target.files?.[0]
-                      if (!file) return
-                      const reader = new FileReader()
-                      reader.onload = ev => setBannerUrl(ev.target?.result as string)
-                      reader.readAsDataURL(file)
-                    }} />
-                  </label>
+                  <BannerUploader onUrl={url => setBannerUrl(url)} />
                 )}
               </div>
             ) : (
@@ -517,6 +612,35 @@ export default function MediaKitEditorPage() {
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* Réseaux sociaux */}
+          <div className="card-standard" style={{ padding: '28px' }}>
+            <h3 style={sectionTitle}>Réseaux sociaux</h3>
+            <p style={{ ...subText, marginBottom: '16px' }}>Tes handles apparaîtront sur ton media kit avec un lien cliquable. YouTube et Twitch sont ajoutés automatiquement si connectés.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={labelStyle}>Twitter / X</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#94a3b8', fontWeight: 500 }}>@</span>
+                  <input style={{ ...inputStyle, paddingLeft: '28px' }} value={twitterHandle} onChange={e => setTwitterHandle(e.target.value.replace(/^@/, ''))} onFocus={onFocus} onBlur={onBlur} placeholder="tonpseudo" />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Instagram</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#94a3b8', fontWeight: 500 }}>@</span>
+                  <input style={{ ...inputStyle, paddingLeft: '28px' }} value={instagramHandle} onChange={e => setInstagramHandle(e.target.value.replace(/^@/, ''))} onFocus={onFocus} onBlur={onBlur} placeholder="tonpseudo" />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>TikTok</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#94a3b8', fontWeight: 500 }}>@</span>
+                  <input style={{ ...inputStyle, paddingLeft: '28px' }} value={tiktokHandle} onChange={e => setTiktokHandle(e.target.value.replace(/^@/, ''))} onFocus={onFocus} onBlur={onBlur} placeholder="tonpseudo" />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Lien de réservation */}

@@ -2,6 +2,7 @@
 
 import { Instagram, Mail, Twitter, Youtube } from 'lucide-react'
 import Flag from '@/components/ui/Flag'
+import { QRCodeSVG } from 'qrcode.react'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import {
@@ -225,6 +226,15 @@ const PublicMediaKitPage = () => {
         setPrintReady(true)
       })
       .catch(() => { setPrintReady(true) })
+
+    // Logger la visite (non bloquant, ignoré en mode print)
+    if (!new URLSearchParams(window.location.search).has('print')) {
+      fetch('/api/pageview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      }).catch(() => {})
+    }
   }, [slug])
 
   // Fallback: trigger print after 4s even if API never responds
@@ -293,6 +303,8 @@ const PublicMediaKitPage = () => {
     message: '',
   })
   const [sent, setSent] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const localFormats = useState<string[]>(loadFormats)[0]
   const localShowPartnerships = useState<boolean>(loadShowPartnerships)[0]
   const localPartnerships = useState(loadPartnerships)[0]
@@ -371,6 +383,17 @@ const PublicMediaKitPage = () => {
     : localConnectedIds
   const bannerUrl = effectiveBannerUrl
   const calendlyUrl = effectiveCalendlyUrl
+
+  // Liens réseaux sociaux : plateformes connectées (auto) + handles manuels
+  const remoteYtUsername = (remoteData?.platforms as Array<{ type: string; username?: string }> | undefined)?.find(p => p.type === 'youtube')?.username ?? null
+  const remoteTwitchUsername = (remoteData?.platforms as Array<{ type: string; username?: string }> | undefined)?.find(p => p.type === 'twitch')?.username ?? null
+  const socialLinks = [
+    remoteYtUsername ? { id: 'youtube', label: 'YouTube', handle: remoteYtUsername.startsWith('@') ? remoteYtUsername : `@${remoteYtUsername}`, url: `https://youtube.com/${remoteYtUsername.startsWith('@') ? remoteYtUsername : `@${remoteYtUsername}`}`, color: '#ef4444' } : null,
+    remoteTwitchUsername ? { id: 'twitch', label: 'Twitch', handle: `@${remoteTwitchUsername}`, url: `https://twitch.tv/${remoteTwitchUsername}`, color: '#9146ff' } : null,
+    remoteData?.twitterHandle ? { id: 'twitter', label: 'Twitter / X', handle: `@${remoteData.twitterHandle}`, url: `https://x.com/${remoteData.twitterHandle}`, color: isDark ? '#ffffff' : '#0f172a' } : null,
+    remoteData?.instagramHandle ? { id: 'instagram', label: 'Instagram', handle: `@${remoteData.instagramHandle}`, url: `https://instagram.com/${remoteData.instagramHandle}`, color: '#e1306c' } : null,
+    remoteData?.tiktokHandle ? { id: 'tiktok', label: 'TikTok', handle: `@${remoteData.tiktokHandle}`, url: `https://tiktok.com/@${remoteData.tiktokHandle}`, color: isDark ? '#ffffff' : '#0f172a' } : null,
+  ].filter(Boolean) as { id: string; label: string; handle: string; url: string; color: string }[]
   const ytOverride = effectiveYtOverride
   const [stickyVisible, setStickyVisible] = useState(false)
 
@@ -380,9 +403,28 @@ const PublicMediaKitPage = () => {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSent(true)
+    setSubmitting(true)
+    setSubmitError('')
+    try {
+      const pseudo = params.pseudo as string
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: pseudo, ...form }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setSubmitError(data.error ?? 'Erreur lors de l\'envoi')
+      } else {
+        setSent(true)
+      }
+    } catch {
+      setSubmitError('Erreur réseau, réessaie dans quelques instants')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const labelStyle: React.CSSProperties = {
@@ -420,6 +462,11 @@ const PublicMediaKitPage = () => {
   return (
     <div style={{ background: theme.bg, minHeight: '100vh' }}>
       <style>{`
+        select#partnership-budget option,
+        select#partnership-type option {
+          background: ${isDark ? '#1e293b' : '#ffffff'};
+          color: ${isDark ? '#f1f5f9' : '#0f172a'};
+        }
         @media print {
           @page { margin: 10mm 10mm; size: A4; }
           * {
@@ -437,6 +484,10 @@ const PublicMediaKitPage = () => {
           .pdf-export-date { display: block !important; text-align: right; font-size: 10px; color: #cbd5e1; padding: 8px 0 0; border-top: 1px solid #e2e8f0; margin-top: 8px; }
         }
         .pdf-export-date { display: none; }
+        .pdf-qr-block { display: none; }
+        @media print {
+          .pdf-qr-block { display: flex !important; }
+        }
       `}</style>
 
       {/* ── BANNIÈRE ──────────────────────────────────────── */}
@@ -1053,7 +1104,7 @@ const PublicMediaKitPage = () => {
                       required
                       value={form.budget}
                       onChange={e => setForm({ ...form, budget: e.target.value })}
-                      style={{ ...inputStyle, cursor: 'pointer' }}
+                      style={{ ...inputStyle, cursor: 'pointer', colorScheme: isDark ? 'dark' : 'light' }}
                       onFocus={focusStyle}
                       onBlur={blurStyle}
                     >
@@ -1073,7 +1124,7 @@ const PublicMediaKitPage = () => {
                       required
                       value={form.type}
                       onChange={e => setForm({ ...form, type: e.target.value })}
-                      style={{ ...inputStyle, cursor: 'pointer' }}
+                      style={{ ...inputStyle, cursor: 'pointer', colorScheme: isDark ? 'dark' : 'light' }}
                       onFocus={focusStyle}
                       onBlur={blurStyle}
                     >
@@ -1101,52 +1152,71 @@ const PublicMediaKitPage = () => {
                     />
                   </div>
 
+                  {submitError && (
+                    <p style={{ fontSize: '13px', color: '#ef4444', textAlign: 'center', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', borderRadius: '8px' }}>
+                      {submitError}
+                    </p>
+                  )}
+
                   <button
                     type="submit"
+                    disabled={submitting}
                     style={{
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                       background: theme.accent, color: btnTextColor, border: 'none', borderRadius: '9999px',
-                      padding: '14px 28px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', width: '100%',
+                      padding: '14px 28px', fontSize: '15px', fontWeight: 600, width: '100%',
+                      cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.7 : 1,
                       transition: 'opacity 150ms ease',
                     }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.85' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+                    onMouseEnter={e => { if (!submitting) (e.currentTarget as HTMLElement).style.opacity = '0.85' }}
+                    onMouseLeave={e => { if (!submitting) (e.currentTarget as HTMLElement).style.opacity = '1' }}
                   >
-                    Envoyer la proposition →
+                    {submitting ? 'Envoi en cours...' : 'Envoyer la proposition →'}
                   </button>
                 </form>
               </>
             )}
 
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '28px', paddingTop: '24px', borderTop: `1px solid ${theme.border}` }}>
-              {[
-                { Icon: Youtube, color: '#ef4444', label: 'YouTube' },
-                { Icon: Twitter, color: isDark ? '#ffffff' : '#0f172a', label: 'Twitter / X' },
-                { Icon: Instagram, color: '#e1306c', label: 'Instagram' },
-                { Icon: Mail, color: '#0284c7', label: 'Email' },
-              ].map(({ Icon, color, label }, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  aria-label={label}
-                  style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, background: isDark ? 'rgba(255,255,255,0.06)' : 'white', transition: 'all 150ms ease' }}
-                  onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.accent; ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)' }}
-                  onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.border; ;(e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
-                >
-                  <Icon size={18} />
-                </a>
-              ))}
-              <a
-                href="#"
-                aria-label="Twitch"
-                style={{ width: '40px', height: '40px', borderRadius: '10px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDark ? 'rgba(255,255,255,0.06)' : 'white', transition: 'all 150ms ease' }}
-                onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.accent; ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)' }}
-                onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.borderColor = theme.border; ;(e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#9146ff" aria-hidden="true">
-                  <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
-                </svg>
-              </a>
+            {socialLinks.length > 0 && (
+              <div style={{ marginTop: '28px', paddingTop: '24px', borderTop: `1px solid ${theme.border}` }}>
+                <p style={{ fontSize: '11px', fontWeight: 600, color: theme.subtext, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '14px', textAlign: 'center' }}>Retrouve-moi sur</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                  {socialLinks.map(({ id, label, handle, url, color }) => (
+                    <a
+                      key={id}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '10px', border: `1px solid ${theme.border}`, background: isDark ? 'rgba(255,255,255,0.06)' : 'white', textDecoration: 'none', transition: 'all 150ms ease' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = color; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = theme.border; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
+                    >
+                      {id === 'youtube' && <svg width="16" height="16" viewBox="0 0 24 24" fill={color}><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/><path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="white"/></svg>}
+                      {id === 'twitch' && <svg width="16" height="16" viewBox="0 0 24 24" fill={color}><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>}
+                      {id === 'twitter' && <svg width="16" height="16" viewBox="0 0 24 24" fill={color}><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>}
+                      {id === 'instagram' && <svg width="16" height="16" viewBox="0 0 24 24" fill={color}><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>}
+                      {id === 'tiktok' && <svg width="16" height="16" viewBox="0 0 24 24" fill={color}><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.78a4.85 4.85 0 01-1.01-.09z"/></svg>}
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: theme.text }}>{handle}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* QR code — visible uniquement en PDF */}
+            <div className="pdf-qr-block" style={{ display: 'none', alignItems: 'center', gap: '16px', marginTop: '28px', paddingTop: '24px', borderTop: `1px solid ${theme.border}` }}>
+              <QRCodeSVG
+                value={typeof window !== 'undefined' ? window.location.href.split('?')[0] : ''}
+                size={80}
+                bgColor="transparent"
+                fgColor={isDark ? '#ffffff' : '#0f172a'}
+                level="M"
+              />
+              <div>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: theme.text, marginBottom: '2px' }}>Scanne pour accéder au media kit en ligne</p>
+                <p style={{ fontSize: '10px', color: theme.subtext }}>Tous les liens sont cliquables sur la version web</p>
+              </div>
             </div>
           </div>
         </div>

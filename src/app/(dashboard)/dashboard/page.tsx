@@ -1,7 +1,7 @@
 'use client'
 
 import { Copy, ExternalLink } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
 import Sidebar from '@/components/layout/Sidebar'
@@ -70,7 +70,7 @@ const StatusBadge = ({ connected }: { connected: boolean }) => (
   </span>
 )
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session } = useSession()
@@ -78,6 +78,8 @@ export default function DashboardPage() {
   const [ytData, setYtData] = useState<YTData | null>(null)
   const [ytLoading, setYtLoading] = useState(false)
   const [ytError, setYtError] = useState('')
+  const [ytNeedsReauth, setYtNeedsReauth] = useState(false)
+  const [ytReauthLoading, setYtReauthLoading] = useState(false)
 
   const [twitchData, setTwitchData] = useState<TwitchData | null>(null)
   const [twitchLoading, setTwitchLoading] = useState(false)
@@ -90,11 +92,17 @@ export default function DashboardPage() {
   const fetchYouTube = async () => {
     setYtLoading(true)
     setYtError('')
+    setYtNeedsReauth(false)
     try {
       const res = await fetch('/api/youtube/channel')
       const data = await res.json()
       if (!res.ok) {
-        setYtError(data.error ?? 'Erreur inconnue')
+        if (data.error === 'INSUFFICIENT_SCOPES') {
+          setYtNeedsReauth(true)
+          setYtError('Permissions YouTube manquantes — reconnexion requise.')
+        } else {
+          setYtError(data.error ?? 'Erreur inconnue')
+        }
       } else {
         setYtData(data)
         localStorage.setItem('sponsorable_yt_data', JSON.stringify(data))
@@ -104,6 +112,16 @@ export default function DashboardPage() {
     } finally {
       setYtLoading(false)
     }
+  }
+
+  const handleYouTubeReauth = async () => {
+    setYtReauthLoading(true)
+    try {
+      // Supprimer l'ancien token Google (scopes insuffisants)
+      await fetch('/api/platforms/google-reauth', { method: 'DELETE' })
+    } catch { /* continue */ }
+    // Lancer un nouveau OAuth Google avec tous les scopes YouTube + prompt consent
+    signIn('google', { callbackUrl: '/dashboard?connected=youtube' })
   }
 
   const fetchTwitch = async () => {
@@ -258,11 +276,11 @@ export default function DashboardPage() {
                   </button>
                 ) : !ytLoading && (
                   <button
-                    onClick={() => signIn('google', { callbackUrl: '/dashboard?connected=youtube' }, {
-                      scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
-                      prompt: 'consent',
-                      access_type: 'offline',
-                    })}
+                    onClick={async () => {
+                      // Effacer l'éventuel ancien token Google sans scopes YouTube
+                      await fetch('/api/platforms/google-reauth', { method: 'DELETE' }).catch(() => {})
+                      signIn('google', { callbackUrl: '/dashboard?connected=youtube' })
+                    }}
                     style={{ fontSize: '12px', color: '#ef4444', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
                     Connecter →
@@ -272,7 +290,23 @@ export default function DashboardPage() {
             </div>
 
             {ytError && (
-              <p style={{ fontSize: '12px', color: '#ef4444', padding: '0 4px' }}>⚠ YouTube : {ytError}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', marginTop: '4px' }}>
+                <p style={{ fontSize: '12px', color: '#dc2626', flex: 1 }}>⚠ YouTube : {ytError}</p>
+                {ytNeedsReauth && (
+                  <button
+                    onClick={handleYouTubeReauth}
+                    disabled={ytReauthLoading}
+                    style={{
+                      padding: '6px 14px', borderRadius: '8px', border: 'none',
+                      background: '#dc2626', color: 'white', fontSize: '12px',
+                      fontWeight: 700, cursor: ytReauthLoading ? 'wait' : 'pointer',
+                      whiteSpace: 'nowrap', opacity: ytReauthLoading ? 0.7 : 1,
+                    }}
+                  >
+                    {ytReauthLoading ? '...' : 'Reconnecter Google →'}
+                  </button>
+                )}
+              </div>
             )}
 
             {/* Twitch */}
@@ -321,13 +355,19 @@ export default function DashboardPage() {
         {/* Public link */}
         <div style={{ maxWidth: '560px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', marginBottom: '16px' }}>Ton lien public</h3>
-          <div style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500 }}>sponsorable.gg/alexplays</span>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => navigator.clipboard.writeText('https://sponsorable.gg/alexplays')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Copier"><Copy size={15} /></button>
-              <button onClick={() => router.push('/p/alexplays')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Ouvrir"><ExternalLink size={15} /></button>
+          {publicPseudo ? (
+            <div style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500 }}>sponsorable.gg/{publicPseudo}</span>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.gg/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Copier"><Copy size={15} /></button>
+                <button onClick={() => router.push(`/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Ouvrir"><ExternalLink size={15} /></button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div style={{ background: '#f8fafc', border: '1px dashed rgba(0,0,0,0.12)', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px' }}>
+              <span style={{ fontSize: '14px', color: '#94a3b8' }}>Configure ton pseudo dans le media kit pour obtenir ton lien →</span>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
             <Button variant="primary" arrow onClick={() => publicPseudo ? router.push(`/${publicPseudo}`) : router.push('/dashboard/mediakit')}>Voir ma page</Button>
             {publicPseudo ? (
@@ -353,5 +393,13 @@ export default function DashboardPage() {
       </main>
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardContent />
+    </Suspense>
   )
 }

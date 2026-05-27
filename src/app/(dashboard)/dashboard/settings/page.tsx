@@ -1,8 +1,9 @@
 'use client'
 
 import { Bell, ChevronRight, Globe, Lock, Shield, Trash2, User, Zap } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 import Sidebar from '@/components/layout/Sidebar'
 
@@ -11,16 +12,16 @@ const loadPlan = () => { try { return localStorage.getItem('sponsorable_plan') |
 const loadProfile = () => {
   try {
     const saved = localStorage.getItem('sponsorable_profile')
-    if (!saved) return { pseudo: 'AlexPlays', email: 'alex@alexplays.fr', bio: '', niche: 'Gaming · Minecraft · FPS' }
+    if (!saved) return { pseudo: '', email: '', bio: '', niche: '' }
     const p = JSON.parse(saved)
     return {
-      pseudo: p.pseudo || 'AlexPlays',
-      email: p.email || 'alex@alexplays.fr',
+      pseudo: p.pseudo || '',
+      email: p.email || '',
       bio: p.bio || '',
-      niche: p.niche || 'Gaming · Minecraft · FPS',
+      niche: p.niche || '',
     }
   } catch {
-    return { pseudo: 'AlexPlays', email: 'alex@alexplays.fr', bio: '', niche: 'Gaming · Minecraft · FPS' }
+    return { pseudo: '', email: '', bio: '', niche: '' }
   }
 }
 
@@ -62,7 +63,7 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   </button>
 )
 
-export default function SettingsPage() {
+function SettingsContent() {
   const profile = loadProfile()
   const searchParams = useSearchParams()
 
@@ -74,6 +75,7 @@ export default function SettingsPage() {
   const [currentPlan, setCurrentPlan] = useState(loadPlan)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
+  const [planLoading, setPlanLoading] = useState(true)
 
   const handleCheckout = async () => {
     setCheckoutLoading(true)
@@ -106,10 +108,35 @@ export default function SettingsPage() {
     }
   }, [])
 
+  // Charger le plan réel depuis la DB
+  useEffect(() => {
+    fetch('/api/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          const plan = data.isPro ? 'pro' : 'free'
+          setCurrentPlan(plan)
+          try { localStorage.setItem('sponsorable_plan', plan) } catch {}
+        }
+      })
+      .catch(() => {})
+      .finally(() => setPlanLoading(false))
+  }, [])
+
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
-      localStorage.setItem('sponsorable_plan', 'pro')
-      setCurrentPlan('pro')
+      // Stripe vient de confirmer le paiement — on recharge depuis la DB après quelques secondes
+      // (le webhook peut prendre un peu de temps)
+      setTimeout(() => {
+        fetch('/api/me')
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (data?.isPro) {
+              setCurrentPlan('pro')
+              try { localStorage.setItem('sponsorable_plan', 'pro') } catch {}
+            }
+          }).catch(() => {})
+      }, 2000)
       setTimeout(() => {
         planRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 100)
@@ -119,10 +146,24 @@ export default function SettingsPage() {
   const [notifNewMessage, setNotifNewMessage] = useState(true)
   const [notifWeeklyReport, setNotifWeeklyReport] = useState(true)
   const [notifTips, setNotifTips] = useState(false)
+  const [notifSaving, setNotifSaving] = useState(false)
+
+  // Changement de mot de passe
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [currentPwd, setCurrentPwd] = useState('')
+  const [newPwd, setNewPwd] = useState('')
+  const [confirmPwd, setConfirmPwd] = useState('')
+  const [pwdError, setPwdError] = useState('')
+  const [pwdSuccess, setPwdSuccess] = useState(false)
+  const [pwdLoading, setPwdLoading] = useState(false)
+  const [hasPassword, setHasPassword] = useState(false)
 
   const [pagePublic, setPagePublic] = useState(true)
+  const [publicSlug, setPublicSlug] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteInput, setDeleteInput] = useState('')
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   const [saved, setSaved] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -139,6 +180,50 @@ export default function SettingsPage() {
   }
 
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current) }, [])
+
+  // Charger isPublic + slug depuis la DB
+  useEffect(() => {
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.profile) {
+          setPagePublic(data.profile.isPublic ?? true)
+          setPublicSlug(data.profile.slug ?? '')
+        }
+      }).catch(() => {})
+  }, [])
+
+  // Charger les préférences de notification
+  useEffect(() => {
+    fetch('/api/notifications')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.prefs) {
+          setNotifNewMessage(data.prefs.notifNewMessage ?? true)
+          setNotifWeeklyReport(data.prefs.notifWeeklyReport ?? true)
+          setNotifTips(data.prefs.notifProductUpdates ?? false)
+        }
+      }).catch(() => {})
+  }, [])
+
+  // Détecter si l'user a un mot de passe (compte Sponsorable)
+  useEffect(() => {
+    fetch('/api/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.hasPassword !== undefined) setHasPassword(data.hasPassword) })
+      .catch(() => {})
+  }, [])
+
+  const handleTogglePublic = async (val: boolean) => {
+    setPagePublic(val)
+    try {
+      await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: publicSlug || pseudo.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'me', isPublic: val }),
+      })
+    } catch {}
+  }
 
   const inputStyle = {
     width: '100%', padding: '10px 14px', fontSize: '14px', color: '#0f172a',
@@ -313,16 +398,16 @@ export default function SettingsPage() {
                   <p style={{ fontSize: '14px', fontWeight: 500, color: '#0f172a' }}>Page visible publiquement</p>
                   <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>Les marques peuvent accéder à ton media kit via le lien</p>
                 </div>
-                <Toggle checked={pagePublic} onChange={setPagePublic} />
+                <Toggle checked={pagePublic} onChange={handleTogglePublic} />
               </div>
               <div style={{ padding: '14px 0' }}>
                 <p style={{ fontSize: '12px', fontWeight: 600, color: '#475569', letterSpacing: '0.03em', textTransform: 'uppercase', marginBottom: '8px' }}>Lien public</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{ flex: 1, padding: '10px 14px', background: '#f1f5f9', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', fontSize: '13px', color: '#475569', fontFamily: 'monospace' }}>
-                    sponsorable.gg/<strong style={{ color: '#0f172a' }}>{pseudo.toLowerCase().replace(/\s+/g, '')}</strong>
+                    sponsorable.gg/<strong style={{ color: '#0f172a' }}>{publicSlug || pseudo.toLowerCase().replace(/\s+/g, '-')}</strong>
                   </div>
                   <button
-                    onClick={() => navigator.clipboard.writeText(`https://sponsorable.gg/${pseudo.toLowerCase().replace(/\s+/g, '')}`)}
+                    onClick={() => navigator.clipboard.writeText(`https://sponsorable.gg/${publicSlug || pseudo.toLowerCase().replace(/\s+/g, '-')}`)}
                     style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: 'white', fontSize: '13px', fontWeight: 500, color: '#475569', whiteSpace: 'nowrap' }}
                   >
                     Copier
@@ -336,33 +421,110 @@ export default function SettingsPage() {
             <SectionHeader icon={<Bell size={16} />} title="Notifications" desc="Emails que tu reçois de Sponsorable" />
             <div style={{ padding: '0 24px' }}>
               {[
-                { label: 'Nouveau message d\'une marque', desc: 'Quand une marque t\'envoie un message via ton media kit', checked: notifNewMessage, set: setNotifNewMessage },
-                { label: 'Rapport hebdomadaire', desc: 'Résumé des vues, clics et visites de ta page chaque lundi', checked: notifWeeklyReport, set: setNotifWeeklyReport },
-                { label: 'Nouveautés produit', desc: 'Nouveaux templates, nouvelles fonctionnalités et améliorations de la plateforme', checked: notifTips, set: setNotifTips },
+                { key: 'notifNewMessage' as const, label: 'Nouveau message d\'une marque', desc: 'Quand une marque t\'envoie un message via ton media kit', checked: notifNewMessage, set: setNotifNewMessage },
+                { key: 'notifWeeklyReport' as const, label: 'Rapport hebdomadaire', desc: 'Résumé des vues, clics et visites de ta page chaque lundi', checked: notifWeeklyReport, set: setNotifWeeklyReport },
+                { key: 'notifProductUpdates' as const, label: 'Nouveautés produit', desc: 'Nouveaux templates, nouvelles fonctionnalités et améliorations de la plateforme', checked: notifTips, set: setNotifTips },
               ].map((item, i, arr) => (
                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none' }}>
                   <div>
                     <p style={{ fontSize: '14px', fontWeight: 500, color: '#0f172a' }}>{item.label}</p>
                     <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>{item.desc}</p>
                   </div>
-                  <Toggle checked={item.checked} onChange={item.set} />
+                  <Toggle checked={item.checked} onChange={val => {
+                    item.set(val)
+                    setNotifSaving(true)
+                    fetch('/api/notifications', {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ [item.key]: val }),
+                    }).catch(() => {}).finally(() => setNotifSaving(false))
+                  }} />
                 </div>
               ))}
+              {notifSaving && <p style={{ fontSize: '11px', color: '#94a3b8', paddingBottom: '12px' }}>Sauvegarde…</p>}
             </div>
           </SectionCard>
 
           <SectionCard>
             <SectionHeader icon={<Lock size={16} />} title="Sécurité" desc="Mot de passe et authentification" />
-            <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <p style={{ fontSize: '14px', fontWeight: 500, color: '#0f172a' }}>Mot de passe</p>
-                <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>Dernière modification il y a 3 mois</p>
-              </div>
-              <button
-                style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: 'white', fontSize: '13px', fontWeight: 500, color: '#0f172a' }}
-              >
-                Changer
-              </button>
+            <div style={{ padding: '20px 24px' }}>
+              {!hasPassword ? (
+                <p style={{ fontSize: '13px', color: '#94a3b8' }}>
+                  Ton compte utilise Google ou Twitch pour se connecter — aucun mot de passe Sponsorable.
+                </p>
+              ) : !showPasswordForm ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ fontSize: '14px', fontWeight: 500, color: '#0f172a' }}>Mot de passe</p>
+                    <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>Modifier ton mot de passe de connexion</p>
+                  </div>
+                  <button
+                    onClick={() => { setShowPasswordForm(true); setPwdError(''); setPwdSuccess(false) }}
+                    style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: 'white', fontSize: '13px', fontWeight: 500, color: '#0f172a' }}
+                  >
+                    Changer
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>Changer le mot de passe</p>
+                  {pwdSuccess ? (
+                    <div style={{ background: '#f0fdf4', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '10px', padding: '14px 16px' }}>
+                      <p style={{ fontSize: '14px', fontWeight: 600, color: '#16a34a' }}>✓ Mot de passe modifié avec succès</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <label style={labelStyle}>Mot de passe actuel</label>
+                        <input type="password" style={inputStyle} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)}
+                          onFocus={e => (e.target.style.border = '1px solid #16a34a')} onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
+                          placeholder="••••••••" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Nouveau mot de passe</label>
+                        <input type="password" style={inputStyle} value={newPwd} onChange={e => setNewPwd(e.target.value)}
+                          onFocus={e => (e.target.style.border = '1px solid #16a34a')} onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
+                          placeholder="8 caractères minimum" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Confirmer le nouveau mot de passe</label>
+                        <input type="password" style={inputStyle} value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)}
+                          onFocus={e => (e.target.style.border = '1px solid #16a34a')} onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
+                          placeholder="••••••••" />
+                      </div>
+                      {pwdError && <p style={{ fontSize: '12px', color: '#ef4444' }}>⚠️ {pwdError}</p>}
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button onClick={() => { setShowPasswordForm(false); setCurrentPwd(''); setNewPwd(''); setConfirmPwd(''); setPwdError('') }}
+                          style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: 'white', fontSize: '13px', fontWeight: 500, color: '#475569' }}>
+                          Annuler
+                        </button>
+                        <button
+                          disabled={pwdLoading}
+                          onClick={async () => {
+                            setPwdError('')
+                            if (newPwd !== confirmPwd) { setPwdError('Les mots de passe ne correspondent pas'); return }
+                            if (newPwd.length < 8) { setPwdError('Le mot de passe doit faire au moins 8 caractères'); return }
+                            setPwdLoading(true)
+                            try {
+                              const res = await fetch('/api/auth/change-password', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ currentPassword: currentPwd, newPassword: newPwd }),
+                              })
+                              const data = await res.json()
+                              if (!res.ok) { setPwdError(data.error ?? 'Erreur'); return }
+                              setPwdSuccess(true)
+                              setCurrentPwd(''); setNewPwd(''); setConfirmPwd('')
+                            } catch { setPwdError('Erreur réseau') } finally { setPwdLoading(false) }
+                          }}
+                          style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: pwdLoading ? 'wait' : 'pointer', background: '#0f172a', color: 'white', fontSize: '13px', fontWeight: 600, opacity: pwdLoading ? 0.7 : 1 }}>
+                          {pwdLoading ? 'En cours…' : 'Confirmer'}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </SectionCard>
 
@@ -404,18 +566,34 @@ export default function SettingsPage() {
                     onFocus={e => (e.target.style.border = '1px solid #ef4444')}
                     onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
                   />
+                  {deleteError && <p style={{ fontSize: '12px', color: '#ef4444', marginBottom: '8px' }}>⚠️ {deleteError}</p>}
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button
-                      onClick={() => { setShowDeleteConfirm(false); setDeleteInput('') }}
+                      onClick={() => { setShowDeleteConfirm(false); setDeleteInput(''); setDeleteError('') }}
                       style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: 'white', fontSize: '13px', fontWeight: 500, color: '#475569' }}
                     >
                       Annuler
                     </button>
                     <button
-                      disabled={deleteInput !== pseudo}
-                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: deleteInput === pseudo ? 'pointer' : 'not-allowed', fontSize: '13px', fontWeight: 600, background: deleteInput === pseudo ? '#ef4444' : '#fecaca', color: 'white', transition: 'background 200ms' }}
+                      disabled={deleteInput !== pseudo || deleteLoading}
+                      onClick={async () => {
+                        setDeleteLoading(true)
+                        setDeleteError('')
+                        try {
+                          const res = await fetch('/api/me', { method: 'DELETE' })
+                          if (!res.ok) { setDeleteError('Erreur lors de la suppression'); return }
+                          // Vider le localStorage et déconnecter
+                          localStorage.clear()
+                          await signOut({ callbackUrl: '/' })
+                        } catch {
+                          setDeleteError('Erreur réseau, réessaie')
+                        } finally {
+                          setDeleteLoading(false)
+                        }
+                      }}
+                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: (deleteInput === pseudo && !deleteLoading) ? 'pointer' : 'not-allowed', fontSize: '13px', fontWeight: 600, background: (deleteInput === pseudo && !deleteLoading) ? '#ef4444' : '#fecaca', color: 'white', transition: 'background 200ms', opacity: deleteLoading ? 0.7 : 1 }}
                     >
-                      Supprimer définitivement
+                      {deleteLoading ? 'Suppression…' : 'Supprimer définitivement'}
                     </button>
                   </div>
                 </div>
@@ -431,5 +609,13 @@ export default function SettingsPage() {
 
       </main>
     </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsContent />
+    </Suspense>
   )
 }

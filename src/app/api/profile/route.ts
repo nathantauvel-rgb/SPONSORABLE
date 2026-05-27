@@ -19,6 +19,9 @@ const ProfileSchema = z.object({
   })).max(50).optional(),
   bannerUrl: z.string().max(2048).optional(),
   calendlyUrl: z.string().max(2048).optional(),
+  twitterHandle: z.string().max(64).optional().nullable(),
+  instagramHandle: z.string().max(64).optional().nullable(),
+  tiktokHandle: z.string().max(64).optional().nullable(),
   isPublic: z.boolean().optional(),
 })
 
