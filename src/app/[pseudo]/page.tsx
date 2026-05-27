@@ -620,15 +620,18 @@ const PublicMediaKitPage = () => {
         /* ── DEFAULT / ESPORT HERO ── */
         <section style={{ position: 'relative', paddingTop: '80px', paddingBottom: '64px', textAlign: 'center', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
-            <div style={{ position: 'absolute', top: '-20%', left: '-5%', width: '65%', height: '90%', borderRadius: '60% 40% 55% 45% / 50% 65% 35% 50%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '55' : theme.accent + '35'} 0%, transparent 65%)`, filter: 'blur(40px)' }} />
-            <div style={{ position: 'absolute', top: '5%', right: '-10%', width: '60%', height: '80%', borderRadius: '40% 60% 45% 55% / 60% 40% 60% 40%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '42' : theme.accent + '28'} 0%, transparent 65%)`, filter: 'blur(50px)' }} />
-            <div style={{ position: 'absolute', bottom: '-15%', left: '15%', width: '65%', height: '65%', borderRadius: '50% 50% 35% 65% / 40% 60% 40% 60%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '38' : theme.accent + '22'} 0%, transparent 70%)`, filter: 'blur(55px)' }} />
-            <div style={{ position: 'absolute', top: '30%', left: '30%', width: '45%', height: '55%', borderRadius: '55% 45% 60% 40% / 50% 50% 50% 50%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '28' : theme.accent + '18'} 0%, transparent 60%)`, filter: 'blur(35px)' }} />
+            <div style={{ position: 'absolute', top: '-20%', left: '-5%', width: '65%', height: '90%', borderRadius: '60% 40% 55% 45% / 50% 65% 35% 50%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '70' : theme.accent + '55'} 0%, transparent 65%)`, filter: 'blur(40px)' }} />
+            <div style={{ position: 'absolute', top: '5%', right: '-10%', width: '60%', height: '80%', borderRadius: '40% 60% 45% 55% / 60% 40% 60% 40%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '58' : theme.accent + '44'} 0%, transparent 65%)`, filter: 'blur(50px)' }} />
+            <div style={{ position: 'absolute', bottom: '-15%', left: '15%', width: '65%', height: '65%', borderRadius: '50% 50% 35% 65% / 40% 60% 40% 60%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '50' : theme.accent + '38'} 0%, transparent 70%)`, filter: 'blur(55px)' }} />
+            <div style={{ position: 'absolute', top: '30%', left: '30%', width: '45%', height: '55%', borderRadius: '55% 45% 60% 40% / 50% 50% 50% 50%', background: `radial-gradient(ellipse, ${isDark ? theme.accent + '38' : theme.accent + '28'} 0%, transparent 60%)`, filter: 'blur(35px)' }} />
           </div>
 
           <div style={{ position: 'relative', zIndex: 1, padding: '0 24px' }}>
-            <div style={{ width: '88px', height: '88px', borderRadius: '50%', background: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: btnTextColor, fontSize: '28px', fontWeight: 700, boxShadow: `0 0 0 4px ${theme.accent}26` }}>
-              {displayCreator.avatar_initials}
+            <div style={{ position: 'relative', width: '96px', height: '96px', margin: '0 auto 24px' }}>
+              <div style={{ position: 'absolute', inset: '-3px', borderRadius: '50%', background: `conic-gradient(${theme.accent}, ${theme.accent}80, ${theme.accent})`, zIndex: 0 }} />
+              <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '50%', background: `linear-gradient(135deg, ${theme.accent}dd 0%, ${theme.accent} 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: btnTextColor, fontSize: '30px', fontWeight: 800, zIndex: 1, boxShadow: `0 8px 32px ${theme.accent}50, 0 0 0 3px ${theme.bg}` }}>
+                {displayCreator.avatar_initials}
+              </div>
             </div>
             <h1 style={{ fontSize: '32px', fontWeight: 700, color: theme.text, marginBottom: '12px', letterSpacing: '-0.02em' }}>
               {displayCreator.pseudo}
@@ -671,6 +674,13 @@ const PublicMediaKitPage = () => {
       )}
 
       {/* ── STATS ─────────────────────────────────────────── */}
+      {(() => {
+        const realPlatforms: Platform[] = []
+        if (effectiveYtOverride) realPlatforms.push({ ...effectiveYtOverride, hero: true })
+        if (effectiveTwitchOverride) realPlatforms.push({ ...effectiveTwitchOverride, hero: realPlatforms.length === 0 })
+        if (realPlatforms.length === 0) return null
+
+        return (
       <section style={{ padding: '64px 24px', background: theme.bg }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
 
@@ -767,6 +777,8 @@ const PublicMediaKitPage = () => {
           })()}
         </div>
       </section>
+        )
+      })()}
 
       {/* ── YOUTUBE ANALYTICS ────────────────────────────── */}
       {(ytAnalytics != null || ytEngagementRate != null) && (effectiveYtOverride != null || ytStats != null) && (() => {

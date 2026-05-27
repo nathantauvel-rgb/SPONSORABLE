@@ -91,6 +91,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     adapter: PrismaAdapter(prisma),
     session: { strategy: "jwt" },
     debug: process.env.NODE_ENV === 'development',
+    pages: {
+        signIn: '/login',
+        error: '/login',
+    },
     providers,
     callbacks: {
         authorized({ auth: session, request: { nextUrl } }) {
