@@ -19,6 +19,8 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [devVerifyUrl, setDevVerifyUrl] = useState('')
+  const [showResend, setShowResend] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
 
   useEffect(() => {
     if (searchParams.get('register') === '1') setMode('register')
@@ -58,7 +60,14 @@ function LoginForm() {
           callbackUrl: '/dashboard',
         })
         if (result?.error) {
-          setError('Email ou mot de passe incorrect.')
+          const errCode = result.error
+          if (errCode === 'EMAIL_NOT_VERIFIED' || errCode?.includes('EMAIL_NOT_VERIFIED')) {
+            setError('Tu dois confirmer ton adresse email avant de te connecter.')
+            setShowResend(true)
+          } else {
+            setError('Email ou mot de passe incorrect.')
+            setShowResend(false)
+          }
         } else {
           router.push('/dashboard')
         }
@@ -183,6 +192,40 @@ function LoginForm() {
           {error && (
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#dc2626' }}>
               {error}
+              {showResend && (
+                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #fecaca' }}>
+                  <button
+                    type="button"
+                    disabled={resendLoading}
+                    onClick={async () => {
+                      setResendLoading(true)
+                      try {
+                        const res = await fetch('/api/auth/resend-verification', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ email }),
+                        })
+                        const data = await res.json()
+                        setError('')
+                        setShowResend(false)
+                        if (data.devVerifyUrl) {
+                          setSuccess('Lien de confirmation (mode dev) :')
+                          setDevVerifyUrl(data.devVerifyUrl)
+                        } else {
+                          setSuccess('Email de confirmation renvoyé ! Vérifie ta boîte mail.')
+                        }
+                      } catch {
+                        setError('Erreur réseau lors du renvoi.')
+                      } finally {
+                        setResendLoading(false)
+                      }
+                    }}
+                    style={{ background: 'none', border: 'none', cursor: resendLoading ? 'wait' : 'pointer', color: '#dc2626', fontWeight: 600, fontSize: '13px', padding: 0, textDecoration: 'underline' }}
+                  >
+                    {resendLoading ? 'Envoi…' : 'Renvoyer l\'email de confirmation →'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

@@ -102,18 +102,30 @@ export async function POST(req: NextRequest) {
     const token = crypto.randomBytes(32).toString("hex")
     const expires = new Date(Date.now() + 24 * 3600 * 1000)
 
+    const isDev = process.env.NODE_ENV !== "production"
+    const hasEmailService = !!process.env.RESEND_API_KEY
+    // Auto-vérifier en dev sans service email configuré
+    const autoVerify = isDev && !hasEmailService
+
     try {
       await prisma.$transaction(async (tx) => {
         const existing = await tx.user.findUnique({ where: { email } })
         if (existing) throw new Error("EMAIL_TAKEN")
 
         await tx.user.create({
-          data: { name, email, password: hashedPassword, emailVerified: null },
+          data: {
+            name,
+            email,
+            password: hashedPassword,
+            emailVerified: autoVerify ? new Date() : null,
+          },
         })
 
-        await tx.verificationToken.create({
-          data: { identifier: email, token, expires },
-        })
+        if (!autoVerify) {
+          await tx.verificationToken.create({
+            data: { identifier: email, token, expires },
+          })
+        }
       })
     } catch (err) {
       if (err instanceof Error && err.message === "EMAIL_TAKEN") {
@@ -122,9 +134,15 @@ export async function POST(req: NextRequest) {
       throw err
     }
 
-    const verifyUrl = `${getAppUrl(req.url)}/api/auth/verify?token=${token}&email=${encodeURIComponent(email)}`
+    if (autoVerify) {
+      console.log("\n✅  Compte créé + email auto-vérifié (dev sans Resend)")
+      return NextResponse.json(
+        { message: "Compte créé ! Tu peux maintenant te connecter.", autoVerified: true },
+        { status: 201 }
+      )
+    }
 
-    const isDev = process.env.NODE_ENV !== "production"
+    const verifyUrl = `${getAppUrl(req.url)}/api/auth/verify?token=${token}&email=${encodeURIComponent(email)}`
 
     try {
       await sendVerificationEmail(email, verifyUrl)

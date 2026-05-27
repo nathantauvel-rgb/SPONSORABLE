@@ -1,11 +1,11 @@
 'use client'
 
 import { ChevronDown, ChevronUp, Lock, Plus, Trash2, X, Zap } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Sidebar from '@/components/layout/Sidebar'
 import Button from '@/components/ui/button'
-import { creator, exampleCreators, pastPartners } from '@/data/mockData'
+import { exampleCreators } from '@/data/mockData'
 
 type Partnership = {
   name: string
@@ -14,7 +14,7 @@ type Partnership = {
   date: string
 }
 
-const DEFAULT_FORMATS = ['FPS', 'Variety Gaming', 'Esport']
+const DEFAULT_FORMATS: string[] = []
 
 const load = <T,>(key: string, fallback: T): T => {
   try {
@@ -27,36 +27,151 @@ const load = <T,>(key: string, fallback: T): T => {
 
 const EMPTY_PARTNERSHIP: Partnership = { name: '', category: '', result: '', date: '' }
 
-const isPro = () => { try { return localStorage.getItem('sponsorable_plan') === 'pro' } catch { return false } }
+/* ── Banner uploader component ───────────────────────────────── */
+function BannerUploader({ onUrl }: { onUrl: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleFile = async (file: File) => {
+    setError('')
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('type', 'banner')
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Erreur lors de l\'upload'); return }
+      onUrl(data.url)
+    } catch {
+      setError('Erreur réseau, réessaie')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div>
+      <label
+        style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: '8px', height: '100px', border: '2px dashed rgba(0,0,0,0.12)', borderRadius: '10px',
+          cursor: uploading ? 'wait' : 'pointer', background: '#f8fafc', transition: 'all 150ms',
+          opacity: uploading ? 0.7 : 1,
+        }}
+      >
+        {uploading ? (
+          <>
+            <span style={{ width: '24px', height: '24px', border: '3px solid rgba(22,163,74,0.3)', borderTopColor: '#16a34a', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Upload en cours…</span>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: '24px' }}>🖼️</span>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Clique pour uploader une image</span>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>JPG, PNG, WebP · Max 5 Mo · Format 16:9 recommandé</span>
+          </>
+        )}
+        <input
+          type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+          style={{ display: 'none' }}
+          disabled={uploading}
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+        />
+      </label>
+      {error && <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '6px' }}>{error}</p>}
+    </div>
+  )
+}
 
 export default function MediaKitEditorPage() {
-  const pro = isPro()
+  const [pro, setPro] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(pro ? (localStorage.getItem('sponsorable_template') || null) : null)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(() => {
+    try { return localStorage.getItem('sponsorable_template') || null } catch { return null }
+  })
+
+  useEffect(() => {
+    fetch('/api/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.isPro) setPro(true) })
+      .catch(() => {})
+    // Load saved theme from DB
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.profile?.theme) {
+          setSelectedTemplateId(data.profile.theme)
+          localStorage.setItem('sponsorable_template', data.profile.theme)
+        }
+        if (data?.profile?.twitterHandle != null) { setTwitterHandle(data.profile.twitterHandle); localStorage.setItem('sponsorable_twitter', JSON.stringify(data.profile.twitterHandle)) }
+        if (data?.profile?.instagramHandle != null) { setInstagramHandle(data.profile.instagramHandle); localStorage.setItem('sponsorable_instagram', JSON.stringify(data.profile.instagramHandle)) }
+        if (data?.profile?.tiktokHandle != null) { setTiktokHandle(data.profile.tiktokHandle); localStorage.setItem('sponsorable_tiktok', JSON.stringify(data.profile.tiktokHandle)) }
+        // Charger la bannière depuis la DB (URL réelle, pas base64)
+        if (data?.profile?.bannerUrl) {
+          setBannerUrl(data.profile.bannerUrl)
+          localStorage.setItem('sponsorable_banner', JSON.stringify(data.profile.bannerUrl))
+        }
+        // Charger le vrai profil depuis la DB (source de vérité, évite les données mock)
+        if (data?.profile) {
+          const dbProfile = {
+            pseudo: data.profile.displayName ?? '',
+            bio: data.profile.bio ?? '',
+            niche: data.profile.niche ?? '',
+            country: '',
+            email: '',
+          }
+          setProfile(dbProfile)
+
+          // Formats depuis DB
+          if (Array.isArray(data.profile.formats)) {
+            setFormats(data.profile.formats)
+            localStorage.setItem('sponsorable_formats', JSON.stringify(data.profile.formats))
+          }
+
+          // Partenariats depuis DB
+          if (Array.isArray(data.profile.partnerships)) {
+            setPartnerships(data.profile.partnerships)
+            localStorage.setItem('sponsorable_partnerships', JSON.stringify(data.profile.partnerships))
+          }
+
+          // Visibilité partenariats depuis DB
+          if (typeof data.profile.showPartnerships === 'boolean') {
+            setShowPartnerships(data.profile.showPartnerships)
+            localStorage.setItem('sponsorable_show_partnerships', String(data.profile.showPartnerships))
+          }
+
+          // Calendly depuis DB
+          if (data.profile.calendlyUrl != null) {
+            setCalendlyUrl(data.profile.calendlyUrl)
+            localStorage.setItem('sponsorable_calendly', JSON.stringify(data.profile.calendlyUrl))
+          }
+        }
+      })
+      .catch(() => {})
+  }, [])
   const [profile, setProfile] = useState(() => {
     try {
       const saved = localStorage.getItem('sponsorable_profile')
-      return saved ? JSON.parse(saved) : {
-        pseudo: creator.pseudo, niche: creator.niche, bio: creator.bio,
-        country: creator.country, email: creator.email,
-      }
+      // Ne pas utiliser les données mock si localStorage est vide
+      return saved ? JSON.parse(saved) : { pseudo: '', niche: '', bio: '', country: '', email: '' }
     } catch {
-      return { pseudo: creator.pseudo, niche: creator.niche, bio: creator.bio,
-        country: creator.country, email: creator.email }
+      return { pseudo: '', niche: '', bio: '', country: '', email: '' }
     }
   })
   const [formats, setFormats] = useState<string[]>(() => load('sponsorable_formats', DEFAULT_FORMATS))
   const [showPartnerships, setShowPartnerships] = useState<boolean>(() => load('sponsorable_show_partnerships', true))
-  const [partnerships, setPartnerships] = useState<Partnership[]>(() => load('sponsorable_partnerships', pastPartners))
+  const [partnerships, setPartnerships] = useState<Partnership[]>(() => load('sponsorable_partnerships', []))
   const [addingPartnership, setAddingPartnership] = useState(false)
   const [draft, setDraft] = useState<Partnership>(EMPTY_PARTNERSHIP)
   const [saved, setSaved] = useState(false)
   const [profileFlash, setProfileFlash] = useState(false)
-  const [templateJustApplied, setTemplateJustApplied] = useState(false)
-  const [appliedTheme, setAppliedTheme] = useState<{ bg: string; accent: string; text: string } | null>(null)
   const profileCardRef = useRef<HTMLDivElement>(null)
   const [bannerUrl, setBannerUrl] = useState<string>(() => load('sponsorable_banner', ''))
   const [calendlyUrl, setCalendlyUrl] = useState<string>(() => load('sponsorable_calendly', ''))
+  const [twitterHandle, setTwitterHandle] = useState<string>(() => load('sponsorable_twitter', ''))
+  const [instagramHandle, setInstagramHandle] = useState<string>(() => load('sponsorable_instagram', ''))
+  const [tiktokHandle, setTiktokHandle] = useState<string>(() => load('sponsorable_tiktok', ''))
 
   const removeFormat = (f: string) => setFormats(formats.filter(x => x !== f))
 
@@ -77,26 +192,31 @@ export default function MediaKitEditorPage() {
     localStorage.setItem('sponsorable_partnerships', JSON.stringify(partnerships))
     localStorage.setItem('sponsorable_banner', JSON.stringify(bannerUrl))
     localStorage.setItem('sponsorable_calendly', JSON.stringify(calendlyUrl))
-    if (selectedTemplateId) localStorage.setItem('sponsorable_template', selectedTemplateId)
-
-    // Persist to DB so public page reads fresh data for any visitor
-    fetch('/api/profile', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        slug: profile.pseudo?.trim().toLowerCase().replace(/\s+/g, '-') || 'creator',
-        displayName: profile.pseudo,
-        bio: profile.bio,
-        niche: profile.niche,
-        theme: selectedTemplateId ?? undefined,
-        formats,
-        showPartnerships,
-        partnerships,
-        bannerUrl: bannerUrl || undefined,
-        calendlyUrl: calendlyUrl || undefined,
-      }),
-    }).catch(() => { /* best effort */ })
-
+    localStorage.setItem('sponsorable_twitter', JSON.stringify(twitterHandle))
+    localStorage.setItem('sponsorable_instagram', JSON.stringify(instagramHandle))
+    localStorage.setItem('sponsorable_tiktok', JSON.stringify(tiktokHandle))
+    try {
+      const slug = (profile.pseudo ?? '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'me'
+      await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug,
+          displayName: profile.pseudo,
+          bio: profile.bio,
+          niche: profile.niche,
+          theme: selectedTemplateId || undefined,
+          formats,
+          showPartnerships,
+          partnerships,
+          bannerUrl: bannerUrl || undefined,
+          calendlyUrl: calendlyUrl || undefined,
+          twitterHandle: twitterHandle || null,
+          instagramHandle: instagramHandle || null,
+          tiktokHandle: tiktokHandle || null,
+        }),
+      })
+    } catch { /* localStorage already saved */ }
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }
@@ -109,25 +229,18 @@ export default function MediaKitEditorPage() {
       `}</style>
       <Sidebar />
 
-      {/* Sticky save bar */}
-      <div style={{
-        position: 'fixed', top: 0, left: '240px', right: 0, zIndex: 40,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 48px',
-        background: 'rgba(248,250,252,0.85)', backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(0,0,0,0.07)',
-      }}>
+      <div style={{ position: 'fixed', top: 0, left: '240px', right: 0, zIndex: 40, backdropFilter: 'blur(12px)', background: 'rgba(248,250,252,0.92)', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '12px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <span style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>Mon media kit</span>
-          {saved && <span style={{ marginLeft: '12px', fontSize: '12px', color: '#16a34a', fontWeight: 500 }}>✓ Sauvegardé</span>}
+          <p style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>Mon media kit</p>
+          <p style={{ fontSize: '12px', color: '#94a3b8' }}>Personnalise ce que voient les sponsors.</p>
         </div>
         <Button variant="primary" onClick={handleSave}>
           Sauvegarder
         </Button>
       </div>
 
-      <main style={{ marginLeft: '240px', padding: '72px 48px 40px' }}>
-        <div style={{ marginBottom: '32px' }}>
+      <main style={{ marginLeft: '240px', padding: '80px 48px 40px' }}>
+        <div style={{ marginBottom: '40px' }}>
           <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Mon media kit</h1>
           <p style={{ fontSize: '14px', color: '#94a3b8' }}>Personnalise ce que voient les sponsors.</p>
         </div>
@@ -142,14 +255,14 @@ export default function MediaKitEditorPage() {
             >
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', textAlign: 'left' }}>Thème du media kit</p>
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', textAlign: 'left' }}>Partir d'un exemple</p>
                   {!pro && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: '#16a34a', background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '9999px', padding: '2px 8px', letterSpacing: '0.04em' }}>
                       <Lock size={9} /> PRO
                     </span>
                   )}
                 </div>
-                <p style={{ fontSize: '13px', color: '#94a3b8', textAlign: 'left', marginTop: '2px' }}>Choisis le thème visuel de ton media kit.</p>
+                <p style={{ fontSize: '13px', color: '#94a3b8', textAlign: 'left', marginTop: '2px' }}>Pré-remplis ton media kit à partir d'un profil type.</p>
               </div>
               {pro
                 ? (showTemplates ? <ChevronUp size={18} color="#94a3b8" /> : <ChevronDown size={18} color="#94a3b8" />)
@@ -159,7 +272,7 @@ export default function MediaKitEditorPage() {
 
             {!pro && (
               <div style={{ marginTop: '14px', padding: '14px 16px', background: '#f8fafc', border: '1px dashed #e2e8f0', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <p style={{ fontSize: '13px', color: '#64748b' }}>Les thèmes de media kit sont réservés au plan Pro</p>
+                <p style={{ fontSize: '13px', color: '#64748b' }}>Les templates de design sont réservés au plan Pro</p>
                 <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: '#16a34a', textDecoration: 'none', background: 'rgba(22,163,74,0.08)', padding: '6px 12px', borderRadius: '8px' }}>
                   <Zap size={11} /> Upgrader
                 </Link>
@@ -178,17 +291,12 @@ export default function MediaKitEditorPage() {
                       <div
                         key={tmpl.id}
                         onClick={() => {
-                          const newProfile = { pseudo: tmpl.pseudo, niche: tmpl.niches.join(' · '), bio: tmpl.bio, country: 'France', email: tmpl.email }
-                          setProfile(newProfile)
+                          // Only apply the visual theme + formats, never overwrite the user's own profile content
                           setFormats(tmpl.formats)
                           setSelectedTemplateId(tmpl.id)
-                          localStorage.setItem('sponsorable_profile', JSON.stringify(newProfile))
                           localStorage.setItem('sponsorable_formats', JSON.stringify(tmpl.formats))
                           localStorage.setItem('sponsorable_template', tmpl.id)
                           setTimeout(() => { setProfileFlash(true); setTimeout(() => setProfileFlash(false), 1200) }, 150)
-                          setAppliedTheme({ bg: tmpl.theme.bg, accent: tmpl.theme.accent, text: tmpl.theme.text })
-                          setTemplateJustApplied(true)
-                          setTimeout(() => setTemplateJustApplied(false), 8000)
                         }}
                         style={{
                           borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', position: 'relative',
@@ -268,6 +376,12 @@ export default function MediaKitEditorPage() {
                     )
                   })}
                 </div>
+                {selectedTemplateId && (
+                  <div style={{ marginTop: '14px', padding: '12px 16px', background: 'rgba(134,239,172,0.12)', border: '1px solid rgba(134,239,172,0.4)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '13px', color: '#15803d', fontWeight: 500 }}>✓ Template appliqué — les champs ci-dessous sont mis à jour</span>
+                    <button onClick={() => setShowTemplates(false)} style={{ fontSize: '13px', fontWeight: 600, color: '#15803d', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}>Fermer ×</button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -487,18 +601,7 @@ export default function MediaKitEditorPage() {
                     <button onClick={() => setBannerUrl('')} style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer', padding: '4px 8px', fontSize: '12px', fontWeight: 600 }}>✕ Retirer</button>
                   </div>
                 ) : (
-                  <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '100px', border: '2px dashed rgba(0,0,0,0.12)', borderRadius: '10px', cursor: 'pointer', background: '#f8fafc', transition: 'all 150ms' }}>
-                    <span style={{ fontSize: '24px' }}>🖼️</span>
-                    <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Clique pour uploader une image</span>
-                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>Même format que ta bannière YouTube · 2560×1440px</span>
-                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
-                      const file = e.target.files?.[0]
-                      if (!file) return
-                      const reader = new FileReader()
-                      reader.onload = ev => setBannerUrl(ev.target?.result as string)
-                      reader.readAsDataURL(file)
-                    }} />
-                  </label>
+                  <BannerUploader onUrl={url => setBannerUrl(url)} />
                 )}
               </div>
             ) : (
@@ -509,6 +612,35 @@ export default function MediaKitEditorPage() {
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* Réseaux sociaux */}
+          <div className="card-standard" style={{ padding: '28px' }}>
+            <h3 style={sectionTitle}>Réseaux sociaux</h3>
+            <p style={{ ...subText, marginBottom: '16px' }}>Tes handles apparaîtront sur ton media kit avec un lien cliquable. YouTube et Twitch sont ajoutés automatiquement si connectés.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={labelStyle}>Twitter / X</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#94a3b8', fontWeight: 500 }}>@</span>
+                  <input style={{ ...inputStyle, paddingLeft: '28px' }} value={twitterHandle} onChange={e => setTwitterHandle(e.target.value.replace(/^@/, ''))} onFocus={onFocus} onBlur={onBlur} placeholder="tonpseudo" />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Instagram</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#94a3b8', fontWeight: 500 }}>@</span>
+                  <input style={{ ...inputStyle, paddingLeft: '28px' }} value={instagramHandle} onChange={e => setInstagramHandle(e.target.value.replace(/^@/, ''))} onFocus={onFocus} onBlur={onBlur} placeholder="tonpseudo" />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>TikTok</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#94a3b8', fontWeight: 500 }}>@</span>
+                  <input style={{ ...inputStyle, paddingLeft: '28px' }} value={tiktokHandle} onChange={e => setTiktokHandle(e.target.value.replace(/^@/, ''))} onFocus={onFocus} onBlur={onBlur} placeholder="tonpseudo" />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Lien de réservation */}
@@ -547,21 +679,6 @@ export default function MediaKitEditorPage() {
 
         </div>
       </main>
-
-      {templateJustApplied && appliedTheme && (
-        <div style={{
-          position:'fixed', bottom: saved ? '88px' : '32px', left:'50%',
-          transform:'translateX(-50%)', zIndex:100,
-          background: appliedTheme.bg, color: appliedTheme.text, borderRadius:'14px',
-          padding:'14px 24px', display:'flex', alignItems:'center', gap:'10px',
-          boxShadow:'0 8px 32px rgba(0,0,0,0.25)',
-          animation:'toastIn 220ms ease forwards', whiteSpace:'nowrap',
-          border: `1px solid ${appliedTheme.accent}40`,
-        }}>
-          <span style={{ width:'22px', height:'22px', borderRadius:'50%', background: appliedTheme.accent, color: appliedTheme.bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'13px', fontWeight:700, flexShrink:0 }}>✦</span>
-          <span style={{ fontSize:'14px', fontWeight:500 }}>Thème appliqué — pense à sauvegarder</span>
-        </div>
-      )}
 
       {saved && (
         <div style={{

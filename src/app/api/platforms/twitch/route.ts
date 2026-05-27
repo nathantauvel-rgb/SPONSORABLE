@@ -83,7 +83,18 @@ export async function POST(req: NextRequest) {
   const channelData = await channelRes.json()
   const channel = channelData.data?.[0] ?? {}
 
-  const stats = { followersCount: 0, game: channel.game_name as string | undefined }
+  const followersRes = await fetch(
+    `https://api.twitch.tv/helix/channels/followers?broadcaster_id=${twitchUser.id}`,
+    { headers: { 'Client-Id': TWITCH_CLIENT_ID!, Authorization: `Bearer ${token}` } }
+  )
+  const followersData = followersRes.ok ? await followersRes.json() : null
+
+  const stats = {
+    followerCount: (followersData?.total as number) ?? 0,
+    viewCount: (twitchUser.view_count as number) ?? 0,
+    displayName: twitchUser.display_name as string,
+    game: channel.game_name as string | undefined,
+  }
 
   const platform = await prisma.platform.upsert({
     where: { userId_type: { userId: session.user.id, type: 'twitch' } },

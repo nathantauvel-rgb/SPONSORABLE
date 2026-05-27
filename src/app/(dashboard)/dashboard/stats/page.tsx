@@ -3,8 +3,13 @@
 import { Download, Lock, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import Flag from '@/components/ui/Flag'
 import Sidebar from '@/components/layout/Sidebar'
+
+const COUNTRY_NAMES: Record<string, string> = {
+  FR: 'France', BE: 'Belgique', CH: 'Suisse', CA: 'Canada', LU: 'Luxembourg',
+  DE: 'Allemagne', ES: 'Espagne', IT: 'Italie', GB: 'Royaume-Uni', US: 'États-Unis',
+  NL: 'Pays-Bas', PT: 'Portugal', MA: 'Maroc', DZ: 'Algérie', TN: 'Tunisie',
+}
 
 const ProGate = () => (
   <div style={{ position: 'absolute', inset: 0, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(248,250,252,0.85)', backdropFilter: 'blur(6px)', borderRadius: '16px' }}>
@@ -27,17 +32,15 @@ const ProGate = () => (
   </div>
 )
 
-const dailyViews = [8, 14, 6, 22, 18, 31, 12, 9, 27, 34, 19, 42, 28, 37]
-const days = ['2/5','3/5','4/5','5/5','6/5','7/5','8/5','9/5','10/5','11/5','12/5','13/5','14/5','15/5']
-const maxViews = Math.max(...dailyViews)
-
-const topCountries = [
-  { flag: 'fr', name: 'France', pct: 68, views: 237 },
-  { flag: 'be', name: 'Belgique', pct: 14, views: 49 },
-  { flag: 'ch', name: 'Suisse', pct: 9, views: 31 },
-  { flag: 'ca', name: 'Canada', pct: 6, views: 21 },
-  { flag: 'world', name: 'Autres', pct: 3, views: 10 },
-]
+type AnalyticsData = {
+  views: { date: string; count: number }[]
+  total: number
+  last30: number
+  last7: number
+  today: number
+  topCountries: { country: string; count: number }[]
+  topReferers: { source: string; count: number }[]
+}
 
 const StatCard = ({ label, value, sub, positive }: { label: string; value: string; sub: string; positive?: boolean }) => (
   <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '16px', padding: '24px 28px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
@@ -49,6 +52,8 @@ const StatCard = ({ label, value, sub, positive }: { label: string; value: strin
 
 export default function StatsPage() {
   const [pro, setPro] = useState(false)
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch('/api/me')
@@ -57,48 +62,37 @@ export default function StatsPage() {
       .catch(() => {})
   }, [])
 
-  const exportPDF = () => {
-    const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-    const win = window.open('', '_blank')
-    if (!win) return
-    // Capture the stats section HTML, inject date, print
-    const content = document.getElementById('stats-printable')?.innerHTML ?? ''
-    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
-<title>Statistiques — Sponsorable</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #0f172a; padding: 40px 48px; }
-  h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 6px; }
-  p { font-size: 13px; color: #64748b; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 2px solid #0f172a; }
-  .logo { font-size: 13px; font-weight: 700; color: #16a34a; }
-  .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; }
-  .footer span { font-size: 11px; color: #cbd5e1; }
-  @media print { body { padding: 28px 36px; } }
-</style></head><body>
-<div class="header">
-  <div><h1>Statistiques</h1><p>Analytics de ton media kit · 30 derniers jours</p></div>
-  <div class="logo">Sponsorable</div>
-</div>
-${content}
-<div class="footer">
-  <span>Exporté le ${date}</span>
-  <span>sponsorable.gg</span>
-</div>
-</body></html>`
+  useEffect(() => {
+    fetch('/api/analytics')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setAnalytics(data) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
-    const iframe = document.createElement('iframe')
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;border:none;'
-    document.body.appendChild(iframe)
-    const doc = iframe.contentDocument ?? iframe.contentWindow?.document
-    if (!doc) { document.body.removeChild(iframe); return }
-    doc.open(); doc.write(html); doc.close()
-    setTimeout(() => {
-      iframe.contentWindow?.focus()
-      iframe.contentWindow?.print()
-      setTimeout(() => { document.body.removeChild(iframe) }, 2000)
-    }, 300)
-  }
+  const views = analytics?.views ?? []
+  const maxViews = views.length ? Math.max(...views.map(v => v.count), 1) : 1
+  const totalViews = analytics?.total ?? 0
+  const last30 = analytics?.last30 ?? 0
+  const last7 = analytics?.last7 ?? 0
+  const today = analytics?.today ?? 0
+  const topCountries = analytics?.topCountries ?? []
+  const topReferers = analytics?.topReferers ?? []
+
+  // Calcul du pic
+  const peak = views.reduce((p, v) => v.count > p.count ? v : p, { date: '', count: 0 })
+  const avg = views.length ? (last30 / 30).toFixed(1) : '0'
+
+  // Nombre de messages reçus
+  const [msgCount, setMsgCount] = useState(0)
+  useEffect(() => {
+    fetch('/api/messages')
+      .then(r => r.ok ? r.json() : { messages: [] })
+      .then(data => setMsgCount((data.messages ?? []).length))
+      .catch(() => {})
+  }, [])
+
+  const totalCountryViews = topCountries.reduce((sum, c) => sum + c.count, 0) || 1
 
   return (
     <div style={{ background: '#f8fafc', minHeight: '100vh' }}>
@@ -129,7 +123,7 @@ ${content}
           </div>
           {pro ? (
             <button
-              onClick={exportPDF}
+              onClick={() => window.print()}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', color: '#0f172a', fontSize: '14px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', transition: 'all 150ms' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
@@ -143,151 +137,158 @@ ${content}
           )}
         </div>
 
-        <div id="stats-printable">
-        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px', filter: pro ? 'none' : 'blur(3px)', pointerEvents: pro ? 'auto' : 'none', userSelect: pro ? 'auto' : 'none' }}>
-          <StatCard label="Vues du media kit" value="348" sub="↑ +23% vs mois dernier" positive />
-          <StatCard label="Clics « Me contacter »" value="24" sub="6,9% des visiteurs ont cliqué" positive />
-          <StatCard label="Messages reçus" value="8" sub="↑ +3 ce mois" positive />
-          <StatCard label="Temps moyen" value="2m34s" sub="↑ +18s vs mois dernier" positive />
-        </div>
-
-        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', alignItems: 'start', filter: pro ? 'none' : 'blur(3px)', pointerEvents: pro ? 'auto' : 'none', userSelect: pro ? 'auto' : 'none' }}>
-
-          <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '16px', padding: '28px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
-              <div>
-                <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>Vues du media kit</p>
-                <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '2px' }}>14 derniers jours</p>
-              </div>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#16a34a', background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '9999px', padding: '4px 12px' }}>
-                348 total
-              </span>
+        {loading ? (
+          <p style={{ color: '#94a3b8', fontSize: '14px' }}>Chargement des statistiques…</p>
+        ) : (
+          <>
+            <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px', filter: pro ? 'none' : 'blur(3px)', pointerEvents: pro ? 'auto' : 'none', userSelect: pro ? 'auto' : 'none' }}>
+              <StatCard label="Total vues" value={totalViews.toString()} sub={`${last30} ce mois · ${today} aujourd'hui`} positive />
+              <StatCard label="7 derniers jours" value={last7.toString()} sub={last7 > 0 ? `↑ ${last7} vues` : 'Aucune vue récente'} positive={last7 > 0} />
+              <StatCard label="Messages reçus" value={msgCount.toString()} sub={msgCount > 0 ? `${msgCount} proposition${msgCount > 1 ? 's' : ''} reçue${msgCount > 1 ? 's' : ''}` : 'Partage ton media kit'} positive={msgCount > 0} />
+              <StatCard label="Aujourd'hui" value={today.toString()} sub={today > 0 ? `${today} vue${today > 1 ? 's' : ''} aujourd'hui` : 'Aucune vue pour le moment'} positive={today > 0} />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '140px', marginBottom: '10px' }}>
-              {dailyViews.map((v, i) => (
-                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
-                  <div
-                    title={`${v} vues`}
-                    style={{
-                      width: '100%',
-                      height: `${(v / maxViews) * 100}%`,
-                      background: v === maxViews ? '#16a34a' : 'rgba(22,163,74,0.25)',
-                      borderRadius: '4px 4px 0 0',
-                      transition: 'background 150ms ease',
-                      cursor: 'default',
-                      minHeight: '4px',
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#16a34a' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = v === maxViews ? '#16a34a' : 'rgba(22,163,74,0.25)' }}
-                  />
+            <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', alignItems: 'start', filter: pro ? 'none' : 'blur(3px)', pointerEvents: pro ? 'auto' : 'none', userSelect: pro ? 'auto' : 'none' }}>
+
+              <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '16px', padding: '28px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+                  <div>
+                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>Vues du media kit</p>
+                    <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '2px' }}>30 derniers jours</p>
+                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#16a34a', background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '9999px', padding: '4px 12px' }}>
+                    {last30} ce mois
+                  </span>
                 </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {days.map((d, i) => (
-                <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: '10px', color: '#cbd5e1', fontWeight: 500 }}>
-                  {i % 2 === 0 ? d : ''}
-                </div>
-              ))}
-            </div>
 
-            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: '24px' }}>
-              <div>
-                <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '2px' }}>Pic de vues</p>
-                <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>42 vues · 13 mai</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '2px' }}>Moyenne / jour</p>
-                <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>24,9 vues</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '2px' }}>Tendance</p>
-                <p style={{ fontSize: '14px', fontWeight: 700, color: '#16a34a' }}>↑ En hausse</p>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-              <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', marginBottom: '18px' }}>Top pays</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {topCountries.map(c => (
-                  <div key={c.name}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Flag code={c.flag} size={20} />
-                        <span style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a' }}>{c.name}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>{c.views} vues</span>
-                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#16a34a', width: '34px', textAlign: 'right' }}>{c.pct}%</span>
-                      </div>
+                {last30 === 0 ? (
+                  <div style={{ height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '14px', flexDirection: 'column', gap: '8px' }}>
+                    <span style={{ fontSize: '32px' }}>📊</span>
+                    <p>Les vues apparaîtront ici dès que quelqu'un visitera ton media kit</p>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '140px', marginBottom: '10px' }}>
+                      {views.map((v, i) => (
+                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
+                          <div
+                            title={`${v.count} vue${v.count !== 1 ? 's' : ''} le ${v.date}`}
+                            style={{
+                              width: '100%',
+                              height: `${(v.count / maxViews) * 100}%`,
+                              background: v.count === maxViews ? '#16a34a' : 'rgba(22,163,74,0.25)',
+                              borderRadius: '3px 3px 0 0',
+                              transition: 'background 150ms ease',
+                              cursor: 'default',
+                              minHeight: v.count > 0 ? '4px' : '0',
+                            }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#16a34a' }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = v.count === maxViews ? '#16a34a' : 'rgba(22,163,74,0.25)' }}
+                          />
+                        </div>
+                      ))}
                     </div>
-                    <div style={{ height: '4px', background: '#f1f5f9', borderRadius: '9999px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${c.pct}%`, background: 'linear-gradient(90deg, #4ade80, #16a34a)', borderRadius: '9999px' }} />
+                    <div style={{ display: 'flex', gap: '3px' }}>
+                      {views.map((v, i) => (
+                        <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: '9px', color: '#cbd5e1', fontWeight: 500 }}>
+                          {i % 5 === 0 ? v.date.slice(5) : ''}
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-              <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', marginBottom: '18px' }}>Appareil</p>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                {[
-                  { label: 'Mobile', pct: 61, icon: '📱' },
-                  { label: 'Desktop', pct: 33, icon: '🖥️' },
-                  { label: 'Tablette', pct: 6, icon: '📋' },
-                ].map(d => (
-                  <div key={d.label} style={{ flex: 1, textAlign: 'center', padding: '14px 8px', background: '#f8fafc', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.06)' }}>
-                    <div style={{ fontSize: '20px', marginBottom: '6px' }}>{d.icon}</div>
-                    <p style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>{d.pct}%</p>
-                    <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{d.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginTop: '20px', position: 'relative', filter: pro ? 'none' : 'blur(3px)', pointerEvents: pro ? 'auto' : 'none', userSelect: pro ? 'auto' : 'none' }}>
-        <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '16px', padding: '28px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-          <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', marginBottom: '6px' }}>Parcours des marques sur ta page</p>
-          <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '24px' }}>De la première vue jusqu'au message reçu</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
-            {[
-              { label: 'Ont vu ta page', value: 348, color: '#16a34a', pct: 100 },
-              { label: 'Ont bien lu', value: 201, color: '#4ade80', pct: 58 },
-              { label: 'Ont cliqué contact', value: 24, color: '#86efac', pct: 6.9 },
-              { label: 'T\'ont écrit', value: 8, color: '#bbf7d0', pct: 2.3 },
-            ].map((step, i, arr) => (
-              <div key={step.label} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ height: '48px', background: step.color, borderRadius: i === 0 ? '10px 0 0 10px' : i === arr.length - 1 ? '0 10px 10px 0' : '0', display: 'flex', alignItems: 'center', paddingLeft: '16px', gap: '10px' }}>
-                    <span style={{ fontSize: '16px', fontWeight: 800, color: i < 2 ? 'white' : '#15803d' }}>{step.value}</span>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: i < 2 ? 'rgba(255,255,255,0.8)' : '#15803d' }}>{step.label}</span>
-                  </div>
-                  <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px', paddingLeft: '4px' }}>{step.pct}%</p>
-                </div>
-                {i < arr.length - 1 && (
-                  <div style={{ width: '0', height: '0', borderTop: '24px solid transparent', borderBottom: '24px solid transparent', borderLeft: `12px solid ${step.color}`, flexShrink: 0, marginBottom: '18px' }} />
+                  </>
                 )}
+
+                <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: '24px' }}>
+                  <div>
+                    <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '2px' }}>Pic de vues</p>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{peak.count > 0 ? `${peak.count} vues · ${peak.date}` : '—'}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '2px' }}>Moyenne / jour</p>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{avg} vues</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '2px' }}>Tendance</p>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: last7 > 0 ? '#16a34a' : '#94a3b8' }}>
+                      {last7 > 0 ? '↑ Actif' : '— Pas encore de données'}
+                    </p>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-        </div>
 
-        </div>{/* end stats-printable */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', marginBottom: '18px' }}>Top pays</p>
+                  {topCountries.length === 0 ? (
+                    <p style={{ fontSize: '13px', color: '#94a3b8', textAlign: 'center', padding: '16px 0' }}>Pas encore de données</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {topCountries.map(c => {
+                        const pct = Math.round((c.count / totalCountryViews) * 100)
+                        return (
+                          <div key={c.country}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '16px' }}>{getFlagEmoji(c.country)}</span>
+                                <span style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a' }}>{COUNTRY_NAMES[c.country] ?? c.country}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', color: '#94a3b8' }}>{c.count} vues</span>
+                                <span style={{ fontSize: '12px', fontWeight: 600, color: '#16a34a', width: '34px', textAlign: 'right' }}>{pct}%</span>
+                              </div>
+                            </div>
+                            <div style={{ height: '4px', background: '#f1f5f9', borderRadius: '9999px', overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, #4ade80, #16a34a)', borderRadius: '9999px' }} />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
 
-        {!pro && (
-          <div style={{ position: 'relative', marginTop: '-320px' }}>
-            <ProGate />
-          </div>
+                <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', marginBottom: '18px' }}>Sources de trafic</p>
+                  {topReferers.length === 0 ? (
+                    <p style={{ fontSize: '13px', color: '#94a3b8', textAlign: 'center', padding: '16px 0' }}>Pas encore de données</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {topReferers.map(r => {
+                        const totalRef = topReferers.reduce((s, x) => s + x.count, 0) || 1
+                        const pct = Math.round((r.count / totalRef) * 100)
+                        return (
+                          <div key={r.source} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '13px', color: '#475569', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.source}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '12px', color: '#94a3b8' }}>{r.count}</span>
+                              <span style={{ fontSize: '12px', fontWeight: 600, color: '#16a34a' }}>{pct}%</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {!pro && (
+              <div style={{ position: 'relative', marginTop: '24px' }}>
+                <div style={{ height: '80px', position: 'relative' }}>
+                  <ProGate />
+                </div>
+              </div>
+            )}
+          </>
         )}
 
       </main>
     </div>
   )
+}
+
+function getFlagEmoji(countryCode: string): string {
+  if (!countryCode || countryCode.length !== 2) return '🌍'
+  const codePoints = [...countryCode.toUpperCase()].map(c => 0x1F1E0 + c.charCodeAt(0) - 65)
+  return String.fromCodePoint(...codePoints)
 }

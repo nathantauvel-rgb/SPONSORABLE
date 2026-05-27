@@ -1,13 +1,12 @@
 'use client'
 
 import { Copy, ExternalLink } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
 import Sidebar from '@/components/layout/Sidebar'
 import Button from '@/components/ui/button'
 import MetricCard from '@/components/ui/MetricCard'
-import { metrics } from '@/data/mockData'
 
 type YTData = {
   channelId: string
@@ -71,36 +70,39 @@ const StatusBadge = ({ connected }: { connected: boolean }) => (
   </span>
 )
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: session } = useSession()
-
-  const [publicPseudo] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem('sponsorable_profile')
-      const parsed = saved ? JSON.parse(saved) : null
-      return parsed?.pseudo || 'alexplays'
-    } catch { return 'alexplays' }
-  })
 
   const [ytData, setYtData] = useState<YTData | null>(null)
   const [ytLoading, setYtLoading] = useState(false)
   const [ytError, setYtError] = useState('')
-  const [ytDisconnecting, setYtDisconnecting] = useState(false)
+  const [ytNeedsReauth, setYtNeedsReauth] = useState(false)
+  const [ytReauthLoading, setYtReauthLoading] = useState(false)
 
   const [twitchData, setTwitchData] = useState<TwitchData | null>(null)
   const [twitchLoading, setTwitchLoading] = useState(false)
   const [twitchError, setTwitchError] = useState('')
+
+  const [ytDisconnecting, setYtDisconnecting] = useState(false)
   const [twitchDisconnecting, setTwitchDisconnecting] = useState(false)
+  const [publicPseudo, setPublicPseudo] = useState('')
 
   const fetchYouTube = async () => {
     setYtLoading(true)
     setYtError('')
+    setYtNeedsReauth(false)
     try {
       const res = await fetch('/api/youtube/channel')
       const data = await res.json()
       if (!res.ok) {
-        setYtError(data.error ?? 'Erreur inconnue')
+        if (data.error === 'INSUFFICIENT_SCOPES') {
+          setYtNeedsReauth(true)
+          setYtError('Permissions YouTube manquantes — reconnexion requise.')
+        } else {
+          setYtError(data.error ?? 'Erreur inconnue')
+        }
       } else {
         setYtData(data)
         localStorage.setItem('sponsorable_yt_data', JSON.stringify(data))
@@ -110,6 +112,16 @@ export default function DashboardPage() {
     } finally {
       setYtLoading(false)
     }
+  }
+
+  const handleYouTubeReauth = async () => {
+    setYtReauthLoading(true)
+    try {
+      // Supprimer l'ancien token Google (scopes insuffisants)
+      await fetch('/api/platforms/google-reauth', { method: 'DELETE' })
+    } catch { /* continue */ }
+    // Lancer un nouveau OAuth Google avec tous les scopes YouTube + prompt consent
+    signIn('google', { callbackUrl: '/dashboard?connected=youtube' })
   }
 
   const fetchTwitch = async () => {
@@ -131,46 +143,64 @@ export default function DashboardPage() {
     }
   }
 
-  // On mount: load cached data then auto-fetch
-  useEffect(() => {
-    try {
-      const cachedYT = localStorage.getItem('sponsorable_yt_data')
-      if (cachedYT) setYtData(JSON.parse(cachedYT))
-      const cachedTwitch = localStorage.getItem('sponsorable_twitch_data')
-      if (cachedTwitch) setTwitchData(JSON.parse(cachedTwitch))
-    } catch {}
-  }, [])
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchYouTube()
-      fetchTwitch()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id])
-
   const disconnectPlatform = async (type: 'youtube' | 'twitch') => {
-    const setDisconnecting = type === 'youtube' ? setYtDisconnecting : setTwitchDisconnecting
-    setDisconnecting(true)
+    if (type === 'youtube') setYtDisconnecting(true)
+    else setTwitchDisconnecting(true)
     try {
-      const res = await fetch(`/api/platforms/${type}`, { method: 'DELETE' })
-      if (res.ok) {
-        if (type === 'youtube') {
-          setYtData(null)
-          setYtError('')
-          localStorage.removeItem('sponsorable_yt_data')
-        } else {
-          setTwitchData(null)
-          setTwitchError('')
-          localStorage.removeItem('sponsorable_twitch_data')
-        }
+      await fetch(`/api/platforms/${type}`, { method: 'DELETE' })
+      if (type === 'youtube') {
+        setYtData(null)
+        localStorage.removeItem('sponsorable_yt_data')
+      } else {
+        setTwitchData(null)
+        localStorage.removeItem('sponsorable_twitch_data')
       }
-    } catch {
-      // silent
     } finally {
-      setDisconnecting(false)
+      if (type === 'youtube') setYtDisconnecting(false)
+      else setTwitchDisconnecting(false)
     }
   }
+
+  // On mount: load slug + only show platforms that have a Platform record in DB
+  useEffect(() => {
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.profile?.slug) setPublicPseudo(data.profile.slug) })
+      .catch(() => {})
+
+    // Check which platforms are explicitly connected (Platform record exists)
+    fetch('/api/platforms/youtube')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.platform?.stats) {
+          setYtData(data.platform.stats as YTData)
+          localStorage.setItem('sponsorable_yt_data', JSON.stringify(data.platform.stats))
+        }
+      }).catch(() => {})
+
+    fetch('/api/platforms/twitch')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.platform?.stats) {
+          setTwitchData(data.platform.stats as TwitchData)
+          localStorage.setItem('sponsorable_twitch_data', JSON.stringify(data.platform.stats))
+        }
+      }).catch(() => {})
+  }, [])
+
+  // After OAuth redirect: fetch live data and create/update Platform record
+  useEffect(() => {
+    if (!session?.user?.id) return
+    const connected = searchParams.get('connected')
+    if (connected === 'youtube') {
+      fetchYouTube()
+      router.replace('/dashboard')
+    } else if (connected === 'twitch') {
+      fetchTwitch()
+      router.replace('/dashboard')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id, searchParams])
 
   const displayName = session?.user?.name ?? ytData?.title ?? 'toi'
 
@@ -189,23 +219,30 @@ export default function DashboardPage() {
               {ytData ? `YouTube synchronisé ${timeSince(ytData.lastFetched)}` : 'Connecte tes plateformes pour voir tes stats'}
             </p>
           </div>
-          <Button variant="outline" arrow onClick={() => router.push(`/${publicPseudo}`)}>
-            Voir ma page
-          </Button>
+          {publicPseudo && (
+            <Button variant="outline" arrow onClick={() => router.push(`/${publicPseudo}`)}>
+              Voir ma page
+            </Button>
+          )}
         </div>
 
-        {/* Metrics */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '40px' }}>
-          {metrics.map((m, i) => (
-            <MetricCard
-              key={m.label}
-              label={m.label}
-              value={i === 0 && ytData ? fmtNum(ytData.subscriberCount) : i === 1 && twitchData ? fmtNum(twitchData.followerCount) : m.value}
-              change={m.change}
-              positive={m.positive}
-            />
-          ))}
-        </div>
+        {/* Metrics — uniquement données réelles */}
+        {(ytData || twitchData) && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '40px' }}>
+            {ytData && (
+              <MetricCard label="Abonnés YouTube" value={fmtNum(ytData.subscriberCount)} change="YouTube" positive />
+            )}
+            {ytData && (
+              <MetricCard label="Vues totales" value={fmtNum(ytData.viewCount)} change={`${fmtNum(ytData.videoCount)} vidéos`} positive />
+            )}
+            {twitchData && (
+              <MetricCard label="Followers Twitch" value={fmtNum(twitchData.followerCount)} change="Twitch" positive />
+            )}
+            {twitchData && twitchData.viewCount > 0 && (
+              <MetricCard label="Vues canal Twitch" value={fmtNum(twitchData.viewCount)} change="Twitch" positive />
+            )}
+          </div>
+        )}
 
         {/* Platforms */}
         <div style={{ marginBottom: '40px' }}>
@@ -231,28 +268,20 @@ export default function DashboardPage() {
                   <button
                     onClick={() => disconnectPlatform('youtube')}
                     disabled={ytDisconnecting}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '5px',
-                      fontSize: '12px', fontWeight: 500, color: ytDisconnecting ? '#94a3b8' : '#dc2626',
-                      background: ytDisconnecting ? '#f8fafc' : 'rgba(220,38,38,0.06)',
-                      border: `1px solid ${ytDisconnecting ? '#e2e8f0' : 'rgba(220,38,38,0.2)'}`,
-                      borderRadius: '6px', padding: '5px 10px',
-                      cursor: ytDisconnecting ? 'wait' : 'pointer',
-                      transition: 'all 150ms ease', whiteSpace: 'nowrap',
-                    }}
-                    onMouseEnter={e => { if (!ytDisconnecting) { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.12)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.35)' }}}
-                    onMouseLeave={e => { if (!ytDisconnecting) { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.06)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.2)' }}}
+                    style={{ fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '9999px', border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.06)', color: '#dc2626', cursor: ytDisconnecting ? 'wait' : 'pointer', transition: 'all 150ms', whiteSpace: 'nowrap' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.12)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.06)' }}
                   >
-                    {ytDisconnecting ? '…' : <><span style={{ fontSize: '14px', lineHeight: 1 }}>×</span> Déconnecter</>}
+                    {ytDisconnecting ? '...' : '× Déconnecter'}
                   </button>
                 ) : !ytLoading && (
                   <button
-                    onClick={() => signIn('google', { callbackUrl: '/dashboard' }, {
-                      scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly',
-                      prompt: 'consent',
-                      access_type: 'offline',
-                    })}
-                    style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    onClick={async () => {
+                      // Effacer l'éventuel ancien token Google sans scopes YouTube
+                      await fetch('/api/platforms/google-reauth', { method: 'DELETE' }).catch(() => {})
+                      signIn('google', { callbackUrl: '/dashboard?connected=youtube' })
+                    }}
+                    style={{ fontSize: '12px', color: '#ef4444', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
                     Connecter →
                   </button>
@@ -261,7 +290,23 @@ export default function DashboardPage() {
             </div>
 
             {ytError && (
-              <p style={{ fontSize: '12px', color: '#ef4444', padding: '0 4px' }}>⚠ YouTube : {ytError}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', marginTop: '4px' }}>
+                <p style={{ fontSize: '12px', color: '#dc2626', flex: 1 }}>⚠ YouTube : {ytError}</p>
+                {ytNeedsReauth && (
+                  <button
+                    onClick={handleYouTubeReauth}
+                    disabled={ytReauthLoading}
+                    style={{
+                      padding: '6px 14px', borderRadius: '8px', border: 'none',
+                      background: '#dc2626', color: 'white', fontSize: '12px',
+                      fontWeight: 700, cursor: ytReauthLoading ? 'wait' : 'pointer',
+                      whiteSpace: 'nowrap', opacity: ytReauthLoading ? 0.7 : 1,
+                    }}
+                  >
+                    {ytReauthLoading ? '...' : 'Reconnecter Google →'}
+                  </button>
+                )}
+              </div>
             )}
 
             {/* Twitch */}
@@ -283,23 +328,15 @@ export default function DashboardPage() {
                   <button
                     onClick={() => disconnectPlatform('twitch')}
                     disabled={twitchDisconnecting}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '5px',
-                      fontSize: '12px', fontWeight: 500, color: twitchDisconnecting ? '#94a3b8' : '#dc2626',
-                      background: twitchDisconnecting ? '#f8fafc' : 'rgba(220,38,38,0.06)',
-                      border: `1px solid ${twitchDisconnecting ? '#e2e8f0' : 'rgba(220,38,38,0.2)'}`,
-                      borderRadius: '6px', padding: '5px 10px',
-                      cursor: twitchDisconnecting ? 'wait' : 'pointer',
-                      transition: 'all 150ms ease', whiteSpace: 'nowrap',
-                    }}
-                    onMouseEnter={e => { if (!twitchDisconnecting) { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.12)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.35)' }}}
-                    onMouseLeave={e => { if (!twitchDisconnecting) { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.06)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.2)' }}}
+                    style={{ fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '9999px', border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.06)', color: '#dc2626', cursor: twitchDisconnecting ? 'wait' : 'pointer', transition: 'all 150ms', whiteSpace: 'nowrap' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.12)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.06)' }}
                   >
-                    {twitchDisconnecting ? '…' : <><span style={{ fontSize: '14px', lineHeight: 1 }}>×</span> Déconnecter</>}
+                    {twitchDisconnecting ? '...' : '× Déconnecter'}
                   </button>
                 ) : !twitchLoading && (
                   <button
-                    onClick={() => signIn('twitch', { callbackUrl: '/dashboard' })}
+                    onClick={() => signIn('twitch', { callbackUrl: '/dashboard?connected=twitch' })}
                     style={{ fontSize: '12px', color: '#9146ff', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
                     Connecter →
@@ -318,32 +355,51 @@ export default function DashboardPage() {
         {/* Public link */}
         <div style={{ maxWidth: '560px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', marginBottom: '16px' }}>Ton lien public</h3>
-          <div style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500 }}>sponsorable.gg/{publicPseudo}</span>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.gg/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Copier"><Copy size={15} /></button>
-              <button onClick={() => router.push(`/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Ouvrir"><ExternalLink size={15} /></button>
+          {publicPseudo ? (
+            <div style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500 }}>sponsorable.gg/{publicPseudo}</span>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.gg/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Copier"><Copy size={15} /></button>
+                <button onClick={() => router.push(`/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Ouvrir"><ExternalLink size={15} /></button>
+              </div>
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <Button variant="primary" arrow onClick={() => router.push(`/${publicPseudo}`)}>Voir ma page</Button>
-            <a
-              href={`/${publicPseudo}?print=1`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.12)', background: 'white', color: '#0f172a', fontSize: '14px', fontWeight: 600, textDecoration: 'none', cursor: 'pointer', transition: 'background 150ms' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
-            >
-              Télécharger PDF
-            </a>
+          ) : (
+            <div style={{ background: '#f8fafc', border: '1px dashed rgba(0,0,0,0.12)', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px' }}>
+              <span style={{ fontSize: '14px', color: '#94a3b8' }}>Configure ton pseudo dans le media kit pour obtenir ton lien →</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <Button variant="primary" arrow onClick={() => publicPseudo ? router.push(`/${publicPseudo}`) : router.push('/dashboard/mediakit')}>Voir ma page</Button>
+            {publicPseudo ? (
+              <a
+                href={`/${publicPseudo}?print=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.12)', background: 'white', color: '#0f172a', fontSize: '14px', fontWeight: 600, textDecoration: 'none', cursor: 'pointer', transition: 'background 150ms' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
+              >
+                Télécharger PDF
+              </a>
+            ) : (
+              <Button variant="outline" onClick={() => router.push('/dashboard/mediakit')}>
+                Télécharger PDF
+                <span style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.10)', borderRadius: '9999px', padding: '1px 8px', fontSize: '10px', fontWeight: 600, color: '#94a3b8', marginLeft: '4px' }}>Configurer pseudo d&apos;abord</span>
+              </Button>
+            )}
           </div>
         </div>
 
       </main>
-
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
-
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardContent />
+    </Suspense>
   )
 }

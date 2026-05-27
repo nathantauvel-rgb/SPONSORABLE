@@ -1,6 +1,6 @@
 'use client'
 
-import { BarChart2, FileText, LayoutDashboard, LogOut, Settings, Star, Zap } from 'lucide-react'
+import { BarChart2, FileText, LayoutDashboard, LogOut, Mail, Settings, Star, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -11,6 +11,7 @@ const navItems = [
   { label: 'Tableau de bord', icon: LayoutDashboard, to: '/dashboard' },
   { label: 'Mon media kit', icon: FileText, to: '/dashboard/mediakit' },
   { label: 'Statistiques', icon: BarChart2, to: '/dashboard/stats' },
+  { label: 'Messages', icon: Mail, to: '/dashboard/messages' },
   { label: 'Sponsors', icon: Star, to: '/dashboard/sponsors' },
   { label: 'Paramètres', icon: Settings, to: '/dashboard/settings' },
 ]
@@ -56,17 +57,53 @@ const Avatar = ({ name, image, size }: { name: string | null | undefined; image:
 const Sidebar = () => {
   const pathname = usePathname()
   const [isPro, setIsPro] = useState(false)
+  const [platformImage, setPlatformImage] = useState<string | null>(null)
+  const [unreadCount, setUnreadCount] = useState(0)
   const { data: session } = useSession()
 
   useEffect(() => {
     try {
+      // Lire depuis localStorage d'abord (optimistic), puis la DB confirme
       setIsPro(localStorage.getItem('sponsorable_plan') === 'pro')
+
+      // Priorité : YouTube > Twitch > photo du compte
+      const ytRaw = localStorage.getItem('sponsorable_yt_data')
+      const twitchRaw = localStorage.getItem('sponsorable_twitch_data')
+      const ytThumb = ytRaw ? (JSON.parse(ytRaw) as { thumbnail?: string })?.thumbnail : null
+      const twitchAvatar = twitchRaw ? (JSON.parse(twitchRaw) as { profileImageUrl?: string })?.profileImageUrl : null
+      setPlatformImage(ytThumb ?? twitchAvatar ?? null)
     } catch {}
   }, [])
 
+  // Sync isPro depuis la DB
+  useEffect(() => {
+    if (!session?.user) return
+    fetch('/api/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          const pro = !!data.isPro
+          setIsPro(pro)
+          try { localStorage.setItem('sponsorable_plan', pro ? 'pro' : 'free') } catch {}
+        }
+      })
+      .catch(() => {})
+  }, [session?.user])
+
+  useEffect(() => {
+    if (!session?.user) return
+    fetch('/api/messages')
+      .then(r => r.ok ? r.json() : { messages: [] })
+      .then(data => {
+        const msgs = (data.messages ?? []) as { read: boolean }[]
+        setUnreadCount(msgs.filter(m => !m.read).length)
+      })
+      .catch(() => {})
+  }, [session?.user])
+
   const userName = session?.user?.name
   const userEmail = session?.user?.email
-  const userImage = session?.user?.image
+  const userImage = platformImage ?? session?.user?.image
 
   return (
     <aside
@@ -94,6 +131,7 @@ const Sidebar = () => {
         {navItems.map(item => {
           const active = pathname === item.to
           const Icon = item.icon
+          const isMessages = item.to === '/dashboard/messages'
           return (
             <Link
               key={item.to}
@@ -121,7 +159,17 @@ const Sidebar = () => {
               }}
             >
               <Icon size={16} />
-              {item.label}
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {isMessages && unreadCount > 0 && (
+                <span style={{
+                  background: '#16a34a', color: 'white',
+                  fontSize: '10px', fontWeight: 700,
+                  borderRadius: '9999px', padding: '1px 6px',
+                  lineHeight: '16px', minWidth: '16px', textAlign: 'center',
+                }}>
+                  {unreadCount}
+                </span>
+              )}
             </Link>
           )
         })}

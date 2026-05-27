@@ -47,22 +47,63 @@ function getScoreLabel(score: number): { label: string; color: string } {
   return { label: 'Débutant', color: '#64748b' }
 }
 
-function calcScore(subs: number, connectedCount: number) {
-  const engagementScore = Math.min(35, 24 + connectedCount * 2)
+type PlatformStats = { subscriberCount?: string | number; videoCount?: string | number; viewCount?: string | number; followerCount?: string | number; avgViewerCount?: string | number }
+type PlatformData = { type: string; stats: PlatformStats | null }
+
+function calcScore(platforms: PlatformData[], profileCompleteness: number) {
+  const yt = platforms.find(p => p.type === 'youtube')
+  const tw = platforms.find(p => p.type === 'twitch')
+  const connectedCount = platforms.length
+
+  // Audience score (20pts) — abonnés cumulés
+  const ytSubs = parseInt(String(yt?.stats?.subscriberCount ?? '0')) || 0
+  const twFollowers = parseInt(String(tw?.stats?.followerCount ?? '0')) || 0
+  const totalAudience = ytSubs + twFollowers
   const audienceScore =
-    subs >= 100000 ? 20 : subs >= 50000 ? 17 : subs >= 10000 ? 13 : subs >= 5000 ? 9 : subs >= 1000 ? 6 : 3
-  const demoScore = 15
-  const platformScore = Math.min(10, connectedCount * 3)
-  const growthScore = 8
-  const total = Math.min(100, engagementScore + audienceScore + demoScore + platformScore + growthScore)
+    totalAudience >= 500000 ? 20 : totalAudience >= 100000 ? 17 : totalAudience >= 50000 ? 14 :
+    totalAudience >= 10000 ? 10 : totalAudience >= 5000 ? 7 : totalAudience >= 1000 ? 4 : 2
+
+  // Taux d'engagement (35pts) — views/subs YouTube + viewers Twitch
+  let engagementScore = 0
+  if (yt?.stats?.viewCount && yt?.stats?.videoCount && ytSubs > 0) {
+    const views = parseInt(String(yt.stats.viewCount)) || 0
+    const videos = parseInt(String(yt.stats.videoCount)) || 1
+    const avgViews = views / videos
+    const engRate = (avgViews / ytSubs) * 100
+    // Bon taux d'engagement YouTube : >5% = excellent, >2% = bon, >0.5% = moyen
+    engagementScore = Math.min(28, engRate >= 10 ? 28 : engRate >= 5 ? 22 : engRate >= 2 ? 16 : engRate >= 0.5 ? 10 : 5)
+  } else if (ytSubs > 0 || twFollowers > 0) {
+    engagementScore = 8 // Connecté mais pas assez de données
+  }
+  if (tw?.stats?.avgViewerCount) {
+    const avgViewers = parseInt(String(tw.stats.avgViewerCount)) || 0
+    if (twFollowers > 0) {
+      const twitchEngRate = (avgViewers / twFollowers) * 100
+      const twitchScore = Math.min(7, twitchEngRate >= 5 ? 7 : twitchEngRate >= 2 ? 5 : 3)
+      engagementScore = Math.min(35, engagementScore + twitchScore)
+    }
+  }
+
+  // Complétude du profil (15pts)
+  const completenessScore = Math.min(15, Math.round(profileCompleteness * 15 / 100))
+
+  // Présence multi-plateforme (10pts)
+  const platformScore = Math.min(10, connectedCount * 4 + (profileCompleteness > 50 ? 2 : 0))
+
+  // Activité / données fraîches (5pts)
+  const activityScore = connectedCount > 0 ? 5 : 0
+
+  const total = Math.min(100, engagementScore + audienceScore + completenessScore + platformScore + activityScore)
   return {
     total,
+    ytSubs,
+    twFollowers,
     items: [
       { label: "Taux d'engagement", score: engagementScore, max: 35 },
       { label: "Taille de l'audience", score: audienceScore, max: 20 },
-      { label: 'Profil démographique', score: demoScore, max: 20 },
+      { label: 'Profil complété', score: completenessScore, max: 15 },
       { label: 'Présence multi-plateforme', score: platformScore, max: 10 },
-      { label: 'Croissance', score: growthScore, max: 10 },
+      { label: 'Activité récente', score: activityScore, max: 5 },
     ],
   }
 }
@@ -101,33 +142,48 @@ export default function SponsorsPage() {
   const [pro, setPro] = useState(false)
   const [connected, setConnected] = useState<string[]>([])
   const [scoreData, setScoreData] = useState<ReturnType<typeof calcScore> | null>(null)
+  const [loading, setLoading] = useState(true)
   const [brands, setBrands] = useState<Array<(typeof ALL_BRANDS)[0] & { compatibility: number }>>([])
 
   useEffect(() => {
-    fetch('/api/me')
-      .then(r => r.json())
-      .then(data => {
-        if (typeof data.isPro === 'boolean') setPro(data.isPro)
+    // Récupérer le plan + plateformes
+    const mePromise = fetch('/api/me').then(r => r.ok ? r.json() : null)
+    // Récupérer la complétude du profil
+    const profilePromise = fetch('/api/profile').then(r => r.ok ? r.json() : null)
 
-        const platforms: Array<{ type: string; stats: Record<string, unknown> | null }> = data.platforms ?? []
-        const connectedList = platforms.map((p: { type: string }) => p.type)
-        setConnected(connectedList)
+    Promise.all([mePromise, profilePromise]).then(([meData, profileData]) => {
+      if (meData && typeof meData.isPro === 'boolean') setPro(meData.isPro)
 
-        const ytPlatform = platforms.find((p: { type: string }) => p.type === 'youtube')
-        const subs = ytPlatform?.stats
-          ? parseInt(String((ytPlatform.stats as Record<string, unknown>).subscriberCount ?? '0')) || 0
-          : 0
+      const platforms: PlatformData[] = (meData?.platforms ?? []).map((p: PlatformData) => ({
+        type: p.type,
+        stats: p.stats as PlatformStats | null,
+      }))
+      const connectedList = platforms.map(p => p.type)
+      setConnected(connectedList)
 
-        setScoreData(calcScore(subs, connectedList.length))
+      // Calculer la complétude du profil (0-100)
+      const prof = profileData?.profile
+      let completeness = 0
+      if (prof) {
+        if (prof.displayName) completeness += 20
+        if (prof.bio) completeness += 20
+        if (prof.niche) completeness += 15
+        if (prof.twitterHandle || prof.instagramHandle || prof.tiktokHandle) completeness += 20
+        if (prof.bannerUrl) completeness += 15
+        if (prof.calendlyUrl) completeness += 10
+      }
 
-        setBrands(
-          ALL_BRANDS.map(b => ({ ...b, compatibility: getBrandCompatibility(b.minSubs, subs || 10000) }))
-            .filter(b => b.compatibility > 0)
-            .sort((a, b) => b.compatibility - a.compatibility)
-            .slice(0, 6)
-        )
-      })
-      .catch(() => {})
+      const score = calcScore(platforms, completeness)
+      setScoreData(score)
+
+      const totalAudience = score.ytSubs + score.twFollowers
+      setBrands(
+        ALL_BRANDS.map(b => ({ ...b, compatibility: getBrandCompatibility(b.minSubs, totalAudience || 10000) }))
+          .filter(b => b.compatibility > 0)
+          .sort((a, b) => b.compatibility - a.compatibility)
+          .slice(0, 6)
+      )
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   const hasConnectedPlatforms = connected.length > 0

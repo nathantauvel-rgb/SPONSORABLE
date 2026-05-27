@@ -22,7 +22,7 @@ if (AUTH_GOOGLE_ID && AUTH_GOOGLE_SECRET) {
         allowDangerousEmailAccountLinking: true,
         authorization: {
             params: {
-                scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly",
+                scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly",
                 prompt: "consent",
                 access_type: "offline",
                 response_type: "code",
@@ -37,7 +37,7 @@ if (AUTH_TWITCH_ID && AUTH_TWITCH_SECRET) {
         clientSecret: AUTH_TWITCH_SECRET,
         authorization: {
             params: {
-                scope: "openid user:read:email user:read:follows moderator:read:followers",
+                scope: "openid user:read:email user:read:follows moderator:read:followers channel:read:subscriptions",
             },
         },
     }))
@@ -73,7 +73,15 @@ providers.push(Credentials({
         }
 
         if (!user.emailVerified) {
-            throw new Error("Veuillez confirmer votre email avant de vous connecter")
+            // En dev sans service email → auto-vérifier au passage
+            if (process.env.NODE_ENV !== 'production' && !process.env.RESEND_API_KEY) {
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: { emailVerified: new Date() },
+                })
+            } else {
+                throw new Error("EMAIL_NOT_VERIFIED")
+            }
         }
 
         return user
@@ -92,17 +100,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (isOnDashboard) return isLoggedIn
             return true
         },
-        async signIn({ user, account, profile }) {
+        async signIn({ user, account }) {
             if (account?.provider === 'google' || account?.provider === 'twitch') {
-                const name = profile?.name ?? user.name
-                const image = (profile as Record<string, unknown>)?.picture as string | undefined ?? user.image
-                if (name || image) {
+                // Vérifier si c'est un linking de plateforme (l'utilisateur a déjà un compte Credentials)
+                // Dans ce cas on ne touche PAS au nom/image du compte Sponsorable
+                const existingUser = await prisma.user.findUnique({
+                    where: { id: user.id },
+                    select: { password: true },
+                })
+                const isLinking = !!existingUser?.password
+                if (isLinking) {
+                    // Connexion de plateforme uniquement — ne pas écraser le profil Sponsorable
+                    return true
+                }
+                // Première vraie connexion OAuth (sans compte Credentials) — mettre à jour le profil
+                if (user.name || user.image) {
                     await prisma.user.update({
                         where: { id: user.id },
-                        data: { name, image }
+                        data: { name: user.name ?? undefined, image: user.image ?? undefined }
                     }).catch(err => { console.error('[auth] user update failed', err) })
-                    user.name = name
-                    user.image = image
                 }
             }
             return true
