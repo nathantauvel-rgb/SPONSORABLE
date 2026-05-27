@@ -31,10 +31,24 @@ export async function DELETE() {
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
   }
+
+  // Avant de supprimer, récupérer l'avatar Twitch si connecté (fallback photo de profil)
+  const twitchPlatform = await prisma.platform.findUnique({
+    where: { userId_type: { userId: session.user.id, type: 'twitch' } },
+    select: { avatarUrl: true },
+  })
+
   await prisma.$transaction([
     prisma.platform.deleteMany({ where: { userId: session.user.id, type: 'youtube' } }),
     prisma.account.deleteMany({ where: { userId: session.user.id, provider: 'google' } }),
   ])
+
+  // Basculer la photo de profil sur Twitch si disponible, sinon remettre à null
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { image: twitchPlatform?.avatarUrl ?? null },
+  }).catch(err => console.error('[platforms/youtube DELETE] user image update failed', err))
+
   return NextResponse.json({ success: true })
 }
 

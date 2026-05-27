@@ -125,7 +125,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
             return true
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger }) {
             if (user) {
                 token.id = user.id
                 // Lire depuis la DB pour éviter qu'un OAuth de linking (Twitch, Google)
@@ -136,6 +136,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 })
                 token.name = dbUser?.name ?? user.name
                 token.picture = dbUser?.image ?? user.image
+            }
+            // Quand update() est appelé côté client (après connect/disconnect plateforme),
+            // on relit le profil depuis la DB pour refléter la nouvelle image
+            if (trigger === 'update' && token.id) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: token.id as string },
+                    select: { name: true, image: true },
+                })
+                if (dbUser) {
+                    token.name = dbUser.name ?? token.name
+                    token.picture = dbUser.image ?? token.picture
+                }
             }
             return token
         },

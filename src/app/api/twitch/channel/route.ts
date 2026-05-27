@@ -145,21 +145,37 @@ export async function GET() {
     lastFetched: new Date().toISOString(),
   }
 
+  const twitchAvatar = user.profile_image_url as string | undefined
+
   // Persist to Platform DB
   await prisma.platform.upsert({
     where: { userId_type: { userId: session.user.id, type: 'twitch' } },
-    update: { stats: JSON.parse(JSON.stringify(result)), lastFetched: new Date() },
+    update: { stats: JSON.parse(JSON.stringify(result)), lastFetched: new Date(), avatarUrl: twitchAvatar },
     create: {
       userId: session.user.id,
       type: 'twitch',
       platformId: user.id,
       username: user.login,
       displayName: user.display_name,
-      avatarUrl: user.profile_image_url ?? undefined,
+      avatarUrl: twitchAvatar,
       stats: JSON.parse(JSON.stringify(result)),
       lastFetched: new Date(),
     },
   }).catch(err => console.error('[twitch/channel] upsert failed', err))
+
+  // Twitch ne met à jour la photo de profil que si YouTube n'est pas connecté (priorité YouTube)
+  if (twitchAvatar) {
+    const ytPlatform = await prisma.platform.findUnique({
+      where: { userId_type: { userId: session.user.id, type: 'youtube' } },
+      select: { id: true },
+    })
+    if (!ytPlatform) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { image: twitchAvatar },
+      }).catch(err => console.error('[twitch/channel] user image update failed', err))
+    }
+  }
 
   return NextResponse.json(result)
 }

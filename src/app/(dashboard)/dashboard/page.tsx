@@ -63,7 +63,7 @@ const timeSince = (iso: string) => {
 function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data: session } = useSession()
+  const { data: session, update: updateSession } = useSession()
 
   const [ytData, setYtData] = useState<YTData | null>(null)
   const [ytLoading, setYtLoading] = useState(false)
@@ -96,6 +96,8 @@ function DashboardContent() {
       } else {
         setYtData(data)
         localStorage.setItem('sponsorable_yt_data', JSON.stringify(data))
+        // Rafraîchir la session pour mettre à jour la photo de profil (priorité YouTube)
+        await updateSession()
       }
     } catch {
       setYtError('Erreur réseau')
@@ -125,6 +127,8 @@ function DashboardContent() {
       } else {
         setTwitchData(data)
         localStorage.setItem('sponsorable_twitch_data', JSON.stringify(data))
+        // Rafraîchir la session pour mettre à jour la photo de profil (si pas de YouTube)
+        await updateSession()
       }
     } catch {
       setTwitchError('Erreur réseau')
@@ -149,6 +153,8 @@ function DashboardContent() {
         setTwitchData(null)
         localStorage.removeItem('sponsorable_twitch_data')
       }
+      // Rafraîchir la session pour mettre à jour la photo de profil
+      await updateSession()
     } catch (err) {
       console.error(`[disconnect] ${type} error:`, err)
     } finally {
