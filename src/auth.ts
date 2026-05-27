@@ -92,6 +92,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     adapter: PrismaAdapter(prisma),
     session: { strategy: "jwt" },
     debug: process.env.NODE_ENV === 'development',
+    pages: {
+        signIn: '/login',
+        error: '/login',
+    },
     providers,
     callbacks: {
         authorized({ auth: session, request: { nextUrl } }) {
@@ -102,18 +106,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         },
         async signIn({ user, account }) {
             if (account?.provider === 'google' || account?.provider === 'twitch') {
-                // Vérifier si c'est un linking de plateforme (l'utilisateur a déjà un compte Credentials)
-                // Dans ce cas on ne touche PAS au nom/image du compte Sponsorable
-                const existingUser = await prisma.user.findUnique({
-                    where: { id: user.id },
-                    select: { password: true },
+                // C'est un linking si l'utilisateur a déjà au moins un Account en base
+                // (qu'il se soit inscrit avec email/password OU avec un autre OAuth)
+                const existingAccountCount = await prisma.account.count({
+                    where: { userId: user.id },
                 })
-                const isLinking = !!existingUser?.password
+                const isLinking = existingAccountCount > 0
                 if (isLinking) {
                     // Connexion de plateforme uniquement — ne pas écraser le profil Sponsorable
                     return true
                 }
-                // Première vraie connexion OAuth (sans compte Credentials) — mettre à jour le profil
+                // Première vraie connexion OAuth — mettre à jour le profil avec les données du provider
                 if (user.name || user.image) {
                     await prisma.user.update({
                         where: { id: user.id },
@@ -123,11 +126,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
             return true
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger }) {
             if (user) {
                 token.id = user.id
-                token.name = user.name
-                token.picture = user.image
+                // Lire depuis la DB pour éviter qu'un OAuth de linking (Twitch, Google)
+                // écrase le nom/avatar du compte Sponsorable dans le JWT
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: user.id as string },
+                    select: { name: true, image: true },
+                })
+                token.name = dbUser?.name ?? user.name
+                token.picture = dbUser?.image ?? user.image
+            }
+            // Quand update() est appelé côté client (après connect/disconnect plateforme),
+            // on relit le profil depuis la DB pour refléter la nouvelle image
+            if (trigger === 'update' && token.id) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: token.id as string },
+                    select: { name: true, image: true },
+                })
+                if (dbUser) {
+                    token.name = dbUser.name ?? token.name
+                    token.picture = dbUser.image ?? token.picture
+                }
             }
             return token
         },

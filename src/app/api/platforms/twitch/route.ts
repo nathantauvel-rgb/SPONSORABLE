@@ -45,6 +45,18 @@ export async function GET() {
   return NextResponse.json({ platform })
 }
 
+export async function DELETE() {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+  }
+  await prisma.$transaction([
+    prisma.platform.deleteMany({ where: { userId: session.user.id, type: 'twitch' } }),
+    prisma.account.deleteMany({ where: { userId: session.user.id, provider: 'twitch' } }),
+  ])
+  return NextResponse.json({ success: true })
+}
+
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.id) {

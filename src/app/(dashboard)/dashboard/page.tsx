@@ -59,21 +59,11 @@ const timeSince = (iso: string) => {
   return `il y a ${Math.floor(mins / 60)}h`
 }
 
-const StatusBadge = ({ connected }: { connected: boolean }) => (
-  <span style={{
-    borderRadius: '9999px', padding: '3px 12px', fontSize: '12px', fontWeight: 500,
-    background: connected ? 'rgba(134,239,172,0.2)' : '#f1f5f9',
-    color: connected ? '#15803d' : '#94a3b8',
-    border: connected ? '1px solid rgba(134,239,172,0.4)' : 'none',
-  }}>
-    {connected ? 'Connecté ✓' : 'Non connecté'}
-  </span>
-)
 
 function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data: session } = useSession()
+  const { data: session, update: updateSession } = useSession()
 
   const [ytData, setYtData] = useState<YTData | null>(null)
   const [ytLoading, setYtLoading] = useState(false)
@@ -106,6 +96,8 @@ function DashboardContent() {
       } else {
         setYtData(data)
         localStorage.setItem('sponsorable_yt_data', JSON.stringify(data))
+        // Rafraîchir la session pour mettre à jour la photo de profil (priorité YouTube)
+        await updateSession()
       }
     } catch {
       setYtError('Erreur réseau')
@@ -135,6 +127,8 @@ function DashboardContent() {
       } else {
         setTwitchData(data)
         localStorage.setItem('sponsorable_twitch_data', JSON.stringify(data))
+        // Rafraîchir la session pour mettre à jour la photo de profil (si pas de YouTube)
+        await updateSession()
       }
     } catch {
       setTwitchError('Erreur réseau')
@@ -147,7 +141,11 @@ function DashboardContent() {
     if (type === 'youtube') setYtDisconnecting(true)
     else setTwitchDisconnecting(true)
     try {
-      await fetch(`/api/platforms/${type}`, { method: 'DELETE' })
+      const res = await fetch(`/api/platforms/${type}`, { method: 'DELETE' })
+      if (!res.ok) {
+        console.error(`[disconnect] ${type} failed:`, res.status)
+        return
+      }
       if (type === 'youtube') {
         setYtData(null)
         localStorage.removeItem('sponsorable_yt_data')
@@ -155,6 +153,10 @@ function DashboardContent() {
         setTwitchData(null)
         localStorage.removeItem('sponsorable_twitch_data')
       }
+      // Rafraîchir la session pour mettre à jour la photo de profil
+      await updateSession()
+    } catch (err) {
+      console.error(`[disconnect] ${type} error:`, err)
     } finally {
       if (type === 'youtube') setYtDisconnecting(false)
       else setTwitchDisconnecting(false)
@@ -247,107 +249,154 @@ function DashboardContent() {
         {/* Platforms */}
         <div style={{ marginBottom: '40px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', marginBottom: '16px' }}>Tes plateformes connectées</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '560px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', maxWidth: '560px' }}>
 
             {/* YouTube */}
-            <div className="card-standard" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <PlatformIcon id="youtube" color={ytData ? '#ef4444' : '#94a3b8'} />
-                <div>
-                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>YouTube</p>
-                  <p style={{ fontSize: '12px', color: '#94a3b8' }}>
-                    {ytData
-                      ? `${ytData.title} · ${fmtNum(ytData.subscriberCount)} abonnés · ${fmtNum(ytData.viewCount)} vues`
-                      : ytLoading ? 'Chargement...' : ytError || 'Non connecté'}
-                  </p>
+            <div style={{
+              background: 'white', borderRadius: '16px', overflow: 'hidden',
+              border: '1px solid #e2e8f0',
+              borderTop: `4px solid ${ytData ? '#22c55e' : '#e2e8f0'}`,
+              boxShadow: ytData ? '0 2px 12px rgba(34,197,94,0.08)' : '0 1px 4px rgba(0,0,0,0.05)',
+              transition: 'box-shadow 300ms',
+            }}>
+              {/* Header */}
+              <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: ytData ? 'rgba(239,68,68,0.08)' : '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <PlatformIcon id="youtube" color={ytData ? '#ef4444' : '#cbd5e1'} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>YouTube</p>
+                    <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '1px' }}>
+                      {ytLoading ? 'Chargement...' : ytData ? ytData.title : 'Non connecté'}
+                    </p>
+                  </div>
                 </div>
+                {ytData && (
+                  <span style={{ flexShrink: 0, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', display: 'block' }} />
+                    Connecté
+                  </span>
+                )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <StatusBadge connected={!!ytData} />
-                {ytData ? (
-                  <button
-                    onClick={() => disconnectPlatform('youtube')}
-                    disabled={ytDisconnecting}
-                    style={{ fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '9999px', border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.06)', color: '#dc2626', cursor: ytDisconnecting ? 'wait' : 'pointer', transition: 'all 150ms', whiteSpace: 'nowrap' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.12)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.06)' }}
-                  >
-                    {ytDisconnecting ? '...' : '× Déconnecter'}
+
+              {/* Mini stats */}
+              {ytData && (
+                <div style={{ padding: '0 18px 14px', display: 'flex', gap: '20px' }}>
+                  <div>
+                    <p style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>{fmtNum(ytData.subscriberCount)}</p>
+                    <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>abonnés</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>{fmtNum(ytData.viewCount)}</p>
+                    <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>vues totales</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Action */}
+              <div style={{ borderTop: '1px solid #f1f5f9', padding: '12px 14px' }}>
+                {ytError ? (
+                  <div style={{ marginBottom: '8px' }}>
+                    <p style={{ fontSize: '12px', color: '#dc2626', marginBottom: ytNeedsReauth ? '8px' : '0' }}>⚠ {ytError}</p>
+                    {ytNeedsReauth && (
+                      <button onClick={handleYouTubeReauth} disabled={ytReauthLoading}
+                        style={{ width: '100%', padding: '9px', borderRadius: '10px', border: 'none', background: '#ef4444', color: 'white', fontSize: '13px', fontWeight: 700, cursor: ytReauthLoading ? 'wait' : 'pointer', opacity: ytReauthLoading ? 0.7 : 1 }}>
+                        {ytReauthLoading ? 'Reconnexion...' : 'Reconnecter Google →'}
+                      </button>
+                    )}
+                  </div>
+                ) : ytData ? (
+                  <button onClick={() => disconnectPlatform('youtube')} disabled={ytDisconnecting}
+                    style={{ width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontSize: '13px', fontWeight: 600, cursor: ytDisconnecting ? 'wait' : 'pointer', transition: 'background 150ms' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#fee2e2' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fef2f2' }}>
+                    {ytDisconnecting ? 'Déconnexion...' : 'Déconnecter'}
                   </button>
                 ) : !ytLoading && (
                   <button
                     onClick={async () => {
-                      // Effacer l'éventuel ancien token Google sans scopes YouTube
                       await fetch('/api/platforms/google-reauth', { method: 'DELETE' }).catch(() => {})
                       signIn('google', { callbackUrl: '/dashboard?connected=youtube' })
                     }}
-                    style={{ fontSize: '12px', color: '#ef4444', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                  >
-                    Connecter →
+                    style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: '#ef4444', color: 'white', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
+                    Connecter YouTube
                   </button>
                 )}
               </div>
             </div>
 
-            {ytError && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', marginTop: '4px' }}>
-                <p style={{ fontSize: '12px', color: '#dc2626', flex: 1 }}>⚠ YouTube : {ytError}</p>
-                {ytNeedsReauth && (
-                  <button
-                    onClick={handleYouTubeReauth}
-                    disabled={ytReauthLoading}
-                    style={{
-                      padding: '6px 14px', borderRadius: '8px', border: 'none',
-                      background: '#dc2626', color: 'white', fontSize: '12px',
-                      fontWeight: 700, cursor: ytReauthLoading ? 'wait' : 'pointer',
-                      whiteSpace: 'nowrap', opacity: ytReauthLoading ? 0.7 : 1,
-                    }}
-                  >
-                    {ytReauthLoading ? '...' : 'Reconnecter Google →'}
-                  </button>
+            {/* Twitch */}
+            <div style={{
+              background: 'white', borderRadius: '16px', overflow: 'hidden',
+              border: '1px solid #e2e8f0',
+              borderTop: `4px solid ${twitchData ? '#22c55e' : '#e2e8f0'}`,
+              boxShadow: twitchData ? '0 2px 12px rgba(34,197,94,0.08)' : '0 1px 4px rgba(0,0,0,0.05)',
+              transition: 'box-shadow 300ms',
+            }}>
+              {/* Header */}
+              <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: twitchData ? 'rgba(145,70,255,0.08)' : '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <PlatformIcon id="twitch" color={twitchData ? '#9146ff' : '#cbd5e1'} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>Twitch</p>
+                    <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '1px' }}>
+                      {twitchLoading ? 'Chargement...' : twitchData ? twitchData.displayName : 'Non connecté'}
+                    </p>
+                  </div>
+                </div>
+                {twitchData && (
+                  <span style={{ flexShrink: 0, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', display: 'block' }} />
+                    Connecté
+                  </span>
                 )}
               </div>
-            )}
 
-            {/* Twitch */}
-            <div className="card-standard" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <PlatformIcon id="twitch" color={twitchData ? '#9146ff' : '#94a3b8'} />
-                <div>
-                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>Twitch</p>
-                  <p style={{ fontSize: '12px', color: '#94a3b8' }}>
-                    {twitchData
-                      ? `${twitchData.displayName} · ${fmtNum(twitchData.followerCount)} followers`
-                      : twitchLoading ? 'Chargement...' : twitchError || 'Non connecté'}
-                  </p>
+              {/* Mini stats */}
+              {twitchData && (
+                <div style={{ padding: '0 18px 14px', display: 'flex', gap: '20px' }}>
+                  <div>
+                    <p style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>{fmtNum(twitchData.followerCount)}</p>
+                    <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>followers</p>
+                  </div>
+                  {twitchData.viewCount > 0 && (
+                    <div>
+                      <p style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>{fmtNum(twitchData.viewCount)}</p>
+                      <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>vues canal</p>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <StatusBadge connected={!!twitchData} />
-                {twitchData ? (
-                  <button
-                    onClick={() => disconnectPlatform('twitch')}
-                    disabled={twitchDisconnecting}
-                    style={{ fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '9999px', border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.06)', color: '#dc2626', cursor: twitchDisconnecting ? 'wait' : 'pointer', transition: 'all 150ms', whiteSpace: 'nowrap' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.12)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(220,38,38,0.06)' }}
-                  >
-                    {twitchDisconnecting ? '...' : '× Déconnecter'}
+              )}
+
+              {/* Action */}
+              <div style={{ borderTop: '1px solid #f1f5f9', padding: '12px 14px' }}>
+                {twitchError ? (
+                  <p style={{ fontSize: '12px', color: '#dc2626' }}>⚠ {twitchError}</p>
+                ) : twitchData ? (
+                  <button onClick={() => disconnectPlatform('twitch')} disabled={twitchDisconnecting}
+                    style={{ width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontSize: '13px', fontWeight: 600, cursor: twitchDisconnecting ? 'wait' : 'pointer', transition: 'background 150ms' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#fee2e2' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fef2f2' }}>
+                    {twitchDisconnecting ? 'Déconnexion...' : 'Déconnecter'}
                   </button>
                 ) : !twitchLoading && (
                   <button
                     onClick={() => signIn('twitch', { callbackUrl: '/dashboard?connected=twitch' })}
-                    style={{ fontSize: '12px', color: '#9146ff', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                  >
-                    Connecter →
+                    style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: '#9146ff', color: 'white', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
+                    Connecter Twitch
                   </button>
                 )}
               </div>
             </div>
-
-            {twitchError && (
-              <p style={{ fontSize: '12px', color: '#ef4444', padding: '0 4px' }}>⚠ Twitch : {twitchError}</p>
-            )}
 
           </div>
         </div>

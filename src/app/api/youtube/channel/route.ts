@@ -223,21 +223,31 @@ export async function GET() {
 
   const result = formatChannel(ch, videos, analytics)
 
+  const ytAvatar = ch.snippet.thumbnails?.default?.url as string | undefined
+
   // Persist to Platform DB so the public media kit can display enriched data
   await prisma.platform.upsert({
     where: { userId_type: { userId: session.user.id, type: 'youtube' } },
-    update: { stats: JSON.parse(JSON.stringify(result)), lastFetched: new Date() },
+    update: { stats: JSON.parse(JSON.stringify(result)), lastFetched: new Date(), avatarUrl: ytAvatar },
     create: {
       userId: session.user.id,
       type: 'youtube',
       platformId: ch.id as string,
       username: (ch.snippet.customUrl || ch.id) as string,
       displayName: ch.snippet.title as string,
-      avatarUrl: ch.snippet.thumbnails?.default?.url as string | undefined,
+      avatarUrl: ytAvatar,
       stats: JSON.parse(JSON.stringify(result)),
       lastFetched: new Date(),
     },
   }).catch(err => console.error('[youtube/channel] upsert failed', err))
+
+  // YouTube a la priorité maximale sur la photo de profil Sponsorable
+  if (ytAvatar) {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { image: ytAvatar },
+    }).catch(err => console.error('[youtube/channel] user image update failed', err))
+  }
 
   return NextResponse.json(result)
 }

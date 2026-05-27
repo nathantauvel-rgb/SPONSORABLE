@@ -318,6 +318,8 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
+        {/* Gradient de transition hero → blanc */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '120px', background: 'linear-gradient(to bottom, transparent, #ffffff)', zIndex: 1, pointerEvents: 'none' }} />
       </section>
 
       {/* ── COMMENT ÇA MARCHE ───────────────── */}
