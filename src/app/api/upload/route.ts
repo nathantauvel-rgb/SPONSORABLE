@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
 import { put } from '@vercel/blob'
 import { auth } from '@/lib/auth'
 
