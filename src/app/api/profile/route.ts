@@ -22,6 +22,13 @@ const ProfileSchema = z.object({
   twitterHandle: z.string().max(64).optional().nullable(),
   instagramHandle: z.string().max(64).optional().nullable(),
   tiktokHandle: z.string().max(64).optional().nullable(),
+  country: z.string().max(100).optional().nullable(),
+  languages: z.array(z.string()).max(10).optional(),
+  contentStyle: z.string().max(100).optional().nullable(),
+  targetBrands: z.string().max(300).optional().nullable(),
+  availableForCollabs: z.boolean().optional(),
+  positioningPhrase: z.string().max(300).optional().nullable(),
+  sponsorSummary: z.string().max(600).optional().nullable(),
   isPublic: z.boolean().optional(),
 })
 

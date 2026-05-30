@@ -128,10 +128,17 @@ model Profile {
   partnerships     Json?
   bannerUrl        String?
   calendlyUrl      String?
-  twitterHandle    String?
-  instagramHandle  String?
-  tiktokHandle     String?
-  isPublic         Boolean  @default(true)
+  twitterHandle       String?
+  instagramHandle     String?
+  tiktokHandle        String?
+  country             String?
+  languages           Json?
+  contentStyle        String?
+  targetBrands        String?
+  availableForCollabs Boolean  @default(true)
+  positioningPhrase   String?
+  sponsorSummary      String?
+  isPublic            Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)

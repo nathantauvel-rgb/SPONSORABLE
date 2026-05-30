@@ -38,6 +38,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     twitterHandle: profile.twitterHandle ?? null,
     instagramHandle: profile.instagramHandle ?? null,
     tiktokHandle: profile.tiktokHandle ?? null,
+    country: profile.country ?? null,
+    languages: profile.languages ?? null,
+    contentStyle: profile.contentStyle ?? null,
+    targetBrands: profile.targetBrands ?? null,
+    availableForCollabs: profile.availableForCollabs,
+    positioningPhrase: profile.positioningPhrase ?? null,
+    sponsorSummary: profile.sponsorSummary ?? null,
     platforms: profile.user.platforms,
     isPro,
   })
