@@ -98,12 +98,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     providers,
     callbacks: {
-        authorized({ auth: session, request: { nextUrl } }) {
-            const isLoggedIn = !!session?.user
-            const isOnDashboard = nextUrl.pathname.startsWith('/dashboard')
-            if (isOnDashboard) return isLoggedIn
-            return true
-        },
         async signIn({ user, account }) {
             if (account?.provider === 'google' || account?.provider === 'twitch') {
                 // C'est un linking si l'utilisateur a déjà au moins un Account en base
