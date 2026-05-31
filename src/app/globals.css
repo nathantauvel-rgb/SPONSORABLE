@@ -82,10 +82,13 @@
     color: #0f172a;
   }
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--font-body, system-ui), sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans, system-ui), sans-serif;
   }
 }
 
@@ -226,6 +229,13 @@
   }
 }
 
+/* ── Steps horizontal grid ── */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
 /* ── Responsive mobile ── */
 @media (max-width: 768px) {
   .hero-grid {
@@ -236,5 +246,18 @@
 
   .hero-mockup {
     display: none !important;
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .steps-grid > * {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .steps-grid > *:last-child {
+    border-bottom: none;
   }
 }

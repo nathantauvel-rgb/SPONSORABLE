@@ -1,22 +1,20 @@
 'use client'
 
-import { Link as LinkIcon, Plug, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import HeroOrbs from '@/components/hero/HeroOrbs'
 import Button from '@/components/ui/button'
 import Footer from '@/components/layout/Footer'
 import Navbar from '@/components/layout/Navbar'
-import { plans, exampleCreators } from '@/data/mockData'
+import { exampleCreators } from '@/data/mockData'
 
 /* ── Browser mockup ─────────────────────────────────────── */
 const BrowserMockup = () => (
   <div
     style={{
-      borderRadius: '14px',
+      borderRadius: '10px',
       overflow: 'hidden',
-      boxShadow: '0 32px 80px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)',
-      border: '1px solid rgba(0,0,0,0.10)',
+      boxShadow: '0 24px 64px rgba(0,0,0,0.36), 0 2px 8px rgba(0,0,0,0.14)',
+      border: '1px solid rgba(255,255,255,0.07)',
       background: 'white',
       width: '100%',
       maxWidth: '520px',
@@ -42,7 +40,7 @@ const BrowserMockup = () => (
         style={{
           flex: 1,
           background: 'white',
-          borderRadius: '6px',
+          borderRadius: '5px',
           padding: '4px 12px',
           fontSize: '11px',
           color: '#94a3b8',
@@ -79,7 +77,7 @@ const BrowserMockup = () => (
             <span style={{ fontSize: '11px', fontWeight: 600, color: '#15803d' }}>Stats en direct</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', borderTop: '3px solid #ef4444', borderRadius: '10px', padding: '16px' }}>
+            <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', borderTop: '3px solid #ef4444', borderRadius: '8px', padding: '16px' }}>
               <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px', fontWeight: 500 }}>YouTube</p>
               <p style={{ fontSize: '32px', fontWeight: 800, color: '#0f172a', lineHeight: 1, letterSpacing: '-0.03em' }}>87 400</p>
               <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>abonnés</p>
@@ -130,28 +128,60 @@ const BrowserMockup = () => (
 
 /* ── Steps ──────────────────────────────────────────────── */
 const steps = [
-  { num: '01', icon: Plug, title: 'Connecte', desc: 'YouTube, Twitch, TikTok, Instagram. Tes stats rentrent automatiquement — rien à saisir.' },
-  { num: '02', icon: Sparkles, title: 'On génère', desc: 'Ton media kit complet se crée tout seul. Design pro, stats en direct, données structurées.' },
-  { num: '03', icon: LinkIcon, title: 'Tu envoies', desc: 'Un lien, pas un PDF. Quand tes stats évoluent, le lien se met à jour tout seul.' },
+  {
+    num: '01',
+    title: 'Connecte tes plateformes',
+    desc: 'YouTube, Twitch, TikTok, Instagram. Tes stats rentrent automatiquement — rien à saisir à la main.',
+  },
+  {
+    num: '02',
+    title: 'Ton kit se génère',
+    desc: 'Design pro, stats vérifiées via API, données structurées. Prêt en moins de 2 minutes.',
+  },
+  {
+    num: '03',
+    title: 'Tu envoies un lien',
+    desc: 'Pas un PDF. Quand tes stats évoluent, le lien se met à jour tout seul. Jamais besoin de refaire.',
+  },
 ]
 
 /* ── Pour qui ───────────────────────────────────────────── */
 const profiles = [
-  { emoji: '🎮', title: 'Tu reçois tes premières DM', sub: '1 000 – 20 000 abonnés', desc: 'Une marque t\'a contacté et tu sais pas quoi répondre. Sponsorable te donne quelque chose de pro à envoyer en 2 minutes.' },
-  { emoji: '📈', title: 'Tu veux scaler tes partenariats', sub: '20 000 – 100 000 abonnés', desc: 'T\'as déjà fait des deals mais tout est bricolé — emails, Canva, tableurs. Il te faut un système.' },
-  { emoji: '🏆', title: 'Tu signes des deals réguliers', sub: '100 000+ abonnés', desc: 'Les équipes marketing attendent un dossier structuré. Ton media kit doit être aussi pro que ton contenu.' },
+  {
+    tag: 'Premier contact',
+    title: 'Une marque vient de te contacter',
+    desc: "T'as rien de pro à envoyer. En 2 min, tu as un lien qui répond à toutes leurs questions — stats, formats, tarifs.",
+    accent: '#16a34a',
+    padding: '28px 24px',
+  },
+  {
+    tag: 'Niche solide',
+    title: 'Petit compte, niche en béton',
+    desc: "La taille seule, les marques s'en foutent. Ce qui compte : ta niche, ton engagement, ta communauté. Sponsorable montre ça.",
+    accent: '#0284c7',
+    padding: '40px 32px',
+  },
+  {
+    tag: 'Déjà actif',
+    title: 'Tu enchaînes déjà les partenariats',
+    desc: "T'as un process qui tient à des emails bricolés et des Canva. Il te faut un outil à la hauteur de ton activité.",
+    accent: '#7c3aed',
+    padding: '28px 24px',
+  },
 ]
 
 /* ── Exemples section ───────────────────────────────────── */
 const ExemplesSection = () => (
   <section id="exemples" style={{ background: '#ffffff', padding: '96px 24px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
     <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 600, color: '#16a34a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Exemples</span>
-        <h2 style={{ fontSize: '38px', fontWeight: 700, letterSpacing: '-0.02em', color: '#0f172a', marginTop: '12px', marginBottom: '12px' }}>
-          À quoi ressemble un media kit ?
+
+      {/* Header — before/after framing */}
+      <div style={{ marginBottom: '56px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 600, color: '#16a34a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Exemples réels</span>
+        <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 38px)', fontWeight: 700, letterSpacing: '-0.02em', color: '#0f172a', marginTop: '12px', marginBottom: '14px', lineHeight: 1.2 }}>
+          Avant : un email avec des screenshots.<br />Après : un lien qu'on bookmarke.
         </h2>
-        <p style={{ fontSize: '17px', color: '#475569' }}>
+        <p style={{ fontSize: '17px', color: '#475569', maxWidth: '500px' }}>
           Voilà ce que les sponsors voient quand tu leur envoies ton lien.
         </p>
       </div>
@@ -162,7 +192,7 @@ const ExemplesSection = () => (
           return (
             <div
               key={c.id}
-              style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: '20px', overflow: 'hidden', boxShadow: t.boxShadow || '0 2px 12px rgba(0,0,0,0.06)', transition: 'transform 200ms ease' }}
+              style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: '10px', overflow: 'hidden', boxShadow: t.boxShadow || '0 2px 12px rgba(0,0,0,0.06)', transition: 'transform 200ms ease' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
             >
@@ -193,7 +223,7 @@ const ExemplesSection = () => (
                 </div>
 
                 {/* Stat principale */}
-                <div style={{ background: t.cardBg, border: `1px solid ${t.border}`, borderLeft: `3px solid ${t.accent}`, borderRadius: '12px', padding: '14px 16px', marginBottom: '10px' }}>
+                <div style={{ background: t.cardBg, border: `1px solid ${t.border}`, borderLeft: `3px solid ${t.accent}`, borderRadius: '8px', padding: '14px 16px', marginBottom: '10px' }}>
                   <p style={{ fontSize: '10px', fontWeight: 500, color: t.subtext, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '4px' }}>{c.platform}</p>
                   <p style={{ fontSize: '26px', fontWeight: 800, color: t.text, letterSpacing: '-0.03em', lineHeight: 1 }}>{c.mainStat.value}</p>
                   <p style={{ fontSize: '10px', color: t.subtext, marginTop: '2px' }}>{c.mainStat.label}</p>
@@ -202,7 +232,7 @@ const ExemplesSection = () => (
                 {/* Stats secondaires */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                   {c.stats.slice(0, 2).map(s => (
-                    <div key={s.label} style={{ background: t.statBg, border: `1px solid ${t.statBorder}`, borderRadius: '10px', padding: '10px 12px' }}>
+                    <div key={s.label} style={{ background: t.statBg, border: `1px solid ${t.statBorder}`, borderRadius: '8px', padding: '10px 12px' }}>
                       <p style={{ fontSize: '14px', fontWeight: 700, color: t.accent, letterSpacing: '-0.01em' }}>{s.value}</p>
                       <p style={{ fontSize: '9px', color: t.subtext, marginTop: '2px' }}>{s.label}</p>
                     </div>
@@ -224,9 +254,9 @@ const ExemplesSection = () => (
         })}
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: '48px' }}>
+      <div style={{ marginTop: '40px' }}>
         <p style={{ fontSize: '14px', color: '#94a3b8' }}>
-          Ton lien ressemblera à ça — avec tes vraies stats, en direct.
+          Ton lien ressemblera à ça — avec tes vraies stats, toujours à jour.
         </p>
       </div>
     </div>
@@ -250,133 +280,135 @@ export default function LandingPage() {
           paddingBottom: '96px',
           overflow: 'hidden',
           background: '#080d14',
-          backgroundImage: 'radial-gradient(rgba(74,222,128,0.10) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
         }}
       >
-        <HeroOrbs />
         <div className="hero-grid">
           {/* Left: text */}
           <div>
-            <div style={{ marginBottom: '24px' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: '9999px', padding: '5px 14px', fontSize: '12px', fontWeight: 600, color: '#4ade80', letterSpacing: '0.02em' }}>
-                ✦ En bêta privée
+            {/* Badge bêta */}
+            <div style={{ marginBottom: '28px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(74,222,128,0.09)', border: '1px solid rgba(74,222,128,0.18)', borderRadius: '9999px', padding: '5px 14px', fontSize: '12px', fontWeight: 600, color: '#4ade80', letterSpacing: '0.02em' }}>
+                En bêta privée
               </span>
             </div>
+
+            {/* H1 */}
             <h1 className="font-hero" style={{ marginBottom: '24px', textAlign: 'left', lineHeight: 1.0 }}>
-              <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>Deviens</span>
+              <span style={{ color: 'rgba(255,255,255,0.72)', fontWeight: 500 }}>Deviens</span>
               <br />
               <span style={{ color: '#4ade80' }}>Sponsorable.</span>
             </h1>
-            <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.5)', marginBottom: '40px', lineHeight: 1.7, maxWidth: '420px' }}>
-              La prochaine fois qu'un sponsor te contacte, t'as quelque chose de pro à lui envoyer en 2 minutes.
+
+            {/* Sous-titre */}
+            <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.50)', marginBottom: '40px', lineHeight: 1.75, maxWidth: '440px' }}>
+              Connecte tes plateformes, on génère ton media kit gaming à partir de tes vraies stats. Tu partages un lien sponsor-ready, toujours à jour — plus jamais de PDF bricolé.
             </p>
+
+            {/* Formulaire */}
             <form
               onSubmit={e => {
                 e.preventDefault()
                 const params = email ? `?email=${encodeURIComponent(email)}&register=1` : '?register=1'
                 router.push(`/login${params}`)
               }}
-              style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', maxWidth: '420px' }}
+              style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', maxWidth: '440px' }}
             >
               <input
                 type="email"
                 placeholder="ton@email.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                style={{ flex: 1, minWidth: '180px', background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '12px 16px', fontSize: '15px', color: 'white', outline: 'none', transition: 'all 150ms ease' }}
-                onFocus={e => { e.target.style.borderColor = '#4ade80'; e.target.style.background = 'rgba(74,222,128,0.08)' }}
-                onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; e.target.style.background = 'rgba(255,255,255,0.07)' }}
+                style={{ flex: 1, minWidth: '180px', background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.11)', borderRadius: '8px', padding: '12px 16px', fontSize: '15px', color: 'white', outline: 'none', transition: 'all 150ms ease' }}
+                onFocus={e => { e.target.style.borderColor = 'rgba(74,222,128,0.5)'; e.target.style.background = 'rgba(74,222,128,0.05)' }}
+                onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.11)'; e.target.style.background = 'rgba(255,255,255,0.06)' }}
               />
               <button
                 type="submit"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '10px', padding: '12px 22px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 0 24px rgba(74,222,128,0.35)', transition: 'all 150ms ease' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#15803d'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 36px rgba(74,222,128,0.5)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#16a34a'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 24px rgba(74,222,128,0.35)' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 22px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background 150ms ease' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#15803d' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#16a34a' }}
               >
                 Commencer →
               </button>
             </form>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '14px' }}>
-              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>
-                Gratuit · Sans carte bancaire
-              </p>
-              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.15)' }}>·</span>
-              <a
-                href="/login"
-                style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', textDecoration: 'underline', textUnderlineOffset: '3px' }}
-              >
-                J&apos;ai déjà un compte
-              </a>
-            </div>
+
+            {/* Micro-signaux */}
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.28)', marginTop: '14px', lineHeight: 1.5 }}>
+              Sans carte bancaire · Prêt en 2 minutes · YouTube · Twitch · TikTok · Instagram
+            </p>
           </div>
 
-          {/* Right: browser mockup (caché sur mobile) */}
+          {/* Right: browser mockup */}
           <div className="hero-mockup">
-            <div style={{ filter: 'drop-shadow(0 0 40px rgba(74,222,128,0.15))', width: '100%', maxWidth: '520px' }}>
+            <div style={{ width: '100%', maxWidth: '520px' }}>
               <BrowserMockup />
             </div>
           </div>
         </div>
-        {/* Gradient de transition hero → blanc */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '120px', background: 'linear-gradient(to bottom, transparent, #ffffff)', zIndex: 1, pointerEvents: 'none' }} />
+
+        {/* Transition hero → blanc */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(to bottom, transparent, #ffffff)', zIndex: 1, pointerEvents: 'none' }} />
       </section>
 
       {/* ── COMMENT ÇA MARCHE ───────────────── */}
       <section id="comment-ca-marche" style={{ background: '#ffffff', padding: '96px 24px' }}>
-        <div style={{ maxWidth: '560px', margin: '0 auto', textAlign: 'center', marginBottom: '64px' }}>
-          <h2 style={{ fontSize: '38px', fontWeight: 700, letterSpacing: '-0.02em', color: '#0f172a', marginBottom: '12px' }}>
-            Simple comme envoyer un lien.
-          </h2>
-          <p style={{ fontSize: '17px', color: '#475569', lineHeight: 1.7 }}>
-            Arrête de répondre aux sponsors avec un email bricolé.
-          </p>
-        </div>
-        <div style={{ maxWidth: '560px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0' }}>
-          {steps.map((step, i) => {
-            const Icon = step.icon
-            return (
-              <div key={i} style={{ display: 'flex', gap: '20px', position: 'relative' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '48px', flexShrink: 0 }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1.5px solid rgba(22,163,74,0.25)', background: 'rgba(134,239,172,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Icon size={16} color="#16a34a" />
-                  </div>
-                  {i < steps.length - 1 && (
-                    <div style={{ width: '1px', flex: 1, minHeight: '40px', borderLeft: '1.5px dashed rgba(22,163,74,0.2)', margin: '8px 0' }} />
-                  )}
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{ marginBottom: '56px' }}>
+            <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 38px)', fontWeight: 700, letterSpacing: '-0.02em', color: '#0f172a', marginBottom: '12px' }}>
+              Simple comme envoyer un lien.
+            </h2>
+            <p style={{ fontSize: '17px', color: '#475569', lineHeight: 1.7, maxWidth: '440px' }}>
+              Trois étapes. Pas d&apos;export, pas de mise à jour manuelle.
+            </p>
+          </div>
+
+          <div className="steps-grid">
+            {steps.map((step, i) => (
+              <div
+                key={i}
+                style={{ padding: '40px 32px', borderRight: i < steps.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none' }}
+              >
+                <div style={{ fontSize: '52px', fontWeight: 800, color: '#e9edf2', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: '24px', userSelect: 'none' }}>
+                  {step.num}
                 </div>
-                <div style={{ paddingBottom: i < steps.length - 1 ? '32px' : 0 }}>
-                  <span style={{ fontSize: '11px', fontWeight: 500, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{step.num}</span>
-                  <h3 style={{ fontSize: '20px', fontWeight: 600, color: '#0f172a', marginTop: '4px', marginBottom: '6px' }}>{step.title}</h3>
-                  <p style={{ fontSize: '15px', color: '#475569', lineHeight: 1.6 }}>{step.desc}</p>
-                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a', marginBottom: '8px' }}>{step.title}</h3>
+                <p style={{ fontSize: '15px', color: '#475569', lineHeight: 1.65 }}>{step.desc}</p>
               </div>
-            )
-          })}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── POUR QUI C'EST ──────────────────── */}
-      <section style={{ background: '#0f172a', padding: '96px 24px' }}>
+      <section style={{ background: '#0c1220', padding: '96px 24px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#4ade80', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Pour qui c'est ?</span>
-            <h2 style={{ fontSize: '38px', fontWeight: 700, letterSpacing: '-0.02em', color: '#ffffff', marginTop: '12px' }}>
-              T'es créateur gaming FR.<br />C'est fait pour toi.
+          <div style={{ marginBottom: '52px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#4ade80', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Pour qui c&apos;est ?</span>
+            <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 38px)', fontWeight: 700, letterSpacing: '-0.02em', color: '#ffffff', marginTop: '12px' }}>
+              T&apos;es créateur gaming FR.<br />C&apos;est fait pour toi.
             </h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            {profiles.map(p => (
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', alignItems: 'start' }}>
+            {profiles.map((p) => (
               <div
                 key={p.title}
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '32px', transition: 'border-color 200ms ease' }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(74,222,128,0.3)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderTop: `2px solid ${p.accent}`,
+                  borderRadius: '8px',
+                  padding: p.padding,
+                  transition: 'background 200ms ease',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.055)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)' }}
               >
-                <div style={{ fontSize: '32px', marginBottom: '16px' }}>{p.emoji}</div>
-                <p style={{ fontSize: '11px', fontWeight: 500, color: '#4ade80', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px' }}>{p.sub}</p>
+                <span style={{ fontSize: '10px', fontWeight: 600, color: p.accent, letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: '12px' }}>
+                  {p.tag}
+                </span>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff', marginBottom: '12px', lineHeight: 1.3 }}>{p.title}</h3>
-                <p style={{ fontSize: '14px', color: '#94a3b8', lineHeight: 1.7 }}>{p.desc}</p>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.75 }}>{p.desc}</p>
               </div>
             ))}
           </div>
@@ -386,44 +418,128 @@ export default function LandingPage() {
       {/* ── EXEMPLES MEDIA KITS ─────────────── */}
       <ExemplesSection />
 
-      {/* ── OFFRES ──────────────────────────── */}
-      <section id="tarifs" style={{ background: '#f8fafc', padding: '96px 24px' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <h2 style={{ fontSize: '38px', fontWeight: 700, letterSpacing: '-0.02em', color: '#0f172a', marginBottom: '12px' }}>
-              Prêt à décrocher ton premier partenariat ?
-            </h2>
-            <p style={{ fontSize: '17px', color: '#475569' }}>
-              Commence gratuitement. Passe au niveau supérieur quand tu veux.
+      {/* ── POURQUOI ON A CONSTRUIT ÇA ──────── */}
+      <section style={{ background: '#f6f7f9', padding: '96px 24px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+        <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: '#16a34a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Notre constat</span>
+          <h2 style={{ fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 700, letterSpacing: '-0.02em', color: '#0f172a', marginTop: '16px', marginBottom: '32px', lineHeight: 1.2 }}>
+            Pourquoi on a construit Sponsorable
+          </h2>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <p style={{ fontSize: '17px', color: '#334155', lineHeight: 1.8 }}>
+              On a vu des créateurs envoyer des <strong style={{ color: '#0f172a' }}>screenshots de stats dans des emails</strong>. Des PDF Canva avec les chiffres d&apos;il y a 6 mois. Des tableurs Google Drive partagés à la va-vite.
+            </p>
+            <p style={{ fontSize: '17px', color: '#334155', lineHeight: 1.8 }}>
+              Les marques méritent mieux. <strong style={{ color: '#0f172a' }}>Les créateurs aussi.</strong>
+            </p>
+            <p style={{ fontSize: '17px', color: '#334155', lineHeight: 1.8 }}>
+              Un lien. Des stats vérifiées via API officielle. Un design qui ne fait pas amateur. C&apos;est tout ce qu&apos;il faut pour qu&apos;une marque te prenne au sérieux — même avec 3 000 abonnés et une niche de béton.
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '48px' }}>
-            {plans.map(plan => (
-              <div
-                key={plan.name}
-                style={{ background: 'white', border: plan.highlight ? '2px solid #16a34a' : '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '32px', position: 'relative', boxShadow: plan.highlight ? '0 8px 32px rgba(22,163,74,0.12)' : '0 1px 3px rgba(0,0,0,0.06)' }}
-              >
-                {plan.badge && (
-                  <span style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: '#16a34a', color: 'white', borderRadius: '9999px', padding: '4px 16px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                    {plan.badge}
-                  </span>
-                )}
-                <p style={{ fontSize: '14px', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>{plan.name}</p>
-                <p style={{ marginBottom: '24px' }}>
-                  <span style={{ fontSize: '36px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>{plan.price}</span>
-                  {plan.period && <span style={{ fontSize: '14px', color: '#94a3b8', marginLeft: '4px' }}>{plan.period}</span>}
-                </p>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {plan.features.map(f => (
-                    <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '14px', color: '#475569' }}>
-                      <span style={{ color: '#16a34a', fontWeight: 700, marginTop: '1px', flexShrink: 0 }}>✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+
+          <div style={{ marginTop: '40px', paddingTop: '32px', borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+            <p style={{ fontSize: '14px', color: '#64748b', fontStyle: 'italic', lineHeight: 1.65 }}>
+              Sponsorable est en bêta privée. On construit ça avec les créateurs, pas pour eux. Si t&apos;as des retours, on lit tout.
+            </p>
           </div>
+        </div>
+      </section>
+
+      {/* ── OFFRES ──────────────────────────── */}
+      <section id="tarifs" style={{ background: '#ffffff', padding: '96px 24px' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{ marginBottom: '56px' }}>
+            <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 38px)', fontWeight: 700, letterSpacing: '-0.02em', color: '#0f172a', marginBottom: '12px' }}>
+              Commence aujourd&apos;hui, gratuitement.
+            </h2>
+            <p style={{ fontSize: '17px', color: '#475569' }}>
+              Passe au niveau supérieur quand tu es prêt.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '48px' }}>
+
+            {/* Gratuit */}
+            <div style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', padding: '32px' }}>
+              <p style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Gratuit</p>
+              <p style={{ marginBottom: '10px' }}>
+                <span style={{ fontSize: '36px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>0€</span>
+              </p>
+              <p style={{ fontSize: '14px', color: '#475569', marginBottom: '24px', lineHeight: 1.65 }}>
+                Pour créer ton premier lien et voir à quoi ressemble ton kit.
+              </p>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  '1 plateforme connectée (YouTube ou Twitch)',
+                  'Page publique avec watermark Sponsorable',
+                  'Lien partageable sponsorable.gg/tonpseudo',
+                  'Stats mises à jour manuellement',
+                ].map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '14px', color: '#475569' }}>
+                    <span style={{ color: '#16a34a', fontWeight: 700, marginTop: '1px', flexShrink: 0 }}>✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Pro */}
+            <div style={{ background: 'white', border: '2px solid #16a34a', borderRadius: '10px', padding: '32px', position: 'relative', boxShadow: '0 8px 32px rgba(22,163,74,0.08)' }}>
+              <span style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: '#16a34a', color: 'white', borderRadius: '9999px', padding: '4px 16px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                Le plus complet
+              </span>
+              <p style={{ fontSize: '12px', fontWeight: 600, color: '#16a34a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Pro</p>
+              <p style={{ marginBottom: '10px' }}>
+                <span style={{ fontSize: '36px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>19€</span>
+                <span style={{ fontSize: '14px', color: '#94a3b8', marginLeft: '4px' }}>/mois</span>
+              </p>
+              <p style={{ fontSize: '14px', color: '#475569', marginBottom: '24px', lineHeight: 1.65 }}>
+                Pour décrocher et gérer tes partenariats sérieusement — sans bricoler.
+              </p>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  'YouTube + Twitch + TikTok + Instagram',
+                  'Page sans watermark, design personnalisé',
+                  'Stats synchronisées automatiquement (API)',
+                  'Analytics kit : qui visite, quand, combien de fois',
+                  'Export PDF pour les marques qui demandent',
+                ].map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '14px', color: '#475569' }}>
+                    <span style={{ color: '#16a34a', fontWeight: 700, marginTop: '1px', flexShrink: 0 }}>✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Agence */}
+            <div style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', padding: '32px' }}>
+              <p style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Agence</p>
+              <p style={{ marginBottom: '10px' }}>
+                <span style={{ fontSize: '36px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>49€</span>
+                <span style={{ fontSize: '14px', color: '#94a3b8', marginLeft: '4px' }}>/mois</span>
+              </p>
+              <p style={{ fontSize: '14px', color: '#475569', marginBottom: '24px', lineHeight: 1.65 }}>
+                Pour les talents managers et agences qui gèrent plusieurs créateurs.
+              </p>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  "Jusqu'à 20 créateurs gérés",
+                  'Dashboard manager centralisé',
+                  'White-label (votre propre domaine)',
+                  'Priorité support',
+                ].map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '14px', color: '#475569' }}>
+                    <span style={{ color: '#16a34a', fontWeight: 700, marginTop: '1px', flexShrink: 0 }}>✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+          </div>
+
           <div style={{ textAlign: 'center' }}>
             <Button variant="primary" arrow onClick={() => router.push('/login?register=1')}>
               Commencer gratuitement
