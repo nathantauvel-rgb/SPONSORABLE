@@ -1,11 +1,16 @@
 import type { Metadata } from 'next'
-import { Space_Grotesk } from 'next/font/google'
+import { Space_Grotesk, Hanken_Grotesk } from 'next/font/google'
 import './globals.css'
 import Providers from '@/components/providers'
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-sans',
+})
+
+const hankenGrotesk = Hanken_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-body',
 })
 
 export const metadata: Metadata = {
@@ -20,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="fr" className={`${spaceGrotesk.variable} h-full antialiased`}>
+    <html lang="fr" className={`${spaceGrotesk.variable} ${hankenGrotesk.variable} h-full antialiased`}>
       <body className="min-h-full"><Providers>{children}</Providers></body>
     </html>
   )
