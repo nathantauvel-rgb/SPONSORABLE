@@ -82,7 +82,8 @@ export async function POST(req: NextRequest) {
   const data = await res.json()
 
   if (data.error) {
-    return NextResponse.json({ error: data.error.message }, { status: 400 })
+    console.error('[platforms/youtube] erreur API Google:', data.error.message)
+    return NextResponse.json({ error: 'Impossible de récupérer la chaîne YouTube.' }, { status: 400 })
   }
   if (!data.items?.length) {
     return NextResponse.json({ error: 'Chaîne introuvable' }, { status: 404 })

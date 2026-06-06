@@ -3,6 +3,7 @@ import { Space_Grotesk, Hanken_Grotesk, Syne, Martian_Mono } from 'next/font/goo
 import localFont from 'next/font/local'
 import './globals.css'
 import Providers from '@/components/providers'
+import CookieBanner from '@/components/CookieBanner'
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -57,7 +58,7 @@ export default function RootLayout({
       lang="fr"
       className={`${spaceGrotesk.variable} ${hankenGrotesk.variable} ${syne.variable} ${martianMono.variable} ${cabinetGrotesk.variable} h-full antialiased`}
     >
-      <body className="min-h-full"><Providers>{children}</Providers></body>
+      <body className="min-h-full"><Providers>{children}</Providers><CookieBanner /></body>
     </html>
   )
 }

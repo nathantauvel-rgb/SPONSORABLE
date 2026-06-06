@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -37,6 +38,16 @@ export async function POST(req: NextRequest) {
     const message = err instanceof Error ? err.message : 'Signature invalide'
     console.error('Webhook signature invalide:', message)
     return NextResponse.json({ error: `Webhook error: ${message}` }, { status: 400 })
+  }
+
+  // Idempotence : si cet event a déjà été traité, on acquitte sans rejouer.
+  try {
+    await prisma.stripeEvent.create({ data: { id: event.id } })
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+    throw err
   }
 
   try {

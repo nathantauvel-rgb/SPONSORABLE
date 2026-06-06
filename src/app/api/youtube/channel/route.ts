@@ -207,7 +207,9 @@ export async function GET() {
         }
       }
     }
-    return NextResponse.json({ error: errMsg || 'Erreur YouTube' }, { status: 400 })
+    // On loggue le message brut côté serveur mais on ne l'expose pas au client (fuite d'infos infra/quota).
+    console.error('[youtube/channel] erreur API Google:', errMsg)
+    return NextResponse.json({ error: 'Impossible de récupérer les données YouTube.' }, { status: 400 })
   }
 
   if (!data.items?.length) {

@@ -105,6 +105,14 @@ model PageView {
   @@index([createdAt])
 }
 
+// Idempotence des webhooks Stripe : on enregistre chaque event.id traité.
+// Stripe redélivre les events (retries, livraison "at-least-once") — on ignore
+// tout event déjà vu pour éviter de réactiver un abonnement annulé, etc.
+model StripeEvent {
+  id        String   @id
+  createdAt DateTime @default(now())
+}
+
 model VerificationToken {
   identifier String
   token      String   @unique

@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation'
 import { creator, exampleCreators, pastPartners, platforms } from '@/data/mockData'
 import type { Platform } from '@/types'
 import { safeUrl, safeCalendlyUrl } from '@/lib/safeUrl'
+import { hasAnalyticsConsent } from '@/lib/consent'
 import { inferProfileData, computeEditorialScore, computeProfileStrategy, selectBriefCards } from '@/lib/profileInference'
 import { generatePositioningPhrase } from '@/lib/profileCopyGenerator'
 import type { ProfileStrategy, BriefCard } from '@/types/mediakit'
@@ -157,7 +158,8 @@ const PublicMediaKitPage = () => {
       .then(data => { if (data) setRemoteData(data); setPrintReady(true) })
       .catch(() => { setPrintReady(true) })
 
-    if (!new URLSearchParams(window.location.search).has('print')) {
+    // RGPD : on ne déclenche la mesure d'audience que si le visiteur a explicitement consenti.
+    if (!new URLSearchParams(window.location.search).has('print') && hasAnalyticsConsent()) {
       fetch('/api/pageview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug }) }).catch(() => {})
     }
   }, [slug])

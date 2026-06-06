@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isProStatus } from '@/lib/subscription'
 
 export async function GET() {
   const session = await auth()
@@ -13,6 +14,6 @@ export async function GET() {
     select: { stripeSubscriptionStatus: true },
   })
 
-  const isPro = user?.stripeSubscriptionStatus === 'active'
+  const isPro = isProStatus(user?.stripeSubscriptionStatus)
   return NextResponse.json({ plan: isPro ? 'pro' : 'free', status: user?.stripeSubscriptionStatus ?? 'free' })
 }

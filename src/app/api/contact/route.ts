@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
+import { isRateLimited } from '@/lib/redis'
 import { z } from 'zod'
 
 const ContactSchema = z.object({
@@ -11,8 +12,20 @@ const ContactSchema = z.object({
   message: z.string().min(1).max(5000),
 })
 
+// Échappe le HTML pour empêcher l'injection de contenu/phishing dans l'email
+// envoyé au créateur (les champs viennent d'un formulaire public non authentifié).
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    // Rate-limit : empêche le spam de messages et l'email-bombing du créateur.
+    if (await isRateLimited(`contact:${ip}`, 5, 3600)) {
+      return NextResponse.json({ error: 'Trop de demandes. Réessaie plus tard.' }, { status: 429 })
+    }
+
     const body = await req.json()
     const parsed = ContactSchema.safeParse(body)
     if (!parsed.success) {
@@ -52,10 +65,10 @@ export async function POST(req: NextRequest) {
               <h2 style="color:#0f172a;margin-bottom:4px">Nouvelle proposition de partenariat</h2>
               <p style="color:#64748b;margin-bottom:24px">Reçue via ton media kit Sponsorable</p>
               <div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:16px">
-                <p style="margin:0 0 12px"><strong>Entreprise :</strong> ${company}</p>
-                <p style="margin:0 0 12px"><strong>Budget :</strong> ${budget}</p>
-                <p style="margin:0 0 12px"><strong>Type :</strong> ${type}</p>
-                <p style="margin:0"><strong>Message :</strong><br/>${message.replace(/\n/g, '<br/>')}</p>
+                <p style="margin:0 0 12px"><strong>Entreprise :</strong> ${escapeHtml(company)}</p>
+                <p style="margin:0 0 12px"><strong>Budget :</strong> ${escapeHtml(budget)}</p>
+                <p style="margin:0 0 12px"><strong>Type :</strong> ${escapeHtml(type)}</p>
+                <p style="margin:0"><strong>Message :</strong><br/>${escapeHtml(message).replace(/\n/g, '<br/>')}</p>
               </div>
               <a href="https://sponsorable.gg/dashboard/messages" style="display:inline-block;background:#16a34a;color:white;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600">
                 Voir dans le dashboard →
@@ -63,7 +76,7 @@ export async function POST(req: NextRequest) {
             </div>
           `,
         }),
-      }).catch(() => { /* Email non bloquant */ })
+      }).catch(err => { console.error('[contact] échec envoi email notification:', err) })
     }
 
     return NextResponse.json({ success: true })

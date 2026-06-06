@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import Stripe from 'stripe'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isProStatus } from '@/lib/subscription'
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
 if (!STRIPE_SECRET_KEY) throw new Error('Missing env var: STRIPE_SECRET_KEY')
@@ -26,9 +27,14 @@ export async function POST() {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, email: true, stripeCustomerId: true },
+      select: { id: true, email: true, stripeCustomerId: true, stripeSubscriptionStatus: true },
     })
     if (!user) return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
+
+    // Empêche un second abonnement (double facturation) si l'utilisateur est déjà Pro.
+    if (isProStatus(user.stripeSubscriptionStatus)) {
+      return NextResponse.json({ error: 'Tu es déjà abonné Pro.' }, { status: 409 })
+    }
 
     // Récupérer ou créer le customer Stripe
     let customerId = user.stripeCustomerId

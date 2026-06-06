@@ -23,7 +23,9 @@ export function safeCalendlyUrl(url: string | undefined | null): string {
   try {
     const parsed = new URL(url)
     if (parsed.protocol !== 'https:') return ''
-    if (!parsed.hostname.endsWith('calendly.com')) return ''
+    // Match exact du domaine ou sous-domaine légitime — évite le bypass
+    // "evilcalendly.com" / "calendly.com.attacker.com" via endsWith.
+    if (parsed.hostname !== 'calendly.com' && !parsed.hostname.endsWith('.calendly.com')) return ''
     return url
   } catch {
     return ''

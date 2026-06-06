@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
@@ -43,6 +44,16 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('[stripe-webhook] signature invalide:', err)
     return NextResponse.json({ error: 'Signature invalide' }, { status: 400 })
+  }
+
+  // Idempotence : si cet event a déjà été traité, on acquitte sans rejouer.
+  try {
+    await prisma.stripeEvent.create({ data: { id: event.id } })
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+    throw err
   }
 
   try {

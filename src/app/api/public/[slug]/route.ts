@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
-export const dynamic = 'force-dynamic'
+// Page publique = cœur produit, très consultée et non temps-réel (stats rafraîchies
+// par cron). On la met en cache 60s au lieu de force-dynamic → TTFB bien meilleur.
+export const revalidate = 60
 import { prisma } from '@/lib/prisma'
+import { isProStatus } from '@/lib/subscription'
 
 export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -23,7 +26,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     return NextResponse.json({ error: 'Page introuvable' }, { status: 404 })
   }
 
-  const isPro = profile.user.stripeSubscriptionStatus === 'active' || profile.user.stripeSubscriptionStatus === 'trialing'
+  const isPro = isProStatus(profile.user.stripeSubscriptionStatus)
 
   return NextResponse.json({
     slug: profile.slug,
