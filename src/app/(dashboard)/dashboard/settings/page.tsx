@@ -7,6 +7,17 @@ import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 import Sidebar from '@/components/layout/Sidebar'
 
+// Palette dark
+const BG = '#0d0d0f'
+const SURFACE = '#111318'
+const CARD = '#1c1f26'
+const ACCENT = '#22c55e'
+const TEXT = '#ffffff'
+const MUTED = '#888888'
+const BORDER = '#222222'
+const SYNE = '"Syne", var(--font-syne), system-ui, sans-serif'
+const DISPLAY = '"Cabinet Grotesk", var(--font-display), system-ui, sans-serif'
+
 const loadPlan = () => { try { return localStorage.getItem('sponsorable_plan') || 'free' } catch { return 'free' } }
 
 const loadProfile = () => {
@@ -26,19 +37,19 @@ const loadProfile = () => {
 }
 
 const SectionCard = ({ children }: { children: React.ReactNode }) => (
-  <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+  <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '16px', overflow: 'hidden' }}>
     {children}
   </div>
 )
 
 const SectionHeader = ({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) => (
-  <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(22,163,74,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a', flexShrink: 0 }}>
+  <div style={{ padding: '20px 24px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(34,197,94,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: ACCENT, flexShrink: 0 }}>
       {icon}
     </div>
     <div>
-      <p style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{title}</p>
-      <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '1px' }}>{desc}</p>
+      <p style={{ fontSize: '14px', fontWeight: 600, color: TEXT }}>{title}</p>
+      <p style={{ fontSize: '12px', color: MUTED, marginTop: '1px' }}>{desc}</p>
     </div>
   </div>
 )
@@ -48,7 +59,7 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     onClick={() => onChange(!checked)}
     style={{
       width: '42px', height: '24px', borderRadius: '9999px', border: 'none', cursor: 'pointer',
-      background: checked ? '#16a34a' : '#e2e8f0',
+      background: checked ? ACCENT : BORDER,
       position: 'relative', transition: 'background 200ms ease', flexShrink: 0,
     }}
   >
@@ -56,7 +67,8 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       position: 'absolute', top: '3px',
       left: checked ? '21px' : '3px',
       width: '18px', height: '18px', borderRadius: '50%',
-      background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      background: checked ? BG : MUTED,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
       transition: 'left 200ms ease',
       display: 'block',
     }} />
@@ -226,25 +238,26 @@ function SettingsContent() {
   }
 
   const inputStyle = {
-    width: '100%', padding: '10px 14px', fontSize: '14px', color: '#0f172a',
-    border: '1px solid rgba(0,0,0,0.12)', borderRadius: '10px', outline: 'none',
-    boxSizing: 'border-box' as const, background: '#fafafa', transition: 'border 150ms',
+    width: '100%', padding: '10px 14px', fontSize: '14px', color: TEXT,
+    border: `1px solid ${BORDER}`, borderRadius: '10px', outline: 'none',
+    boxSizing: 'border-box' as const, background: CARD, transition: 'border 150ms',
   }
 
-  const labelStyle = { fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '6px', display: 'block', letterSpacing: '0.03em', textTransform: 'uppercase' as const }
+  const labelStyle = { fontSize: '12px', fontWeight: 600, color: MUTED, marginBottom: '6px', display: 'block', letterSpacing: '0.03em', textTransform: 'uppercase' as const }
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh' }}>
+    <div style={{ background: BG, minHeight: '100vh' }}>
       <Sidebar />
       <main style={{ marginLeft: '240px', padding: '40px 48px', maxWidth: '800px' }}>
 
         <div style={{ marginBottom: '36px' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Paramètres</h1>
-          <p style={{ fontSize: '14px', color: '#94a3b8' }}>Gère ton compte, ta page publique et tes préférences</p>
+          <h1 style={{ fontSize: '26px', fontWeight: 700, color: TEXT, marginBottom: '6px', letterSpacing: '-0.02em', fontFamily: DISPLAY }}>Paramètres</h1>
+          <p style={{ fontSize: '14px', color: MUTED }}>Gère ton compte, ta page publique et tes préférences</p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
+          {/* Section Profil */}
           <SectionCard>
             <SectionHeader icon={<User size={16} />} title="Profil" desc="Informations affichées sur ton media kit" />
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -255,8 +268,8 @@ function SettingsContent() {
                     style={inputStyle}
                     value={pseudo}
                     onChange={e => setPseudo(e.target.value)}
-                    onFocus={e => (e.target.style.border = '1px solid #16a34a')}
-                    onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
+                    onFocus={e => (e.target.style.border = `1px solid ${ACCENT}`)}
+                    onBlur={e => (e.target.style.border = `1px solid ${BORDER}`)}
                     placeholder="Ton pseudo"
                   />
                 </div>
@@ -266,8 +279,8 @@ function SettingsContent() {
                     style={inputStyle}
                     value={niche}
                     onChange={e => setNiche(e.target.value)}
-                    onFocus={e => (e.target.style.border = '1px solid #16a34a')}
-                    onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
+                    onFocus={e => (e.target.style.border = `1px solid ${ACCENT}`)}
+                    onBlur={e => (e.target.style.border = `1px solid ${BORDER}`)}
                     placeholder="Gaming · Minecraft · FPS"
                   />
                 </div>
@@ -278,8 +291,8 @@ function SettingsContent() {
                   style={inputStyle}
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  onFocus={e => (e.target.style.border = '1px solid #16a34a')}
-                  onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
+                  onFocus={e => (e.target.style.border = `1px solid ${ACCENT}`)}
+                  onBlur={e => (e.target.style.border = `1px solid ${BORDER}`)}
                   placeholder="ton@email.com"
                   type="email"
                 />
@@ -290,20 +303,20 @@ function SettingsContent() {
                   style={{ ...inputStyle, resize: 'vertical', minHeight: '80px', fontFamily: 'inherit', lineHeight: '1.5' }}
                   value={bio}
                   onChange={e => setBio(e.target.value)}
-                  onFocus={e => (e.target.style.border = '1px solid #16a34a')}
-                  onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
+                  onFocus={e => (e.target.style.border = `1px solid ${ACCENT}`)}
+                  onBlur={e => (e.target.style.border = `1px solid ${BORDER}`)}
                   placeholder="Décris-toi en 1-2 phrases pour les marques..."
                 />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <p style={{ fontSize: '12px', color: '#94a3b8' }}>Ces infos sont aussi modifiables depuis l'éditeur media kit</p>
+                <p style={{ fontSize: '12px', color: MUTED }}>Ces infos sont aussi modifiables depuis l'éditeur media kit</p>
                 <button
                   onClick={handleSaveProfile}
                   style={{
                     padding: '10px 24px', borderRadius: '10px', border: 'none', cursor: 'pointer',
                     fontSize: '14px', fontWeight: 600,
-                    background: saved ? '#dcfce7' : '#16a34a',
-                    color: saved ? '#16a34a' : 'white',
+                    background: saved ? 'rgba(34,197,94,0.15)' : ACCENT,
+                    color: saved ? ACCENT : BG,
                     transition: 'all 200ms ease',
                   }}
                 >
@@ -313,38 +326,41 @@ function SettingsContent() {
             </div>
           </SectionCard>
 
+          {/* Section Plan */}
           <div ref={planRef} id="plan">
           <SectionCard>
             <SectionHeader icon={<Shield size={16} />} title="Mon plan" desc="Abonnement actuel et fonctionnalités" />
             <div style={{ padding: '20px 24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'rgba(22,163,74,0.05)', border: '1px solid rgba(22,163,74,0.15)', borderRadius: '12px', marginBottom: '16px' }}>
+              {/* Carte plan actuel */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: CARD, border: `1px solid ${ACCENT}`, borderRadius: '12px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#16a34a' }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: ACCENT }} />
                   <div>
-                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>Plan {currentPlan === 'pro' ? 'Pro' : 'Gratuit'}</p>
-                    <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '1px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT }}>Plan {currentPlan === 'pro' ? 'Pro' : 'Gratuit'}</p>
+                    <p style={{ fontSize: '12px', color: MUTED, marginTop: '1px' }}>
                       {currentPlan === 'pro'
                         ? 'Toutes les plateformes · Templates · Analytics · PDF · Calendly'
                         : '1 plateforme · Template par défaut · Pas d\'accès aux stats'}
                     </p>
                   </div>
                 </div>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: '#16a34a', background: 'rgba(22,163,74,0.1)', padding: '4px 10px', borderRadius: '9999px' }}>Actif</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: ACCENT, background: 'rgba(34,197,94,0.12)', padding: '4px 10px', borderRadius: '9999px' }}>Actif</span>
               </div>
 
-              <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#fffbeb', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <p style={{ fontSize: '12px', color: '#92400e' }}>🧪 Mode démo — simule le plan pour tester l&apos;app</p>
+              {/* Bloc démo */}
+              <div style={{ marginBottom: '16px', padding: '10px 14px', background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.18)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <p style={{ fontSize: '12px', color: '#ca8a04' }}>🧪 Mode démo — simule le plan pour tester l&apos;app</p>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => { setCurrentPlan('free'); localStorage.setItem('sponsorable_plan', 'free') }} style={{ padding: '5px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600, background: currentPlan === 'free' ? '#0f172a' : '#f1f5f9', color: currentPlan === 'free' ? 'white' : '#64748b' }}>Gratuit</button>
-                  <button onClick={() => { setCurrentPlan('pro'); localStorage.setItem('sponsorable_plan', 'pro') }} style={{ padding: '5px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600, background: currentPlan === 'pro' ? '#16a34a' : '#f1f5f9', color: currentPlan === 'pro' ? 'white' : '#64748b' }}>Pro</button>
+                  <button onClick={() => { setCurrentPlan('free'); localStorage.setItem('sponsorable_plan', 'free') }} style={{ padding: '5px 14px', borderRadius: '8px', border: `1px solid ${BORDER}`, cursor: 'pointer', fontSize: '12px', fontWeight: 600, background: currentPlan === 'free' ? TEXT : CARD, color: currentPlan === 'free' ? BG : MUTED }}>Gratuit</button>
+                  <button onClick={() => { setCurrentPlan('pro'); localStorage.setItem('sponsorable_plan', 'pro') }} style={{ padding: '5px 14px', borderRadius: '8px', border: `1px solid ${BORDER}`, cursor: 'pointer', fontSize: '12px', fontWeight: 600, background: currentPlan === 'pro' ? ACCENT : CARD, color: currentPlan === 'pro' ? BG : MUTED }}>Pro</button>
                 </div>
               </div>
 
               {currentPlan !== 'pro' && (
-                <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', borderRadius: '14px', padding: '24px', color: 'white' }}>
+                <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '24px', color: TEXT }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                    <Zap size={16} color="#4ade80" />
-                    <p style={{ fontSize: '15px', fontWeight: 700 }}>Plan Pro — 19€/mois</p>
+                    <Zap size={16} color={ACCENT} />
+                    <p style={{ fontSize: '15px', fontWeight: 700, fontFamily: SYNE }}>Plan Pro — 19€/mois</p>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '20px' }}>
                     {[
@@ -361,19 +377,19 @@ function SettingsContent() {
                       'Tarifs cachés sur demande',
                     ].map(f => (
                       <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                        <span style={{ color: '#4ade80', fontWeight: 700, flexShrink: 0, marginTop: '1px' }}>✓</span>
-                        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.75)' }}>{f}</span>
+                        <span style={{ color: ACCENT, fontWeight: 700, flexShrink: 0, marginTop: '1px' }}>✓</span>
+                        <span style={{ fontSize: '12px', color: MUTED }}>{f}</span>
                       </div>
                     ))}
                   </div>
                   <button
                     onClick={handleCheckout}
                     disabled={checkoutLoading}
-                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', cursor: checkoutLoading ? 'wait' : 'pointer', background: checkoutLoading ? '#15803d' : '#16a34a', color: 'white', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'background 150ms', opacity: checkoutLoading ? 0.8 : 1 }}
+                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', cursor: checkoutLoading ? 'wait' : 'pointer', background: checkoutLoading ? 'rgba(34,197,94,0.7)' : ACCENT, color: BG, fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'background 150ms', opacity: checkoutLoading ? 0.8 : 1 }}
                   >
                     {checkoutLoading ? (
                       <>
-                        <span style={{ width: '15px', height: '15px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+                        <span style={{ width: '15px', height: '15px', border: `2px solid rgba(0,0,0,0.2)`, borderTopColor: BG, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
                         Redirection vers Stripe…
                       </>
                     ) : (
@@ -383,32 +399,33 @@ function SettingsContent() {
                   {checkoutError && (
                     <p style={{ textAlign: 'center', fontSize: '12px', color: '#fca5a5', marginTop: '8px' }}>⚠️ {checkoutError}</p>
                   )}
-                  <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '10px' }}>Sans engagement · Annulable à tout moment · Paiement sécurisé Stripe</p>
+                  <p style={{ textAlign: 'center', fontSize: '11px', color: MUTED, marginTop: '10px' }}>Sans engagement · Annulable à tout moment · Paiement sécurisé Stripe</p>
                 </div>
               )}
             </div>
           </SectionCard>
           </div>
 
+          {/* Section Page publique */}
           <SectionCard>
             <SectionHeader icon={<Globe size={16} />} title="Page publique" desc="Visibilité et lien de ton media kit" />
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: `1px solid ${BORDER}` }}>
                 <div>
-                  <p style={{ fontSize: '14px', fontWeight: 500, color: '#0f172a' }}>Page visible publiquement</p>
-                  <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>Les marques peuvent accéder à ton media kit via le lien</p>
+                  <p style={{ fontSize: '14px', fontWeight: 500, color: TEXT }}>Page visible publiquement</p>
+                  <p style={{ fontSize: '12px', color: MUTED, marginTop: '2px' }}>Les marques peuvent accéder à ton media kit via le lien</p>
                 </div>
                 <Toggle checked={pagePublic} onChange={handleTogglePublic} />
               </div>
               <div style={{ padding: '14px 0' }}>
-                <p style={{ fontSize: '12px', fontWeight: 600, color: '#475569', letterSpacing: '0.03em', textTransform: 'uppercase', marginBottom: '8px' }}>Lien public</p>
+                <p style={{ fontSize: '12px', fontWeight: 600, color: MUTED, letterSpacing: '0.03em', textTransform: 'uppercase', marginBottom: '8px' }}>Lien public</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ flex: 1, padding: '10px 14px', background: '#f1f5f9', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', fontSize: '13px', color: '#475569', fontFamily: 'monospace' }}>
-                    sponsorable.gg/<strong style={{ color: '#0f172a' }}>{publicSlug || pseudo.toLowerCase().replace(/\s+/g, '-')}</strong>
+                  <div style={{ flex: 1, padding: '10px 14px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', fontSize: '13px', color: MUTED, fontFamily: 'monospace' }}>
+                    sponsorable.gg/<strong style={{ color: TEXT }}>{publicSlug || pseudo.toLowerCase().replace(/\s+/g, '-')}</strong>
                   </div>
                   <button
                     onClick={() => navigator.clipboard.writeText(`https://sponsorable.gg/${publicSlug || pseudo.toLowerCase().replace(/\s+/g, '-')}`)}
-                    style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: 'white', fontSize: '13px', fontWeight: 500, color: '#475569', whiteSpace: 'nowrap' }}
+                    style={{ padding: '10px 16px', borderRadius: '10px', border: `1px solid ${BORDER}`, cursor: 'pointer', background: CARD, fontSize: '13px', fontWeight: 500, color: TEXT, whiteSpace: 'nowrap' }}
                   >
                     Copier
                   </button>
@@ -417,6 +434,7 @@ function SettingsContent() {
             </div>
           </SectionCard>
 
+          {/* Section Notifications */}
           <SectionCard>
             <SectionHeader icon={<Bell size={16} />} title="Notifications" desc="Emails que tu reçois de Sponsorable" />
             <div style={{ padding: '0 24px' }}>
@@ -425,10 +443,10 @@ function SettingsContent() {
                 { key: 'notifWeeklyReport' as const, label: 'Rapport hebdomadaire', desc: 'Résumé des vues, clics et visites de ta page chaque lundi', checked: notifWeeklyReport, set: setNotifWeeklyReport },
                 { key: 'notifProductUpdates' as const, label: 'Nouveautés produit', desc: 'Nouveaux templates, nouvelles fonctionnalités et améliorations de la plateforme', checked: notifTips, set: setNotifTips },
               ].map((item, i, arr) => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none' }}>
+                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: i < arr.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
                   <div>
-                    <p style={{ fontSize: '14px', fontWeight: 500, color: '#0f172a' }}>{item.label}</p>
-                    <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>{item.desc}</p>
+                    <p style={{ fontSize: '14px', fontWeight: 500, color: TEXT }}>{item.label}</p>
+                    <p style={{ fontSize: '12px', color: MUTED, marginTop: '2px' }}>{item.desc}</p>
                   </div>
                   <Toggle checked={item.checked} onChange={val => {
                     item.set(val)
@@ -441,61 +459,62 @@ function SettingsContent() {
                   }} />
                 </div>
               ))}
-              {notifSaving && <p style={{ fontSize: '11px', color: '#94a3b8', paddingBottom: '12px' }}>Sauvegarde…</p>}
+              {notifSaving && <p style={{ fontSize: '11px', color: MUTED, paddingBottom: '12px' }}>Sauvegarde…</p>}
             </div>
           </SectionCard>
 
+          {/* Section Sécurité */}
           <SectionCard>
             <SectionHeader icon={<Lock size={16} />} title="Sécurité" desc="Mot de passe et authentification" />
             <div style={{ padding: '20px 24px' }}>
               {!hasPassword ? (
-                <p style={{ fontSize: '13px', color: '#94a3b8' }}>
+                <p style={{ fontSize: '13px', color: MUTED }}>
                   Ton compte utilise Google ou Twitch pour se connecter — aucun mot de passe Sponsorable.
                 </p>
               ) : !showPasswordForm ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
-                    <p style={{ fontSize: '14px', fontWeight: 500, color: '#0f172a' }}>Mot de passe</p>
-                    <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>Modifier ton mot de passe de connexion</p>
+                    <p style={{ fontSize: '14px', fontWeight: 500, color: TEXT }}>Mot de passe</p>
+                    <p style={{ fontSize: '12px', color: MUTED, marginTop: '2px' }}>Modifier ton mot de passe de connexion</p>
                   </div>
                   <button
                     onClick={() => { setShowPasswordForm(true); setPwdError(''); setPwdSuccess(false) }}
-                    style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: 'white', fontSize: '13px', fontWeight: 500, color: '#0f172a' }}
+                    style={{ padding: '9px 18px', borderRadius: '10px', border: `1px solid ${BORDER}`, cursor: 'pointer', background: CARD, fontSize: '13px', fontWeight: 500, color: TEXT }}
                   >
                     Changer
                   </button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>Changer le mot de passe</p>
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: TEXT }}>Changer le mot de passe</p>
                   {pwdSuccess ? (
-                    <div style={{ background: '#f0fdf4', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '10px', padding: '14px 16px' }}>
-                      <p style={{ fontSize: '14px', fontWeight: 600, color: '#16a34a' }}>✓ Mot de passe modifié avec succès</p>
+                    <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '10px', padding: '14px 16px' }}>
+                      <p style={{ fontSize: '14px', fontWeight: 600, color: ACCENT }}>✓ Mot de passe modifié avec succès</p>
                     </div>
                   ) : (
                     <>
                       <div>
                         <label style={labelStyle}>Mot de passe actuel</label>
                         <input type="password" style={inputStyle} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)}
-                          onFocus={e => (e.target.style.border = '1px solid #16a34a')} onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
+                          onFocus={e => (e.target.style.border = `1px solid ${ACCENT}`)} onBlur={e => (e.target.style.border = `1px solid ${BORDER}`)}
                           placeholder="••••••••" />
                       </div>
                       <div>
                         <label style={labelStyle}>Nouveau mot de passe</label>
                         <input type="password" style={inputStyle} value={newPwd} onChange={e => setNewPwd(e.target.value)}
-                          onFocus={e => (e.target.style.border = '1px solid #16a34a')} onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
+                          onFocus={e => (e.target.style.border = `1px solid ${ACCENT}`)} onBlur={e => (e.target.style.border = `1px solid ${BORDER}`)}
                           placeholder="8 caractères minimum" />
                       </div>
                       <div>
                         <label style={labelStyle}>Confirmer le nouveau mot de passe</label>
                         <input type="password" style={inputStyle} value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)}
-                          onFocus={e => (e.target.style.border = '1px solid #16a34a')} onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
+                          onFocus={e => (e.target.style.border = `1px solid ${ACCENT}`)} onBlur={e => (e.target.style.border = `1px solid ${BORDER}`)}
                           placeholder="••••••••" />
                       </div>
                       {pwdError && <p style={{ fontSize: '12px', color: '#ef4444' }}>⚠️ {pwdError}</p>}
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={() => { setShowPasswordForm(false); setCurrentPwd(''); setNewPwd(''); setConfirmPwd(''); setPwdError('') }}
-                          style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: 'white', fontSize: '13px', fontWeight: 500, color: '#475569' }}>
+                          style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${BORDER}`, cursor: 'pointer', background: CARD, fontSize: '13px', fontWeight: 500, color: MUTED }}>
                           Annuler
                         </button>
                         <button
@@ -517,7 +536,7 @@ function SettingsContent() {
                               setCurrentPwd(''); setNewPwd(''); setConfirmPwd('')
                             } catch { setPwdError('Erreur réseau') } finally { setPwdLoading(false) }
                           }}
-                          style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: pwdLoading ? 'wait' : 'pointer', background: '#0f172a', color: 'white', fontSize: '13px', fontWeight: 600, opacity: pwdLoading ? 0.7 : 1 }}>
+                          style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: pwdLoading ? 'wait' : 'pointer', background: ACCENT, color: BG, fontSize: '13px', fontWeight: 600, opacity: pwdLoading ? 0.7 : 1 }}>
                           {pwdLoading ? 'En cours…' : 'Confirmer'}
                         </button>
                       </div>
@@ -528,35 +547,36 @@ function SettingsContent() {
             </div>
           </SectionCard>
 
+          {/* Section Zone de danger */}
           <SectionCard>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', flexShrink: 0 }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', flexShrink: 0 }}>
                 <Trash2 size={16} />
               </div>
               <div>
                 <p style={{ fontSize: '14px', fontWeight: 600, color: '#ef4444' }}>Zone de danger</p>
-                <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '1px' }}>Actions irréversibles sur ton compte</p>
+                <p style={{ fontSize: '12px', color: MUTED, marginTop: '1px' }}>Actions irréversibles sur ton compte</p>
               </div>
             </div>
-            <div style={{ padding: '20px 24px' }}>
+            <div style={{ padding: '20px 24px', background: 'rgba(239,68,68,0.06)', border: '0', borderRadius: '0 0 16px 16px' }}>
               {!showDeleteConfirm ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
-                    <p style={{ fontSize: '14px', fontWeight: 500, color: '#0f172a' }}>Supprimer mon compte</p>
-                    <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>Supprime définitivement ton compte et toutes tes données</p>
+                    <p style={{ fontSize: '14px', fontWeight: 500, color: TEXT }}>Supprimer mon compte</p>
+                    <p style={{ fontSize: '12px', color: MUTED, marginTop: '2px' }}>Supprime définitivement ton compte et toutes tes données</p>
                   </div>
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer', background: 'rgba(239,68,68,0.05)', fontSize: '13px', fontWeight: 600, color: '#ef4444' }}
+                    style={{ padding: '9px 18px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer', background: 'rgba(239,68,68,0.08)', fontSize: '13px', fontWeight: 600, color: '#ef4444' }}
                   >
                     Supprimer
                   </button>
                 </div>
               ) : (
-                <div style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '12px', padding: '20px' }}>
-                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '8px' }}>Tu es sûr·e ?</p>
-                  <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '14px' }}>
-                    Cette action est <strong>irréversible</strong>. Tape ton pseudo <strong>{pseudo}</strong> pour confirmer.
+                <div style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px', padding: '20px' }}>
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: TEXT, marginBottom: '8px' }}>Tu es sûr·e ?</p>
+                  <p style={{ fontSize: '13px', color: MUTED, marginBottom: '14px' }}>
+                    Cette action est <strong style={{ color: TEXT }}>irréversible</strong>. Tape ton pseudo <strong style={{ color: TEXT }}>{pseudo}</strong> pour confirmer.
                   </p>
                   <input
                     style={{ ...inputStyle, marginBottom: '14px' }}
@@ -564,13 +584,13 @@ function SettingsContent() {
                     onChange={e => setDeleteInput(e.target.value)}
                     placeholder={`Tape "${pseudo}" pour confirmer`}
                     onFocus={e => (e.target.style.border = '1px solid #ef4444')}
-                    onBlur={e => (e.target.style.border = '1px solid rgba(0,0,0,0.12)')}
+                    onBlur={e => (e.target.style.border = `1px solid ${BORDER}`)}
                   />
                   {deleteError && <p style={{ fontSize: '12px', color: '#ef4444', marginBottom: '8px' }}>⚠️ {deleteError}</p>}
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button
                       onClick={() => { setShowDeleteConfirm(false); setDeleteInput(''); setDeleteError('') }}
-                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: 'white', fontSize: '13px', fontWeight: 500, color: '#475569' }}
+                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: `1px solid ${BORDER}`, cursor: 'pointer', background: CARD, fontSize: '13px', fontWeight: 500, color: MUTED }}
                     >
                       Annuler
                     </button>
@@ -591,7 +611,7 @@ function SettingsContent() {
                           setDeleteLoading(false)
                         }
                       }}
-                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: (deleteInput === pseudo && !deleteLoading) ? 'pointer' : 'not-allowed', fontSize: '13px', fontWeight: 600, background: (deleteInput === pseudo && !deleteLoading) ? '#ef4444' : '#fecaca', color: 'white', transition: 'background 200ms', opacity: deleteLoading ? 0.7 : 1 }}
+                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: (deleteInput === pseudo && !deleteLoading) ? 'pointer' : 'not-allowed', fontSize: '13px', fontWeight: 600, background: (deleteInput === pseudo && !deleteLoading) ? '#ef4444' : 'rgba(239,68,68,0.25)', color: 'white', transition: 'background 200ms', opacity: deleteLoading ? 0.7 : 1 }}
                     >
                       {deleteLoading ? 'Suppression…' : 'Supprimer définitivement'}
                     </button>
@@ -603,7 +623,7 @@ function SettingsContent() {
 
         </div>
 
-        <p style={{ textAlign: 'center', fontSize: '12px', color: '#cbd5e1', marginTop: '40px', marginBottom: '20px' }}>
+        <p style={{ textAlign: 'center', fontSize: '12px', color: MUTED, marginTop: '40px', marginBottom: '20px' }}>
           Sponsorable v1.0 · Fait avec ❤️ pour les créateurs FR
         </p>
 

@@ -5,6 +5,18 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
 
+// ─── Design system ─────────────────────────────────────────────────────────────
+const BG = '#0d0d0f'
+const SURFACE = '#111318'
+const CARD = '#1c1f26'
+const ACCENT = '#22c55e'
+const TEXT = '#ffffff'
+const MUTED = '#888888'
+const BORDER = '#222222'
+const SYNE = '"Syne", var(--font-syne), system-ui, sans-serif'
+const DISPLAY = '"Cabinet Grotesk", var(--font-display), system-ui, sans-serif'
+const NUM = '"Martian Mono", var(--font-num), ui-monospace, monospace'
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type PlatformStats = {
@@ -405,14 +417,14 @@ function buildSnapshotItems(platforms: PlatformData[], profile: ProfileData, pro
 // ─── Pro gate ──────────────────────────────────────────────────────────────────
 
 const ProGate = ({ message }: { message: string }) => (
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', background: '#f8fafc', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '8px', padding: '16px 20px', marginTop: '12px' }}>
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', background: `rgba(13,13,15,0.88)`, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '16px 20px', marginTop: '12px' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-      <Lock size={14} color="#94a3b8" />
-      <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>{message}</p>
+      <Lock size={14} color={MUTED} />
+      <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{message}</p>
     </div>
     <Link
       href="/dashboard/settings"
-      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', background: '#0f172a', color: 'white', fontWeight: 600, fontSize: '12px', textDecoration: 'none', flexShrink: 0 }}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', background: SURFACE, border: `1px solid ${BORDER}`, color: TEXT, fontWeight: 600, fontSize: '12px', textDecoration: 'none', flexShrink: 0, fontFamily: SYNE }}
     >
       <Zap size={12} /> Passer Pro
     </Link>
@@ -464,18 +476,18 @@ export default function SponsorsPage() {
     : String(n)
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh' }}>
+    <div style={{ background: BG, minHeight: '100vh', fontFamily: SYNE }}>
       <Sidebar />
       <main style={{ marginLeft: '240px', padding: '40px 48px', maxWidth: '1100px' }}>
 
         {/* Bandeau Pro */}
         {!pro && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0f172a', borderRadius: '8px', padding: '14px 20px', marginBottom: '28px', color: 'white' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '14px 20px', marginBottom: '28px', color: TEXT }}>
             <div>
-              <p style={{ fontSize: '13px', fontWeight: 600 }}>Score visible gratuitement.</p>
-              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>Les recommandations détaillées et le plan d'action complet sont réservés au plan Pro.</p>
+              <p style={{ fontSize: '13px', fontWeight: 600, fontFamily: SYNE }}>Score visible gratuitement.</p>
+              <p style={{ fontSize: '12px', color: MUTED, marginTop: '2px', fontFamily: SYNE }}>Les recommandations détaillées et le plan d'action complet sont réservés au plan Pro.</p>
             </div>
-            <Link href="/dashboard/settings" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '6px', background: '#16a34a', color: 'white', fontWeight: 700, fontSize: '13px', textDecoration: 'none', flexShrink: 0 }}>
+            <Link href="/dashboard/settings" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '6px', background: ACCENT, color: '#000000', fontWeight: 700, fontSize: '13px', textDecoration: 'none', flexShrink: 0, fontFamily: SYNE }}>
               <Zap size={13} /> Passer au Pro — 19€/mois
             </Link>
           </div>
@@ -483,31 +495,31 @@ export default function SponsorsPage() {
 
         {/* Hero */}
         <div style={{ marginBottom: '32px' }}>
-          <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: 600, color: '#64748b', background: '#f1f5f9', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '4px', padding: '3px 10px', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '12px' }}>
+          <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: 600, color: MUTED, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '4px', padding: '3px 10px', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '12px', fontFamily: SYNE }}>
             Privé
           </span>
-          <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a', marginBottom: '6px', letterSpacing: '-0.02em' }}>Sponsorabilité</h1>
-          <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6 }}>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: TEXT, marginBottom: '6px', letterSpacing: '-0.02em', fontFamily: DISPLAY }}>Sponsorabilité</h1>
+          <p style={{ fontSize: '14px', color: MUTED, lineHeight: 1.6, fontFamily: SYNE }}>
             Une vue privée de ton niveau de préparation pour les partenariats. Non visible par les marques.
           </p>
         </div>
 
         {loading ? (
-          <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '10px', padding: '60px', textAlign: 'center' }}>
-            <p style={{ fontSize: '14px', color: '#94a3b8' }}>Calcul en cours…</p>
+          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '60px', textAlign: 'center' }}>
+            <p style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>Calcul en cours…</p>
           </div>
         ) : !hasPlatforms ? (
           // État vide — aucune plateforme
-          <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '10px', padding: '60px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-            <p style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', marginBottom: '8px' }}>Connecte au moins une plateforme pour commencer</p>
-            <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px', lineHeight: 1.6, maxWidth: '420px', margin: '0 auto 24px' }}>
+          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '60px', textAlign: 'center' }}>
+            <p style={{ fontSize: '16px', fontWeight: 600, color: TEXT, marginBottom: '8px', fontFamily: SYNE }}>Connecte au moins une plateforme pour commencer</p>
+            <p style={{ fontSize: '14px', color: MUTED, marginBottom: '24px', lineHeight: 1.6, maxWidth: '420px', margin: '0 auto 24px', fontFamily: SYNE }}>
               Pour calculer ton score et t'indiquer des pistes d'amélioration, on a besoin de tes statistiques YouTube ou Twitch vérifiées.
             </p>
-            <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', borderRadius: '8px', background: '#0f172a', color: 'white', fontWeight: 600, fontSize: '14px', textDecoration: 'none' }}>
+            <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', borderRadius: '8px', background: ACCENT, color: '#000000', fontWeight: 600, fontSize: '14px', textDecoration: 'none', fontFamily: SYNE }}>
               Connecter mes plateformes
             </Link>
             {scoreResult && scoreResult.total > 0 && (
-              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '20px' }}>
+              <p style={{ fontSize: '12px', color: MUTED, marginTop: '20px', fontFamily: SYNE }}>
                 Score partiel basé sur ton profil éditorial : {scoreResult.total}/100
               </p>
             )}
@@ -518,26 +530,26 @@ export default function SponsorsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '20px', marginBottom: '20px', alignItems: 'stretch' }}>
 
               {/* Gauche — score */}
-              <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '10px', padding: '32px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '32px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '64px', fontWeight: 800, color: '#0f172a', lineHeight: 1, letterSpacing: '-0.04em' }}>
+                  <div style={{ fontSize: '60px', fontWeight: 600, color: TEXT, lineHeight: 1, letterSpacing: '-0.04em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>
                     {scoreResult?.total ?? 0}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '2px' }}>/100</div>
+                  <div style={{ fontSize: '14px', color: MUTED, marginTop: '2px', fontFamily: SYNE }}>/100</div>
                 </div>
 
                 {level && (
-                  <span style={{ display: 'inline-block', padding: '5px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: 700, color: level.color, background: `${level.color}14`, border: `1px solid ${level.color}30`, letterSpacing: '0.01em' }}>
+                  <span style={{ display: 'inline-block', padding: '5px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: 700, color: level.color, background: `${level.color}20`, border: `1px solid ${level.color}40`, letterSpacing: '0.01em', fontFamily: SYNE }}>
                     {level.label}
                   </span>
                 )}
 
                 {/* Encart "Ce score est privé" */}
-                <div style={{ width: '100%', background: '#f8fafc', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '6px', padding: '12px 14px' }}>
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ width: '100%', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '6px', padding: '12px 14px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: MUTED, marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
                     <Lock size={10} /> Ce score est privé
                   </p>
-                  <p style={{ fontSize: '11px', color: '#94a3b8', lineHeight: 1.6 }}>
+                  <p style={{ fontSize: '11px', color: MUTED, lineHeight: 1.6, fontFamily: SYNE }}>
                     Il n'est pas visible par les marques.<br />
                     Il sert uniquement à t'aider à améliorer ton profil.
                   </p>
@@ -545,33 +557,33 @@ export default function SponsorsPage() {
               </div>
 
               {/* Droite — interprétation + mini-stats */}
-              <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '10px', padding: '32px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>Interprétation</p>
-                  <p style={{ fontSize: '15px', color: '#0f172a', lineHeight: 1.75, maxWidth: '560px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: MUTED, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px', fontFamily: SYNE }}>Interprétation</p>
+                  <p style={{ fontSize: '15px', color: TEXT, lineHeight: 1.75, maxWidth: '560px', fontFamily: SYNE }}>
                     {level?.interpretation}
                   </p>
                 </div>
 
                 {/* Mini-stats */}
-                <div style={{ display: 'flex', gap: '24px', marginTop: '28px', paddingTop: '20px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <div style={{ display: 'flex', gap: '24px', marginTop: '28px', paddingTop: '20px', borderTop: `1px solid ${BORDER}` }}>
                   <div>
-                    <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '3px', fontWeight: 500 }}>Plateformes</p>
-                    <p style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{platforms.length} / 2</p>
+                    <p style={{ fontSize: '11px', color: MUTED, marginBottom: '3px', fontWeight: 500, fontFamily: SYNE }}>Plateformes</p>
+                    <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>{platforms.length} / 2</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '3px', fontWeight: 500 }}>Abonnés / followers</p>
-                    <p style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
+                    <p style={{ fontSize: '11px', color: MUTED, marginBottom: '3px', fontWeight: 500, fontFamily: SYNE }}>Abonnés / followers</p>
+                    <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>
                       {scoreResult && scoreResult.totalAudience > 0 ? fmtNum(scoreResult.totalAudience) : '—'}
                     </p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '3px', fontWeight: 500 }}>Profil complété</p>
-                    <p style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{scoreResult?.profileCompleteness ?? 0}%</p>
+                    <p style={{ fontSize: '11px', color: MUTED, marginBottom: '3px', fontWeight: 500, fontFamily: SYNE }}>Profil complété</p>
+                    <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>{scoreResult?.profileCompleteness ?? 0}%</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '3px', fontWeight: 500 }}>Données</p>
-                    <p style={{ fontSize: '13px', fontWeight: 600, color: '#16a34a' }}>Actuelles</p>
+                    <p style={{ fontSize: '11px', color: MUTED, marginBottom: '3px', fontWeight: 500, fontFamily: SYNE }}>Données</p>
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: ACCENT, fontFamily: SYNE }}>Actuelles</p>
                   </div>
                 </div>
               </div>
@@ -579,22 +591,22 @@ export default function SponsorsPage() {
 
             {/* ── BLOC POURQUOI CE SCORE ──────────────────────────────────── */}
             {pro ? (
-              <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '10px', padding: '28px 32px', marginBottom: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <p style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>Pourquoi ce score</p>
-                <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '24px' }}>Ce qui aide et ce qui peut encore progresser.</p>
+              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
+                <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Pourquoi ce score</p>
+                <p style={{ fontSize: '13px', color: MUTED, marginBottom: '24px', fontFamily: SYNE }}>Ce qui aide et ce qui peut encore progresser.</p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
                   {/* Points forts */}
                   <div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '14px' }}>Points forts</p>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '14px', fontFamily: SYNE }}>Points forts</p>
                     {strengths.length === 0 ? (
-                      <p style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>Complète ton profil pour faire apparaître tes points forts.</p>
+                      <p style={{ fontSize: '13px', color: MUTED, fontStyle: 'italic', fontFamily: SYNE }}>Complète ton profil pour faire apparaître tes points forts.</p>
                     ) : strengths.map(d => (
                       <div key={d.key} style={{ display: 'flex', gap: '10px', marginBottom: '14px', alignItems: 'flex-start' }}>
                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a', marginTop: '6px', flexShrink: 0 }} />
                         <div>
-                          <p style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginBottom: '2px' }}>{d.label}</p>
-                          <p style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>{d.comment}</p>
+                          <p style={{ fontSize: '13px', fontWeight: 600, color: TEXT, marginBottom: '2px', fontFamily: SYNE }}>{d.label}</p>
+                          <p style={{ fontSize: '12px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{d.comment}</p>
                         </div>
                       </div>
                     ))}
@@ -602,21 +614,21 @@ export default function SponsorsPage() {
 
                   {/* Axes d'amélioration */}
                   <div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#d97706', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '14px' }}>Axes d'amélioration</p>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#d97706', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '14px', fontFamily: SYNE }}>Axes d'amélioration</p>
                     {weaknesses.length === 0 ? (
-                      <p style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>Aucun frein majeur identifié.</p>
+                      <p style={{ fontSize: '13px', color: MUTED, fontStyle: 'italic', fontFamily: SYNE }}>Aucun frein majeur identifié.</p>
                     ) : weaknesses.map(d => {
                       const pct = d.score / d.max
-                      const dotColor = pct >= 0.3 ? '#d97706' : '#94a3b8'
+                      const dotColor = pct >= 0.3 ? '#d97706' : MUTED
                       return (
                         <div key={d.key} style={{ display: 'flex', gap: '10px', marginBottom: '14px', alignItems: 'flex-start' }}>
                           <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, marginTop: '6px', flexShrink: 0 }} />
                           <div>
-                            <p style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginBottom: '2px' }}>
+                            <p style={{ fontSize: '13px', fontWeight: 600, color: TEXT, marginBottom: '2px', fontFamily: SYNE }}>
                               {d.label}
-                              <span style={{ fontSize: '11px', fontWeight: 500, color: '#94a3b8', marginLeft: '8px' }}>{d.score}/{d.max} pts</span>
+                              <span style={{ fontSize: '11px', fontWeight: 500, color: MUTED, marginLeft: '8px', fontFamily: SYNE }}>{d.score}/{d.max} pts</span>
                             </p>
-                            <p style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>{d.comment}</p>
+                            <p style={{ fontSize: '12px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{d.comment}</p>
                           </div>
                         </div>
                       )
@@ -625,13 +637,13 @@ export default function SponsorsPage() {
                 </div>
               </div>
             ) : (
-              <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '10px', padding: '28px 32px', marginBottom: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <p style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>Pourquoi ce score</p>
-                <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '16px' }}>Détail des 6 dimensions qui composent ton score.</p>
-                <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.6 }}>
+              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
+                <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Pourquoi ce score</p>
+                <p style={{ fontSize: '13px', color: MUTED, marginBottom: '16px', fontFamily: SYNE }}>Détail des 6 dimensions qui composent ton score.</p>
+                <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.4 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {[1, 2, 3, 4].map(i => (
-                      <div key={i} style={{ height: '48px', background: '#f1f5f9', borderRadius: '6px' }} />
+                      <div key={i} style={{ height: '48px', background: CARD, borderRadius: '6px' }} />
                     ))}
                   </div>
                 </div>
@@ -640,25 +652,25 @@ export default function SponsorsPage() {
             )}
 
             {/* ── BLOC TES 3 PRIORITÉS ────────────────────────────────────── */}
-            <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '10px', padding: '28px 32px', marginBottom: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-              <p style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>Tes priorités</p>
-              <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '24px' }}>Les actions les plus impactantes pour progresser, dans l'ordre.</p>
+            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
+              <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Tes priorités</p>
+              <p style={{ fontSize: '13px', color: MUTED, marginBottom: '24px', fontFamily: SYNE }}>Les actions les plus impactantes pour progresser, dans l'ordre.</p>
 
               {priorities.length === 0 ? (
-                <p style={{ fontSize: '14px', color: '#64748b', fontStyle: 'italic' }}>Ton profil est déjà bien optimisé. Continue à publier régulièrement.</p>
+                <p style={{ fontSize: '14px', color: MUTED, fontStyle: 'italic', fontFamily: SYNE }}>Ton profil est déjà bien optimisé. Continue à publier régulièrement.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {/* Priorité 1 — toujours visible */}
                   {priorities[0] && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', background: '#f8fafc', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '8px', padding: '18px 20px', borderLeft: '3px solid #0f172a' }}>
-                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#0f172a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>1</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '18px 20px', borderLeft: `3px solid ${ACCENT}` }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: ACCENT, color: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0, fontFamily: SYNE }}>1</div>
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', marginBottom: '3px' }}>{priorities[0].title}</p>
-                        <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>{priorities[0].description}</p>
+                        <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT, marginBottom: '3px', fontFamily: SYNE }}>{priorities[0].title}</p>
+                        <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{priorities[0].description}</p>
                       </div>
                       <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                        <p style={{ fontSize: '12px', color: '#16a34a', fontWeight: 700, marginBottom: '8px' }}>+{priorities[0].gain} pts</p>
-                        <Link href={priorities[0].href} style={{ display: 'inline-block', padding: '7px 14px', borderRadius: '6px', background: '#0f172a', color: 'white', fontWeight: 600, fontSize: '12px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                        <p style={{ fontSize: '12px', color: ACCENT, fontWeight: 700, marginBottom: '8px', fontFamily: SYNE }}>+{priorities[0].gain} pts</p>
+                        <Link href={priorities[0].href} style={{ display: 'inline-block', padding: '7px 14px', borderRadius: '6px', background: ACCENT, color: '#000000', fontWeight: 600, fontSize: '12px', textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: SYNE }}>
                           {priorities[0].cta}
                         </Link>
                       </div>
@@ -668,15 +680,15 @@ export default function SponsorsPage() {
                   {/* Priorités 2 & 3 — Pro uniquement */}
                   {pro ? (
                     priorities.slice(1).map((p, i) => (
-                      <div key={p.title} style={{ display: 'flex', alignItems: 'center', gap: '20px', background: '#f8fafc', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '8px', padding: '18px 20px' }}>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#e2e8f0', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>{i + 2}</div>
+                      <div key={p.title} style={{ display: 'flex', alignItems: 'center', gap: '20px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '18px 20px' }}>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: BORDER, color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0, fontFamily: SYNE }}>{i + 2}</div>
                         <div style={{ flex: 1 }}>
-                          <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', marginBottom: '3px' }}>{p.title}</p>
-                          <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>{p.description}</p>
+                          <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT, marginBottom: '3px', fontFamily: SYNE }}>{p.title}</p>
+                          <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{p.description}</p>
                         </div>
                         <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                          <p style={{ fontSize: '12px', color: '#16a34a', fontWeight: 700, marginBottom: '8px' }}>+{p.gain} pts</p>
-                          <Link href={p.href} style={{ display: 'inline-block', padding: '7px 14px', borderRadius: '6px', background: '#e2e8f0', color: '#0f172a', fontWeight: 600, fontSize: '12px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                          <p style={{ fontSize: '12px', color: ACCENT, fontWeight: 700, marginBottom: '8px', fontFamily: SYNE }}>+{p.gain} pts</p>
+                          <Link href={p.href} style={{ display: 'inline-block', padding: '7px 14px', borderRadius: '6px', background: BORDER, color: TEXT, fontWeight: 600, fontSize: '12px', textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: SYNE }}>
                             {p.cta}
                           </Link>
                         </div>
@@ -686,10 +698,10 @@ export default function SponsorsPage() {
                     <div style={{ position: 'relative' }}>
                       <div style={{ filter: 'blur(3px)', pointerEvents: 'none', userSelect: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {[2, 3].map(n => (
-                          <div key={n} style={{ display: 'flex', alignItems: 'center', gap: '20px', background: '#f8fafc', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '8px', padding: '18px 20px' }}>
-                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#e2e8f0', flexShrink: 0 }} />
-                            <div style={{ flex: 1, height: '36px', background: '#e2e8f0', borderRadius: '4px' }} />
-                            <div style={{ width: '80px', height: '32px', background: '#e2e8f0', borderRadius: '6px', flexShrink: 0 }} />
+                          <div key={n} style={{ display: 'flex', alignItems: 'center', gap: '20px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '18px 20px' }}>
+                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: BORDER, flexShrink: 0 }} />
+                            <div style={{ flex: 1, height: '36px', background: BORDER, borderRadius: '4px' }} />
+                            <div style={{ width: '80px', height: '32px', background: BORDER, borderRadius: '6px', flexShrink: 0 }} />
                           </div>
                         ))}
                       </div>
@@ -702,47 +714,55 @@ export default function SponsorsPage() {
 
             {/* ── CATÉGORIES DE MARQUES ───────────────────────────────────── */}
             {pro ? (
-              <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '10px', padding: '28px 32px', marginBottom: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <p style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>Catégories que ton profil peut viser</p>
-                <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '24px', lineHeight: 1.6 }}>
+              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
+                <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Catégories que ton profil peut viser</p>
+                <p style={{ fontSize: '13px', color: MUTED, marginBottom: '24px', lineHeight: 1.6, fontFamily: SYNE }}>
                   Une direction indicative — pas une garantie. Les partenariats dépendent aussi de ton contenu, ta régularité et ta niche.
                 </p>
 
                 {scoreResult && scoreResult.totalAudience < 500 && scoreResult.total < 30 ? (
-                  <div style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '8px', padding: '20px 24px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '6px' }}>Les premières catégories arrivent vite</p>
-                    <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.6, maxWidth: '440px', margin: '0 auto' }}>
+                  <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '20px 24px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 600, color: TEXT, marginBottom: '6px', fontFamily: SYNE }}>Les premières catégories arrivent vite</p>
+                    <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.6, maxWidth: '440px', margin: '0 auto', fontFamily: SYNE }}>
                       Les premières opportunités arrivent plus vite qu'on ne le croit. Complète ton profil et les catégories accessibles apparaîtront ici.
                     </p>
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
                     {categories.map(cat => (
-                      <div key={cat.name} style={{ border: '1px solid rgba(0,0,0,0.07)', borderRadius: '8px', padding: '16px 18px', background: '#fafafa', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div key={cat.name} style={{
+                        border: `1px solid ${cat.accessible ? ACCENT : BORDER}`,
+                        borderRadius: '8px',
+                        padding: '16px 18px',
+                        background: cat.accessible ? 'rgba(34,197,94,0.06)' : CARD,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                      }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
-                          <p style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', lineHeight: 1.3 }}>{cat.name}</p>
+                          <p style={{ fontSize: '13px', fontWeight: 700, color: TEXT, lineHeight: 1.3, fontFamily: SYNE }}>{cat.name}</p>
                           <span style={{
-                            fontSize: '10px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0, padding: '3px 8px', borderRadius: '4px',
-                            color: cat.accessible ? '#16a34a' : '#64748b',
-                            background: cat.accessible ? 'rgba(22,163,74,0.08)' : 'rgba(0,0,0,0.05)',
-                            border: `1px solid ${cat.accessible ? 'rgba(22,163,74,0.2)' : 'rgba(0,0,0,0.08)'}`,
+                            fontSize: '10px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0, padding: '3px 8px', borderRadius: '4px', fontFamily: SYNE,
+                            color: cat.accessible ? ACCENT : MUTED,
+                            background: cat.accessible ? 'rgba(34,197,94,0.12)' : `rgba(255,255,255,0.05)`,
+                            border: `1px solid ${cat.accessible ? 'rgba(34,197,94,0.3)' : BORDER}`,
                           }}>
                             {cat.accessible ? 'À viser maintenant' : 'Accessible prochainement'}
                           </span>
                         </div>
-                        <p style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.55 }}>{cat.description}</p>
+                        <p style={{ fontSize: '12px', color: MUTED, lineHeight: 1.55, fontFamily: SYNE }}>{cat.description}</p>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
             ) : (
-              <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '10px', padding: '28px 32px', marginBottom: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <p style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>Catégories que ton profil peut viser</p>
-                <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '16px' }}>Catégories de marques compatibles avec ton profil gaming.</p>
-                <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.5 }}>
+              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
+                <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Catégories que ton profil peut viser</p>
+                <p style={{ fontSize: '13px', color: MUTED, marginBottom: '16px', fontFamily: SYNE }}>Catégories de marques compatibles avec ton profil gaming.</p>
+                <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.4 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                    {[1, 2, 3].map(i => <div key={i} style={{ height: '80px', background: '#f1f5f9', borderRadius: '8px' }} />)}
+                    {[1, 2, 3].map(i => <div key={i} style={{ height: '80px', background: CARD, borderRadius: '8px' }} />)}
                   </div>
                 </div>
                 <ProGate message="Les catégories de marques compatibles sont disponibles avec le plan Pro." />
@@ -751,25 +771,25 @@ export default function SponsorsPage() {
 
             {/* ── TON PROFIL AUJOURD'HUI ──────────────────────────────────── */}
             {pro && (
-              <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '10px', padding: '28px 32px', marginBottom: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <p style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>Ton profil aujourd'hui</p>
-                <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '24px' }}>Un instantané de l'état actuel de ton profil.</p>
+              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
+                <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Ton profil aujourd'hui</p>
+                <p style={{ fontSize: '13px', color: MUTED, marginBottom: '24px', fontFamily: SYNE }}>Un instantané de l'état actuel de ton profil.</p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
                   {snapshotItems.map(item => (
-                    <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '8px', padding: '14px 18px', background: '#fafafa' }}>
+                    <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '14px 18px', background: CARD }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: item.done ? '#16a34a' : '#e2e8f0', flexShrink: 0 }} />
-                        <p style={{ fontSize: '13px', color: '#475569', fontWeight: 500 }}>{item.label}</p>
+                        <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: item.done ? ACCENT : BORDER, flexShrink: 0 }} />
+                        <p style={{ fontSize: '13px', color: MUTED, fontWeight: 500, fontFamily: SYNE }}>{item.label}</p>
                       </div>
-                      <p style={{ fontSize: '13px', fontWeight: 700, color: item.done ? '#0f172a' : '#94a3b8' }}>{item.value}</p>
+                      <p style={{ fontSize: '13px', fontWeight: 700, color: item.done ? TEXT : MUTED, fontFamily: SYNE }}>{item.value}</p>
                     </div>
                   ))}
                 </div>
 
                 {/* Message de clôture dynamique */}
-                <div style={{ background: '#f8fafc', borderRadius: '6px', padding: '14px 18px', borderLeft: '3px solid #e2e8f0' }}>
-                  <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6 }}>
+                <div style={{ background: CARD, borderRadius: '6px', padding: '14px 18px', borderLeft: `3px solid ${BORDER}` }}>
+                  <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.6, fontFamily: SYNE }}>
                     {(scoreResult?.total ?? 0) >= 76
                       ? 'Ton profil est en excellente forme. Continue à publier régulièrement et à mettre à jour tes partenariats.'
                       : (scoreResult?.total ?? 0) >= 51

@@ -8,6 +8,7 @@ import Button from '@/components/ui/button'
 import { exampleCreators } from '@/data/mockData'
 import { computeReadinessScore, computeEditorialScore } from '@/lib/profileInference'
 import { generatePositioningPhrase, generateSponsorSummary } from '@/lib/profileCopyGenerator'
+import { BG, SURFACE, CARD, ACCENT, TEXT, MUTED, BORDER, SYNE, DISPLAY } from '@/lib/ds'
 
 type Partnership = { name: string; category: string; result: string; date: string }
 
@@ -39,11 +40,11 @@ function BannerUploader({ onUrl }: { onUrl: (url: string) => void }) {
 
   return (
     <div>
-      <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '100px', border: '2px dashed rgba(0,0,0,0.12)', borderRadius: '10px', cursor: uploading ? 'wait' : 'pointer', background: '#f8fafc', transition: 'all 150ms', opacity: uploading ? 0.7 : 1 }}>
+      <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '100px', border: '2px dashed #333', borderRadius: '10px', cursor: uploading ? 'wait' : 'pointer', background: CARD, transition: 'all 150ms', opacity: uploading ? 0.7 : 1 }}>
         {uploading ? (
-          <><span style={{ width: '24px', height: '24px', border: '3px solid rgba(22,163,74,0.3)', borderTopColor: '#16a34a', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} /><span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Upload en cours…</span></>
+          <><span style={{ width: '24px', height: '24px', border: `3px solid rgba(34,197,94,0.3)`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} /><span style={{ fontSize: '13px', color: MUTED, fontWeight: 500, fontFamily: SYNE }}>Upload en cours…</span></>
         ) : (
-          <><span style={{ fontSize: '24px' }}>🖼️</span><span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Clique pour uploader une image</span><span style={{ fontSize: '11px', color: '#94a3b8' }}>JPG, PNG, WebP · Max 5 Mo</span></>
+          <><span style={{ fontSize: '24px' }}>🖼️</span><span style={{ fontSize: '13px', color: MUTED, fontWeight: 500, fontFamily: SYNE }}>Clique pour uploader une image</span><span style={{ fontSize: '11px', color: MUTED, fontFamily: SYNE }}>JPG, PNG, WebP · Max 5 Mo</span></>
         )}
         <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: 'none' }} disabled={uploading} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
       </label>
@@ -56,10 +57,10 @@ function BannerUploader({ onUrl }: { onUrl: (url: string) => void }) {
 function ReadinessWidget({ score }: { score: ReturnType<typeof computeReadinessScore> }) {
   const [open, setOpen] = useState(false)
   const todo = score.items.filter(i => !i.done)
-  const color = score.pct >= 80 ? '#16a34a' : score.pct >= 50 ? '#f59e0b' : '#94a3b8'
+  const color = score.pct >= 80 ? ACCENT : score.pct >= 50 ? '#f59e0b' : MUTED
 
   return (
-    <div style={{ background: 'white', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: '14px', overflow: 'hidden' }}>
+    <div style={{ background: SURFACE, border: `1.5px solid ${BORDER}`, borderRadius: '14px', overflow: 'hidden' }}>
       <button
         onClick={() => setOpen(v => !v)}
         style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
@@ -67,37 +68,37 @@ function ReadinessWidget({ score }: { score: ReturnType<typeof computeReadinessS
         {/* Progress ring */}
         <div style={{ position: 'relative', width: '44px', height: '44px', flexShrink: 0 }}>
           <svg width="44" height="44" viewBox="0 0 44 44" style={{ transform: 'rotate(-90deg)' }}>
-            <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="4" />
+            <circle cx="22" cy="22" r="18" fill="none" stroke={BORDER} strokeWidth="4" />
             <circle cx="22" cy="22" r="18" fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
               strokeDasharray={`${2 * Math.PI * 18}`}
               strokeDashoffset={`${2 * Math.PI * 18 * (1 - score.pct / 100)}`}
               style={{ transition: 'stroke-dashoffset 400ms ease' }}
             />
           </svg>
-          <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color }}>{score.pct}%</span>
+          <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color, fontFamily: SYNE }}>{score.pct}%</span>
         </div>
         <div style={{ flex: 1 }}>
-          <p style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '2px' }}>
+          <p style={{ fontSize: '14px', fontWeight: 600, color: TEXT, marginBottom: '2px', fontFamily: SYNE }}>
             Complétude du media kit — {score.score}/{score.total}
           </p>
-          <p style={{ fontSize: '12px', color: '#94a3b8' }}>
+          <p style={{ fontSize: '12px', color: MUTED, fontFamily: SYNE }}>
             {score.pct >= 80 ? 'Profil bien renseigné ✓' : `${todo.length} point${todo.length > 1 ? 's' : ''} à compléter pour un meilleur positionnement`}
           </p>
         </div>
-        {open ? <ChevronUp size={16} color="#94a3b8" /> : <ChevronDown size={16} color="#94a3b8" />}
+        {open ? <ChevronUp size={16} color={MUTED} /> : <ChevronDown size={16} color={MUTED} />}
       </button>
 
       {open && (
-        <div style={{ padding: '0 20px 16px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+        <div style={{ padding: '0 20px 16px', borderTop: `1px solid ${BORDER}` }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '14px' }}>
             {score.items.map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '8px 10px', borderRadius: '8px', background: item.done ? 'rgba(22,163,74,0.05)' : '#fafafa' }}>
-                <span style={{ flexShrink: 0, width: '18px', height: '18px', borderRadius: '50%', background: item.done ? '#16a34a' : 'rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: item.done ? 'white' : '#94a3b8', fontWeight: 700, marginTop: '1px' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '8px 10px', borderRadius: '8px', background: item.done ? `rgba(34,197,94,0.08)` : CARD }}>
+                <span style={{ flexShrink: 0, width: '18px', height: '18px', borderRadius: '50%', background: item.done ? ACCENT : BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: item.done ? BG : MUTED, fontWeight: 700, marginTop: '1px' }}>
                   {item.done ? '✓' : ''}
                 </span>
                 <div>
-                  <p style={{ fontSize: '13px', fontWeight: 500, color: item.done ? '#15803d' : '#475569' }}>{item.label}</p>
-                  {!item.done && <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>{item.tip}</p>}
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: item.done ? ACCENT : MUTED, fontFamily: SYNE }}>{item.label}</p>
+                  {!item.done && <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>{item.tip}</p>}
                 </div>
               </div>
             ))}
@@ -262,26 +263,27 @@ export default function MediaKitEditorPage() {
   )
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh' }}>
+    <div style={{ background: BG, minHeight: '100vh' }}>
       <style>{`
         @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(16px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
-        @keyframes profileFlash { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } 30% { box-shadow: 0 0 0 6px rgba(22,163,74,0.25); } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } }
+        @keyframes profileFlash { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } 30% { box-shadow: 0 0 0 6px rgba(34,197,94,0.25); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
       <Sidebar />
 
-      <div style={{ position: 'fixed', top: 0, left: '240px', right: 0, zIndex: 40, backdropFilter: 'blur(12px)', background: 'rgba(248,250,252,0.92)', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '12px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* Barre de navigation fixe */}
+      <div style={{ position: 'fixed', top: 0, left: '240px', right: 0, zIndex: 40, backdropFilter: 'blur(12px)', background: `rgba(13,13,15,0.92)`, borderBottom: `1px solid ${BORDER}`, padding: '12px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <p style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>Mon media kit</p>
-          <p style={{ fontSize: '12px', color: '#94a3b8' }}>Personnalise ce que voient les sponsors.</p>
+          <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>Mon media kit</p>
+          <p style={{ fontSize: '12px', color: MUTED, fontFamily: SYNE }}>Personnalise ce que voient les sponsors.</p>
         </div>
         <Button variant="primary" onClick={handleSave}>Sauvegarder</Button>
       </div>
 
       <main style={{ marginLeft: '240px', padding: '80px 48px 40px' }}>
         <div style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Mon media kit</h1>
-          <p style={{ fontSize: '14px', color: '#94a3b8' }}>Personnalise ce que voient les sponsors.</p>
+          <h1 style={{ fontSize: '26px', fontWeight: 700, color: TEXT, marginBottom: '6px', letterSpacing: '-0.02em', fontFamily: DISPLAY }}>Mon media kit</h1>
+          <p style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>Personnalise ce que voient les sponsors.</p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '720px' }}>
@@ -290,25 +292,25 @@ export default function MediaKitEditorPage() {
           <ReadinessWidget score={readiness} />
 
           {/* Templates */}
-          <div className="card-standard" style={{ padding: '20px 28px' }}>
+          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '20px 28px' }}>
             <button
               onClick={() => pro ? setShowTemplates(v => !v) : undefined}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: pro ? 'pointer' : 'default', padding: 0 }}
             >
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', textAlign: 'left' }}>Partir d&apos;un exemple</p>
-                  {!pro && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: '#16a34a', background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '9999px', padding: '2px 8px' }}><Lock size={9} /> PRO</span>}
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: TEXT, textAlign: 'left', fontFamily: SYNE }}>Partir d&apos;un exemple</p>
+                  {!pro && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
                 </div>
-                <p style={{ fontSize: '13px', color: '#94a3b8', textAlign: 'left', marginTop: '2px' }}>Pré-remplis ton media kit à partir d&apos;un profil type.</p>
+                <p style={{ fontSize: '13px', color: MUTED, textAlign: 'left', marginTop: '2px', fontFamily: SYNE }}>Pré-remplis ton media kit à partir d&apos;un profil type.</p>
               </div>
-              {pro ? (showTemplates ? <ChevronUp size={18} color="#94a3b8" /> : <ChevronDown size={18} color="#94a3b8" />) : <Lock size={16} color="#cbd5e1" />}
+              {pro ? (showTemplates ? <ChevronUp size={18} color={MUTED} /> : <ChevronDown size={18} color={MUTED} />) : <Lock size={16} color={BORDER} />}
             </button>
 
             {!pro && (
-              <div style={{ marginTop: '14px', padding: '14px 16px', background: '#f8fafc', border: '1px dashed #e2e8f0', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <p style={{ fontSize: '13px', color: '#64748b' }}>Les templates de design sont réservés au plan Pro</p>
-                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: '#16a34a', textDecoration: 'none', background: 'rgba(22,163,74,0.08)', padding: '6px 12px', borderRadius: '8px' }}><Zap size={11} /> Upgrader</Link>
+              <div style={{ marginTop: '14px', padding: '14px 16px', background: CARD, border: `1px dashed ${BORDER}`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>Les templates de design sont réservés au plan Pro</p>
+                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(34,197,94,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
               </div>
             )}
 
@@ -327,6 +329,7 @@ export default function MediaKitEditorPage() {
                         onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.16)'; e.currentTarget.style.transform = 'translateY(-2px)' } }}
                         onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.10)'; e.currentTarget.style.transform = 'none' } }}
                       >
+                        {/* Prévisualisation avec les thèmes d'origine des exemples créateurs */}
                         <div style={{ background: tmpl.theme.bg, padding: '20px 18px 18px', position: 'relative', minHeight: '160px', overflow: 'hidden' }}>
                           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
                             <div style={{ position: 'absolute', top: '-20%', left: '-10%', width: '70%', height: '80%', borderRadius: '60% 40% 60% 40%', background: `radial-gradient(ellipse, ${tmpl.theme.accent}${isDark ? '50' : isForest ? '30' : '25'} 0%, transparent 70%)`, filter: 'blur(28px)' }} />
@@ -348,18 +351,18 @@ export default function MediaKitEditorPage() {
                             </div>
                           </div>
                         </div>
-                        <div style={{ background: isSelected ? selectionColor : '#f8fafc', padding: '9px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'background 180ms' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? 'white' : '#0f172a' }}>{tmpl.id === 'youtuber' ? 'Classique' : tmpl.id === 'esport' ? 'Esport' : tmpl.id === 'mono' ? 'Minimaliste' : 'Nature'}</span>
-                          <span style={{ fontSize: '11px', color: isSelected ? 'rgba(255,255,255,0.75)' : '#94a3b8' }}>{isSelected ? '✓ Sélectionné' : 'Choisir →'}</span>
+                        <div style={{ background: isSelected ? selectionColor : CARD, padding: '9px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'background 180ms' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? BG : TEXT, fontFamily: SYNE }}>{tmpl.id === 'youtuber' ? 'Classique' : tmpl.id === 'esport' ? 'Esport' : tmpl.id === 'mono' ? 'Minimaliste' : 'Nature'}</span>
+                          <span style={{ fontSize: '11px', color: isSelected ? `rgba(13,13,15,0.75)` : MUTED, fontFamily: SYNE }}>{isSelected ? '✓ Sélectionné' : 'Choisir →'}</span>
                         </div>
                       </div>
                     )
                   })}
                 </div>
                 {selectedTemplateId && (
-                  <div style={{ marginTop: '14px', padding: '12px 16px', background: 'rgba(134,239,172,0.12)', border: '1px solid rgba(134,239,172,0.4)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '13px', color: '#15803d', fontWeight: 500 }}>✓ Template appliqué</span>
-                    <button onClick={() => setShowTemplates(false)} style={{ fontSize: '13px', fontWeight: 600, color: '#15803d', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}>Fermer ×</button>
+                  <div style={{ marginTop: '14px', padding: '12px 16px', background: `rgba(34,197,94,0.08)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '13px', color: ACCENT, fontWeight: 500, fontFamily: SYNE }}>✓ Template appliqué</span>
+                    <button onClick={() => setShowTemplates(false)} style={{ fontSize: '13px', fontWeight: 600, color: ACCENT, background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', fontFamily: SYNE }}>Fermer ×</button>
                   </div>
                 )}
               </div>
@@ -367,7 +370,7 @@ export default function MediaKitEditorPage() {
           </div>
 
           {/* Profil public */}
-          <div ref={profileCardRef} className="card-standard" style={{ padding: '28px', animation: profileFlash ? 'profileFlash 1.2s ease forwards' : 'none' }}>
+          <div ref={profileCardRef} style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px', animation: profileFlash ? 'profileFlash 1.2s ease forwards' : 'none' }}>
             <h3 style={sectionTitle}>Profil public</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
@@ -380,16 +383,16 @@ export default function MediaKitEditorPage() {
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={labelStyle}>Bio</label>
-                <textarea value={profile.bio} onChange={e => setProfile({ ...profile, bio: e.target.value })} rows={3} placeholder="Décris ton contenu, ta communauté, ton style…" style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6 }} onFocus={onFocus} onBlur={onBlur} />
+                <textarea value={profile.bio} onChange={e => setProfile({ ...profile, bio: e.target.value })} rows={3} placeholder="Décris ton contenu, ta communauté, ton style…" style={{ ...inputStyle, resize: 'vertical', fontFamily: SYNE, lineHeight: 1.6 }} onFocus={onFocus} onBlur={onBlur} />
               </div>
             </div>
           </div>
 
           {/* Tags contenu */}
-          <div className="card-standard" style={{ padding: '28px' }}>
+          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
               <h3 style={sectionTitle}>Formats de collaboration</h3>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: formats.length >= 3 ? '#16a34a' : '#94a3b8' }}>{formats.length}/3</span>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: formats.length >= 3 ? ACCENT : MUTED, fontFamily: SYNE }}>{formats.length}/3</span>
             </div>
             <p style={subText}>Choisis 3 formats que tu proposes aux marques.</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '16px', marginBottom: '20px' }}>
@@ -398,7 +401,7 @@ export default function MediaKitEditorPage() {
                 const isDisabled = !isSelected && formats.length >= 3
                 return (
                   <button key={tag} disabled={isDisabled} onClick={() => isSelected ? removeFormat(tag) : (formats.length < 3 && setFormats([...formats, tag]))}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, cursor: isDisabled ? 'not-allowed' : 'pointer', border: isSelected ? '1.5px solid #16a34a' : '1.5px solid rgba(0,0,0,0.12)', background: isSelected ? 'rgba(22,163,74,0.10)' : '#f8fafc', color: isSelected ? '#15803d' : isDisabled ? '#cbd5e1' : '#475569', opacity: isDisabled ? 0.45 : 1, transition: 'all 120ms ease' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, cursor: isDisabled ? 'not-allowed' : 'pointer', border: isSelected ? `1.5px solid rgba(34,197,94,0.25)` : `1.5px solid ${BORDER}`, background: isSelected ? `rgba(34,197,94,0.10)` : CARD, color: isSelected ? ACCENT : isDisabled ? BORDER : MUTED, opacity: isDisabled ? 0.45 : 1, transition: 'all 120ms ease', fontFamily: SYNE }}>
                     {isSelected && <span style={{ fontSize: '10px' }}>✓</span>}
                     {tag}
                   </button>
@@ -406,25 +409,25 @@ export default function MediaKitEditorPage() {
               })}
             </div>
             {formats.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: formats.length >= 3 ? 'rgba(22,163,74,0.06)' : '#f8fafc', borderRadius: '10px', border: `1px solid ${formats.length >= 3 ? 'rgba(22,163,74,0.25)' : 'rgba(0,0,0,0.06)'}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: formats.length >= 3 ? `rgba(34,197,94,0.06)` : CARD, borderRadius: '10px', border: `1px solid ${formats.length >= 3 ? 'rgba(34,197,94,0.25)' : BORDER}` }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', flex: 1 }}>
                   {formats.map(f => (
-                    <span key={f} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(22,163,74,0.12)', color: '#15803d', border: '1px solid rgba(22,163,74,0.30)', borderRadius: '9999px', padding: '4px 10px', fontSize: '12px', fontWeight: 600 }}>
+                    <span key={f} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: `rgba(34,197,94,0.10)`, color: ACCENT, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '4px 10px', fontSize: '12px', fontWeight: 600, fontFamily: SYNE }}>
                       {f}
-                      <button onClick={() => removeFormat(f)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: '#16a34a', opacity: 0.6 }} onMouseEnter={e => ((e.currentTarget as HTMLElement).style.opacity = '1')} onMouseLeave={e => ((e.currentTarget as HTMLElement).style.opacity = '0.6')}><X size={11} /></button>
+                      <button onClick={() => removeFormat(f)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: ACCENT, opacity: 0.6 }} onMouseEnter={e => ((e.currentTarget as HTMLElement).style.opacity = '1')} onMouseLeave={e => ((e.currentTarget as HTMLElement).style.opacity = '0.6')}><X size={11} /></button>
                     </span>
                   ))}
                 </div>
-                {formats.length >= 3 && <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 600, whiteSpace: 'nowrap' }}>Limite atteinte</span>}
+                {formats.length >= 3 && <span style={{ fontSize: '11px', color: ACCENT, fontWeight: 600, whiteSpace: 'nowrap', fontFamily: SYNE }}>Limite atteinte</span>}
               </div>
             )}
           </div>
 
           {/* Section Pour les marques */}
-          <div className="card-standard" style={{ padding: '28px', background: 'linear-gradient(135deg, #f8fffe 0%, #f0fdf4 100%)', border: '1.5px solid rgba(22,163,74,0.15)' }}>
+          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <h3 style={{ ...sectionTitle, marginBottom: 0 }}>Pour les marques</h3>
-              <span style={{ fontSize: '10px', fontWeight: 700, color: '#16a34a', background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '9999px', padding: '2px 8px' }}>Nouveau</span>
+              <span style={{ fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}>Nouveau</span>
             </div>
             <p style={{ ...subText, marginBottom: '24px' }}>Ces infos aident les marques à te qualifier. Plus tu renseignes, meilleur est ton positionnement.</p>
 
@@ -439,7 +442,7 @@ export default function MediaKitEditorPage() {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {CONTENT_STYLE_OPTIONS.map(s => (
                     <button key={s} onClick={() => setProfile((p: typeof profile) => ({ ...p, contentStyle: p.contentStyle === s ? '' : s }))}
-                      style={{ padding: '5px 12px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: profile.contentStyle === s ? '1.5px solid #16a34a' : '1.5px solid rgba(0,0,0,0.12)', background: profile.contentStyle === s ? 'rgba(22,163,74,0.10)' : '#f8fafc', color: profile.contentStyle === s ? '#15803d' : '#475569', transition: 'all 100ms' }}>
+                      style={{ padding: '5px 12px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: profile.contentStyle === s ? `1.5px solid rgba(34,197,94,0.25)` : `1.5px solid ${BORDER}`, background: profile.contentStyle === s ? `rgba(34,197,94,0.10)` : CARD, color: profile.contentStyle === s ? ACCENT : MUTED, transition: 'all 100ms', fontFamily: SYNE }}>
                       {s}
                     </button>
                   ))}
@@ -455,7 +458,7 @@ export default function MediaKitEditorPage() {
                   const isSelected = languages.includes(l)
                   return (
                     <button key={l} onClick={() => setLanguages(isSelected ? languages.filter(x => x !== l) : [...languages, l])}
-                      style={{ padding: '5px 14px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: isSelected ? '1.5px solid #16a34a' : '1.5px solid rgba(0,0,0,0.12)', background: isSelected ? 'rgba(22,163,74,0.10)' : '#f8fafc', color: isSelected ? '#15803d' : '#475569', transition: 'all 100ms' }}>
+                      style={{ padding: '5px 14px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: isSelected ? `1.5px solid rgba(34,197,94,0.25)` : `1.5px solid ${BORDER}`, background: isSelected ? `rgba(34,197,94,0.10)` : CARD, color: isSelected ? ACCENT : MUTED, transition: 'all 100ms', fontFamily: SYNE }}>
                       {isSelected && <span style={{ marginRight: '4px', fontSize: '10px' }}>✓</span>}{l}
                     </button>
                   )
@@ -465,21 +468,21 @@ export default function MediaKitEditorPage() {
 
             {/* Types de marques ciblées */}
             <div style={{ marginBottom: '20px' }}>
-              <label style={labelStyle}>Marques / catégories visées <span style={{ color: '#cbd5e1', fontWeight: 400 }}>optionnel</span></label>
+              <label style={labelStyle}>Marques / catégories visées <span style={{ color: BORDER, fontWeight: 400 }}>optionnel</span></label>
               <input value={profile.targetBrands} onChange={e => setProfile({ ...profile, targetBrands: e.target.value })} placeholder="gaming, tech, énergie, lifestyle, SaaS…" style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
             </div>
 
             {/* Disponibilité */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'white', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.06)', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: CARD, borderRadius: '10px', border: `1px solid ${BORDER}`, marginBottom: '24px' }}>
               <div>
-                <p style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>Disponible pour des collaborations</p>
-                <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>Affiché comme signal positif sur ta page publique</p>
+                <p style={{ fontSize: '14px', fontWeight: 600, color: TEXT, fontFamily: SYNE }}>Disponible pour des collaborations</p>
+                <p style={{ fontSize: '12px', color: MUTED, marginTop: '2px', fontFamily: SYNE }}>Affiché comme signal positif sur ta page publique</p>
               </div>
               <button
                 onClick={() => setAvailableForCollabs(v => !v)}
-                style={{ width: '44px', height: '24px', borderRadius: '9999px', border: 'none', cursor: 'pointer', background: availableForCollabs ? '#16a34a' : '#e2e8f0', transition: 'background 200ms', position: 'relative', flexShrink: 0 }}
+                style={{ width: '44px', height: '24px', borderRadius: '9999px', border: 'none', cursor: 'pointer', background: availableForCollabs ? ACCENT : BORDER, transition: 'background 200ms', position: 'relative', flexShrink: 0 }}
               >
-                <span style={{ position: 'absolute', top: '3px', left: availableForCollabs ? '23px' : '3px', width: '18px', height: '18px', borderRadius: '50%', background: 'white', transition: 'left 200ms', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+                <span style={{ position: 'absolute', top: '3px', left: availableForCollabs ? '23px' : '3px', width: '18px', height: '18px', borderRadius: '50%', background: availableForCollabs ? BG : MUTED, transition: 'left 200ms', boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
               </button>
             </div>
 
@@ -488,9 +491,9 @@ export default function MediaKitEditorPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <label style={{ ...labelStyle, marginBottom: 0 }}>Phrase de positionnement</label>
-                  <span style={{ fontSize: '10px', fontWeight: 600, color: '#16a34a', background: 'rgba(22,163,74,0.1)', borderRadius: '6px', padding: '1px 6px' }}>✦ Suggéré</span>
+                  <span style={{ fontSize: '10px', fontWeight: 600, color: ACCENT, background: `rgba(34,197,94,0.12)`, borderRadius: '6px', padding: '1px 6px', fontFamily: SYNE }}>✦ Suggéré</span>
                 </div>
-                <button onClick={handleGeneratePositioning} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: '#16a34a', background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '7px', padding: '4px 10px', cursor: 'pointer' }}>
+                <button onClick={handleGeneratePositioning} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: ACCENT, background: `rgba(34,197,94,0.08)`, border: `1px solid rgba(34,197,94,0.2)`, borderRadius: '7px', padding: '4px 10px', cursor: 'pointer', fontFamily: SYNE }}>
                   <RefreshCw size={11} /> Générer
                 </button>
               </div>
@@ -500,7 +503,7 @@ export default function MediaKitEditorPage() {
                 placeholder="Ex : Créateur FPS français sur Twitch, marché France"
                 style={inputStyle} onFocus={onFocus} onBlur={onBlur}
               />
-              <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '5px' }}>1 phrase courte affichée en accroche sur ta page publique.</p>
+              <p style={{ fontSize: '11px', color: MUTED, marginTop: '5px', fontFamily: SYNE }}>1 phrase courte affichée en accroche sur ta page publique.</p>
             </div>
 
             {/* Résumé sponsor */}
@@ -508,9 +511,9 @@ export default function MediaKitEditorPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <label style={{ ...labelStyle, marginBottom: 0 }}>Résumé sponsor</label>
-                  <span style={{ fontSize: '10px', fontWeight: 600, color: '#16a34a', background: 'rgba(22,163,74,0.1)', borderRadius: '6px', padding: '1px 6px' }}>✦ Suggéré</span>
+                  <span style={{ fontSize: '10px', fontWeight: 600, color: ACCENT, background: `rgba(34,197,94,0.12)`, borderRadius: '6px', padding: '1px 6px', fontFamily: SYNE }}>✦ Suggéré</span>
                 </div>
-                <button onClick={handleGenerateSummary} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: '#16a34a', background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '7px', padding: '4px 10px', cursor: 'pointer' }}>
+                <button onClick={handleGenerateSummary} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: ACCENT, background: `rgba(34,197,94,0.08)`, border: `1px solid rgba(34,197,94,0.2)`, borderRadius: '7px', padding: '4px 10px', cursor: 'pointer', fontFamily: SYNE }}>
                   <RefreshCw size={11} /> Générer
                 </button>
               </div>
@@ -519,15 +522,15 @@ export default function MediaKitEditorPage() {
                 onChange={e => setProfile({ ...profile, sponsorSummary: e.target.value })}
                 rows={3}
                 placeholder="2 phrases max. Décris ta valeur pour une marque : ton audience, ta niche, ta disponibilité…"
-                style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6 }}
+                style={{ ...inputStyle, resize: 'vertical', fontFamily: SYNE, lineHeight: 1.6 }}
                 onFocus={onFocus} onBlur={onBlur}
               />
-              <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '5px' }}>Affiché dans la section En bref de ta page publique. 2 phrases max.</p>
+              <p style={{ fontSize: '11px', color: MUTED, marginTop: '5px', fontFamily: SYNE }}>Affiché dans la section En bref de ta page publique. 2 phrases max.</p>
             </div>
           </div>
 
           {/* Partenariats précédents */}
-          <div className="card-standard" style={{ padding: '28px' }}>
+          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
               <div>
                 <h3 style={sectionTitle}>Partenariats précédents</h3>
@@ -535,35 +538,35 @@ export default function MediaKitEditorPage() {
               </div>
               <button
                 onClick={() => { const next = !showPartnerships; setShowPartnerships(next); localStorage.setItem('sponsorable_show_partnerships', String(next)) }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '10px', border: showPartnerships ? '2px solid #16a34a' : '2px solid #cbd5e1', cursor: 'pointer', transition: 'all 150ms ease', fontWeight: 600, fontSize: '13px', background: showPartnerships ? 'rgba(22,163,74,0.08)' : 'white', color: showPartnerships ? '#16a34a' : '#94a3b8' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = showPartnerships ? 'rgba(22,163,74,0.14)' : '#f8fafc' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = showPartnerships ? 'rgba(22,163,74,0.08)' : 'white' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '10px', border: showPartnerships ? `2px solid ${ACCENT}` : `2px solid ${BORDER}`, cursor: 'pointer', transition: 'all 150ms ease', fontWeight: 600, fontSize: '13px', background: showPartnerships ? `rgba(34,197,94,0.08)` : CARD, color: showPartnerships ? ACCENT : MUTED, fontFamily: SYNE }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = showPartnerships ? `rgba(34,197,94,0.14)` : SURFACE }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = showPartnerships ? `rgba(34,197,94,0.08)` : CARD }}
               >
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: showPartnerships ? '#16a34a' : '#cbd5e1', boxShadow: showPartnerships ? '0 0 0 3px rgba(22,163,74,0.20)' : 'none', transition: 'all 150ms ease' }} />
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: showPartnerships ? ACCENT : BORDER, boxShadow: showPartnerships ? `0 0 0 3px rgba(34,197,94,0.20)` : 'none', transition: 'all 150ms ease' }} />
                 {showPartnerships ? 'Visible' : 'Masqué'}
               </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: partnerships.length ? '16px' : 0 }}>
               {partnerships.map((p, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px 16px', background: '#f8fafc', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.06)' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px 16px', background: CARD, borderRadius: '10px', border: `1px solid ${BORDER}` }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '2px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{p.name}</span>
-                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>·</span>
-                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>{p.category}</span>
-                      <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#94a3b8' }}>{p.date}</span>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: TEXT, fontFamily: SYNE }}>{p.name}</span>
+                      <span style={{ fontSize: '12px', color: MUTED }}>·</span>
+                      <span style={{ fontSize: '12px', color: MUTED, fontFamily: SYNE }}>{p.category}</span>
+                      <span style={{ marginLeft: 'auto', fontSize: '11px', color: MUTED, fontFamily: SYNE }}>{p.date}</span>
                     </div>
-                    <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>{p.result}</p>
+                    <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{p.result}</p>
                   </div>
-                  <button onClick={() => removePartnership(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px', flexShrink: 0, transition: 'color 150ms ease' }} onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#ef4444')} onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#94a3b8')}><Trash2 size={14} /></button>
+                  <button onClick={() => removePartnership(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED, padding: '2px', flexShrink: 0, transition: 'color 150ms ease' }} onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#ef4444')} onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = MUTED)}><Trash2 size={14} /></button>
                 </div>
               ))}
             </div>
 
             {addingPartnership ? (
-              <div style={{ padding: '20px', background: 'rgba(134,239,172,0.06)', border: '1.5px solid rgba(134,239,172,0.3)', borderRadius: '12px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginBottom: '14px' }}>Nouveau partenariat</p>
+              <div style={{ padding: '20px', background: `rgba(34,197,94,0.04)`, border: `1.5px solid rgba(34,197,94,0.2)`, borderRadius: '12px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: TEXT, marginBottom: '14px', fontFamily: SYNE }}>Nouveau partenariat</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                   {([{ key: 'name', label: 'Marque / Entreprise', placeholder: 'NordVPN' }, { key: 'category', label: 'Catégorie', placeholder: 'Cybersécurité' }, { key: 'date', label: 'Date', placeholder: 'Mars 2025' }] as { key: keyof Partnership; label: string; placeholder: string }[]).map(f => (
                     <div key={f.key}><label style={labelStyle}>{f.label}</label><input value={draft[f.key]} onChange={e => setDraft({ ...draft, [f.key]: e.target.value })} placeholder={f.placeholder} style={inputStyle} onFocus={onFocus} onBlur={onBlur} /></div>
@@ -574,24 +577,24 @@ export default function MediaKitEditorPage() {
                   <input value={draft.result} onChange={e => setDraft({ ...draft, result: e.target.value })} placeholder="42 000 vues · 3,1% CTR lien description" style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={addPartnership} style={{ ...addBtnStyle, background: '#16a34a', color: 'white', borderColor: '#16a34a' }}>Ajouter</button>
+                  <button onClick={addPartnership} style={{ ...addBtnStyle, background: ACCENT, color: BG, borderColor: ACCENT }}>Ajouter</button>
                   <button onClick={() => { setAddingPartnership(false); setDraft(EMPTY_PARTNERSHIP) }} style={{ ...addBtnStyle }}>Annuler</button>
                 </div>
               </div>
             ) : (
-              <button onClick={() => setAddingPartnership(true)} style={{ ...addBtnStyle, width: '100%', justifyContent: 'center' }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#16a34a'; (e.currentTarget as HTMLElement).style.background = 'white' }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.10)'; (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}>
+              <button onClick={() => setAddingPartnership(true)} style={{ ...addBtnStyle, width: '100%', justifyContent: 'center' }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = ACCENT; (e.currentTarget as HTMLElement).style.background = SURFACE }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = BORDER; (e.currentTarget as HTMLElement).style.background = CARD }}>
                 <Plus size={14} /> Ajouter un partenariat
               </button>
             )}
           </div>
 
           {/* Bannière */}
-          <div className="card-standard" style={{ padding: '28px', opacity: pro ? 1 : 0.7 }}>
+          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px', opacity: pro ? 1 : 0.7 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '18px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <h3 style={sectionTitle}>Bannière personnalisée</h3>
-                  {!pro && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: '#16a34a', background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '9999px', padding: '2px 8px' }}><Lock size={9} /> PRO</span>}
+                  {!pro && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
                 </div>
                 <p style={subText}>Image affichée en haut de ta page publique</p>
               </div>
@@ -600,21 +603,21 @@ export default function MediaKitEditorPage() {
               <div>
                 {bannerUrl ? (
                   <div style={{ position: 'relative', marginBottom: '12px' }}>
-                    <img src={bannerUrl} alt="Bannière" style={{ width: '100%', aspectRatio: '1546 / 423', objectFit: 'cover', objectPosition: 'center', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.08)', display: 'block' }} />
-                    <button onClick={() => setBannerUrl('')} style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer', padding: '4px 8px', fontSize: '12px', fontWeight: 600 }}>✕ Retirer</button>
+                    <img src={bannerUrl} alt="Bannière" style={{ width: '100%', aspectRatio: '1546 / 423', objectFit: 'cover', objectPosition: 'center', borderRadius: '10px', border: `1px solid ${BORDER}`, display: 'block' }} />
+                    <button onClick={() => setBannerUrl('')} style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '6px', color: TEXT, cursor: 'pointer', padding: '4px 8px', fontSize: '12px', fontWeight: 600, fontFamily: SYNE }}>✕ Retirer</button>
                   </div>
                 ) : <BannerUploader onUrl={url => setBannerUrl(url)} />}
               </div>
             ) : (
-              <div style={{ padding: '14px 16px', background: '#f8fafc', border: '1px dashed #e2e8f0', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <p style={{ fontSize: '13px', color: '#64748b' }}>Disponible avec le plan Pro</p>
-                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: '#16a34a', textDecoration: 'none', background: 'rgba(22,163,74,0.08)', padding: '6px 12px', borderRadius: '8px' }}><Zap size={11} /> Upgrader</Link>
+              <div style={{ padding: '14px 16px', background: CARD, border: `1px dashed ${BORDER}`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>Disponible avec le plan Pro</p>
+                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(34,197,94,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
               </div>
             )}
           </div>
 
           {/* Réseaux sociaux */}
-          <div className="card-standard" style={{ padding: '28px' }}>
+          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px' }}>
             <h3 style={sectionTitle}>Réseaux sociaux</h3>
             <p style={{ ...subText, marginBottom: '16px' }}>Tes handles apparaîtront sur ton media kit. YouTube et Twitch sont ajoutés automatiquement si connectés.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -622,7 +625,7 @@ export default function MediaKitEditorPage() {
                 <div key={label}>
                   <label style={labelStyle}>{label}</label>
                   <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: '#94a3b8', fontWeight: 500 }}>@</span>
+                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', color: MUTED, fontWeight: 500, fontFamily: SYNE }}>@</span>
                     <input style={{ ...inputStyle, paddingLeft: '28px' }} value={value} onChange={e => set(e.target.value.replace(/^@/, ''))} onFocus={onFocus} onBlur={onBlur} placeholder="tonpseudo" />
                   </div>
                 </div>
@@ -631,22 +634,22 @@ export default function MediaKitEditorPage() {
           </div>
 
           {/* Lien de réservation */}
-          <div className="card-standard" style={{ padding: '28px', opacity: pro ? 1 : 0.7 }}>
+          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px', opacity: pro ? 1 : 0.7 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <h3 style={sectionTitle}>Lien de réservation</h3>
-              {!pro && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: '#16a34a', background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: '9999px', padding: '2px 8px' }}><Lock size={9} /> PRO</span>}
+              {!pro && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
             </div>
             <p style={{ ...subText, marginBottom: '16px' }}>Intègre ton lien Calendly pour que les marques bookent un appel directement</p>
             {pro ? (
               <div>
                 <label style={labelStyle}>Lien Calendly</label>
                 <input style={inputStyle} value={calendlyUrl} onChange={e => setCalendlyUrl(e.target.value)} onFocus={onFocus} onBlur={onBlur} placeholder="https://calendly.com/ton-pseudo" />
-                {calendlyUrl && <p style={{ fontSize: '12px', color: '#16a34a', marginTop: '8px', fontWeight: 500 }}>✓ Un bouton &quot;Réserver un appel&quot; apparaîtra sur ta page publique</p>}
+                {calendlyUrl && <p style={{ fontSize: '12px', color: ACCENT, marginTop: '8px', fontWeight: 500, fontFamily: SYNE }}>✓ Un bouton &quot;Réserver un appel&quot; apparaîtra sur ta page publique</p>}
               </div>
             ) : (
-              <div style={{ padding: '14px 16px', background: '#f8fafc', border: '1px dashed #e2e8f0', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <p style={{ fontSize: '13px', color: '#64748b' }}>Disponible avec le plan Pro</p>
-                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: '#16a34a', textDecoration: 'none', background: 'rgba(22,163,74,0.08)', padding: '6px 12px', borderRadius: '8px' }}><Zap size={11} /> Upgrader</Link>
+              <div style={{ padding: '14px 16px', background: CARD, border: `1px dashed ${BORDER}`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>Disponible avec le plan Pro</p>
+                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(34,197,94,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
               </div>
             )}
           </div>
@@ -655,20 +658,20 @@ export default function MediaKitEditorPage() {
       </main>
 
       {saved && (
-        <div style={{ position: 'fixed', bottom: '32px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, background: '#0f172a', color: 'white', borderRadius: '14px', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.25)', animation: 'toastIn 220ms ease forwards', whiteSpace: 'nowrap' }}>
-          <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>✓</span>
-          <span style={{ fontSize: '14px', fontWeight: 500 }}>Modifications sauvegardées</span>
+        <div style={{ position: 'fixed', bottom: '32px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, background: SURFACE, color: TEXT, borderRadius: '14px', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', border: `1px solid ${BORDER}`, animation: 'toastIn 220ms ease forwards', whiteSpace: 'nowrap' }}>
+          <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0, color: BG }}>✓</span>
+          <span style={{ fontSize: '14px', fontWeight: 500, fontFamily: SYNE }}>Modifications sauvegardées</span>
         </div>
       )}
     </div>
   )
 }
 
-const sectionTitle: React.CSSProperties = { fontSize: '16px', fontWeight: 600, color: '#0f172a', marginBottom: '4px' }
-const subText: React.CSSProperties = { fontSize: '13px', color: '#94a3b8', marginBottom: '0' }
-const labelStyle: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: 500, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px' }
-const inputStyle: React.CSSProperties = { width: '100%', background: '#f8fafc', border: '1.5px solid rgba(0,0,0,0.10)', borderRadius: '10px', padding: '10px 14px', fontSize: '14px', color: '#0f172a', outline: 'none', transition: 'all 150ms ease' }
-const addBtnStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1.5px solid rgba(0,0,0,0.10)', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#0f172a', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease' }
+const sectionTitle: React.CSSProperties = { fontSize: '16px', fontWeight: 600, color: TEXT, marginBottom: '4px', fontFamily: SYNE }
+const subText: React.CSSProperties = { fontSize: '13px', color: MUTED, marginBottom: '0', fontFamily: SYNE }
+const labelStyle: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: 500, color: MUTED, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px', fontFamily: SYNE }
+const inputStyle: React.CSSProperties = { width: '100%', background: CARD, border: `1.5px solid ${BORDER}`, borderRadius: '10px', padding: '10px 14px', fontSize: '14px', color: TEXT, outline: 'none', transition: 'all 150ms ease', fontFamily: SYNE }
+const addBtnStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: '6px', background: CARD, border: `1.5px solid ${BORDER}`, borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: TEXT, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms ease', fontFamily: SYNE }
 
-const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = '#16a34a'; e.target.style.background = '#fff' }
-const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = 'rgba(0,0,0,0.10)'; e.target.style.background = '#f8fafc' }
+const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = ACCENT; e.target.style.background = CARD }
+const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = BORDER; e.target.style.background = CARD }

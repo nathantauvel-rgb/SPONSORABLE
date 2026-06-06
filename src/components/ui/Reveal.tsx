@@ -25,27 +25,38 @@ export function useInView<T extends HTMLElement>(threshold = 0.15) {
   return { ref, inView }
 }
 
-/* Wrapper de révélation : fade + rise discret au scroll. */
+/* Wrapper de révélation : fade + rise (ou slide gauche) au scroll.
+   direction='up'   → translateY(24px) → 0   (défaut)
+   direction='left' → translateX(-24px) → 0  (slide depuis la gauche) */
 export default function Reveal({
   children,
   delay = 0,
+  direction = 'up',
   style,
   className,
 }: {
   children: ReactNode
   delay?: number
+  direction?: 'up' | 'left'
   style?: CSSProperties
   className?: string
 }) {
   const { ref, inView } = useInView<HTMLDivElement>()
+
+  const transform = inView
+    ? 'translate(0, 0)'
+    : direction === 'left'
+      ? 'translate(-24px, 0)'
+      : 'translate(0, 24px)'
+
   return (
     <div
       ref={ref}
       className={className}
       style={{
         opacity: inView ? 1 : 0,
-        transform: inView ? 'translateY(0)' : 'translateY(16px)',
-        transition: `opacity 450ms cubic-bezier(0.22,1,0.36,1) ${delay}ms, transform 450ms cubic-bezier(0.22,1,0.36,1) ${delay}ms`,
+        transform,
+        transition: `opacity 600ms ease-out ${delay}ms, transform 600ms ease-out ${delay}ms`,
         ...style,
       }}
     >

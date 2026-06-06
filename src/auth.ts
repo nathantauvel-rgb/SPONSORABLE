@@ -153,5 +153,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
             return session
         },
+        async redirect({ url, baseUrl }) {
+            // Autoriser les redirects ?connected= (liaison YouTube / Twitch)
+            if (url.includes('connected=')) {
+                return url.startsWith(baseUrl) ? url : `${baseUrl}/dashboard`
+            }
+            // Toujours atterrir sur /dashboard après login, peu importe le callbackUrl stocké
+            // Ça évite d'atterrir sur /dashboard/mediakit quand la session expire sur cette page
+            if (url.startsWith(baseUrl)) return `${baseUrl}/dashboard`
+            if (url.startsWith('/')) return `${baseUrl}${url.startsWith('/dashboard') ? url : '/dashboard'}`
+            return `${baseUrl}/dashboard`
+        },
     },
 })
