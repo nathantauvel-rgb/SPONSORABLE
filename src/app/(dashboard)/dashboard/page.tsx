@@ -8,6 +8,18 @@ import Sidebar from '@/components/layout/Sidebar'
 import Button from '@/components/ui/button'
 import MetricCard from '@/components/ui/MetricCard'
 
+// Design system — dark palette
+const BG      = '#0d0d0f'
+const SURFACE = '#111318'
+const CARD    = '#1c1f26'
+const ACCENT  = '#22c55e'
+const TEXT    = '#ffffff'
+const MUTED   = '#888888'
+const BORDER  = '#222222'
+const SYNE    = '"Syne", var(--font-syne), system-ui, sans-serif'
+const DISPLAY = '"Cabinet Grotesk", var(--font-display), system-ui, sans-serif'
+const NUM     = '"Martian Mono", var(--font-num), ui-monospace, monospace'
+
 type YTData = {
   channelId: string
   title: string
@@ -207,17 +219,17 @@ function DashboardContent() {
   const displayName = session?.user?.name ?? ytData?.title ?? 'toi'
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh' }}>
+    <div style={{ background: BG, minHeight: '100vh' }}>
       <Sidebar />
       <main style={{ marginLeft: '240px', padding: '40px 48px', minHeight: '100vh' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
+            <h1 style={{ fontSize: '26px', fontWeight: 700, color: TEXT, marginBottom: '6px', letterSpacing: '-0.02em', fontFamily: DISPLAY }}>
               Bonjour {displayName} 👋
             </h1>
-            <p style={{ fontSize: '14px', color: '#94a3b8' }}>
+            <p style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>
               {ytData ? `YouTube synchronisé ${timeSince(ytData.lastFetched)}` : 'Connecte tes plateformes pour voir tes stats'}
             </p>
           </div>
@@ -248,33 +260,33 @@ function DashboardContent() {
 
         {/* Platforms */}
         <div style={{ marginBottom: '40px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', marginBottom: '16px' }}>Tes plateformes connectées</h3>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: TEXT, marginBottom: '16px', fontFamily: SYNE }}>Tes plateformes connectées</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', maxWidth: '560px' }}>
 
             {/* YouTube */}
             <div style={{
-              background: 'white', borderRadius: '16px', overflow: 'hidden',
-              border: '1px solid #e2e8f0',
-              borderTop: `4px solid ${ytData ? '#22c55e' : '#e2e8f0'}`,
-              boxShadow: ytData ? '0 2px 12px rgba(34,197,94,0.08)' : '0 1px 4px rgba(0,0,0,0.05)',
+              background: CARD, borderRadius: '16px', overflow: 'hidden',
+              border: `1px solid ${BORDER}`,
+              borderTop: `4px solid ${ytData ? ACCENT : BORDER}`,
+              boxShadow: ytData ? '0 4px 20px rgba(0,0,0,0.3)' : 'none',
               transition: 'box-shadow 300ms',
             }}>
               {/* Header */}
               <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: ytData ? 'rgba(239,68,68,0.08)' : '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <PlatformIcon id="youtube" color={ytData ? '#ef4444' : '#cbd5e1'} />
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: ytData ? 'rgba(239,68,68,0.12)' : SURFACE, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <PlatformIcon id="youtube" color={ytData ? '#ef4444' : '#444'} />
                   </div>
                   <div>
-                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>YouTube</p>
-                    <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '1px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>YouTube</p>
+                    <p style={{ fontSize: '12px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>
                       {ytLoading ? 'Chargement...' : ytData ? ytData.title : 'Non connecté'}
                     </p>
                   </div>
                 </div>
                 {ytData && (
-                  <span style={{ flexShrink: 0, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', display: 'block' }} />
+                  <span style={{ flexShrink: 0, background: 'rgba(34,197,94,0.12)', color: ACCENT, border: '1px solid rgba(34,197,94,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, display: 'block' }} />
                     Connecté
                   </span>
                 )}
@@ -284,33 +296,33 @@ function DashboardContent() {
               {ytData && (
                 <div style={{ padding: '0 18px 14px', display: 'flex', gap: '20px' }}>
                   <div>
-                    <p style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>{fmtNum(ytData.subscriberCount)}</p>
-                    <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>abonnés</p>
+                    <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{fmtNum(ytData.subscriberCount)}</p>
+                    <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>abonnés</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>{fmtNum(ytData.viewCount)}</p>
-                    <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>vues totales</p>
+                    <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{fmtNum(ytData.viewCount)}</p>
+                    <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>vues totales</p>
                   </div>
                 </div>
               )}
 
               {/* Action */}
-              <div style={{ borderTop: '1px solid #f1f5f9', padding: '12px 14px' }}>
+              <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 14px' }}>
                 {ytError ? (
                   <div style={{ marginBottom: '8px' }}>
-                    <p style={{ fontSize: '12px', color: '#dc2626', marginBottom: ytNeedsReauth ? '8px' : '0' }}>⚠ {ytError}</p>
+                    <p style={{ fontSize: '12px', color: '#ef4444', marginBottom: ytNeedsReauth ? '8px' : '0', fontFamily: SYNE }}>⚠ {ytError}</p>
                     {ytNeedsReauth && (
                       <button onClick={handleYouTubeReauth} disabled={ytReauthLoading}
-                        style={{ width: '100%', padding: '9px', borderRadius: '10px', border: 'none', background: '#ef4444', color: 'white', fontSize: '13px', fontWeight: 700, cursor: ytReauthLoading ? 'wait' : 'pointer', opacity: ytReauthLoading ? 0.7 : 1 }}>
+                        style={{ width: '100%', padding: '9px', borderRadius: '10px', border: 'none', background: '#ef4444', color: 'white', fontSize: '13px', fontWeight: 700, cursor: ytReauthLoading ? 'wait' : 'pointer', opacity: ytReauthLoading ? 0.7 : 1, fontFamily: SYNE }}>
                         {ytReauthLoading ? 'Reconnexion...' : 'Reconnecter Google →'}
                       </button>
                     )}
                   </div>
                 ) : ytData ? (
                   <button onClick={() => disconnectPlatform('youtube')} disabled={ytDisconnecting}
-                    style={{ width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontSize: '13px', fontWeight: 600, cursor: ytDisconnecting ? 'wait' : 'pointer', transition: 'background 150ms' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#fee2e2' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fef2f2' }}>
+                    style={{ width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '13px', fontWeight: 600, cursor: ytDisconnecting ? 'wait' : 'pointer', transition: 'background 150ms', fontFamily: SYNE }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.18)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.1)' }}>
                     {ytDisconnecting ? 'Déconnexion...' : 'Déconnecter'}
                   </button>
                 ) : !ytLoading && (
@@ -319,7 +331,7 @@ function DashboardContent() {
                       await fetch('/api/platforms/google-reauth', { method: 'DELETE' }).catch(() => {})
                       signIn('google', { callbackUrl: '/dashboard?connected=youtube' })
                     }}
-                    style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: '#ef4444', color: 'white', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px' }}
+                    style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: '#ef4444', color: 'white', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', fontFamily: SYNE }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
@@ -331,28 +343,28 @@ function DashboardContent() {
 
             {/* Twitch */}
             <div style={{
-              background: 'white', borderRadius: '16px', overflow: 'hidden',
-              border: '1px solid #e2e8f0',
-              borderTop: `4px solid ${twitchData ? '#22c55e' : '#e2e8f0'}`,
-              boxShadow: twitchData ? '0 2px 12px rgba(34,197,94,0.08)' : '0 1px 4px rgba(0,0,0,0.05)',
+              background: CARD, borderRadius: '16px', overflow: 'hidden',
+              border: `1px solid ${BORDER}`,
+              borderTop: `4px solid ${twitchData ? ACCENT : BORDER}`,
+              boxShadow: twitchData ? '0 4px 20px rgba(0,0,0,0.3)' : 'none',
               transition: 'box-shadow 300ms',
             }}>
               {/* Header */}
               <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: twitchData ? 'rgba(145,70,255,0.08)' : '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <PlatformIcon id="twitch" color={twitchData ? '#9146ff' : '#cbd5e1'} />
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: twitchData ? 'rgba(145,70,255,0.12)' : SURFACE, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <PlatformIcon id="twitch" color={twitchData ? '#9146ff' : '#444'} />
                   </div>
                   <div>
-                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>Twitch</p>
-                    <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '1px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>Twitch</p>
+                    <p style={{ fontSize: '12px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>
                       {twitchLoading ? 'Chargement...' : twitchData ? twitchData.displayName : 'Non connecté'}
                     </p>
                   </div>
                 </div>
                 {twitchData && (
-                  <span style={{ flexShrink: 0, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', display: 'block' }} />
+                  <span style={{ flexShrink: 0, background: 'rgba(34,197,94,0.12)', color: ACCENT, border: '1px solid rgba(34,197,94,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, display: 'block' }} />
                     Connecté
                   </span>
                 )}
@@ -362,33 +374,33 @@ function DashboardContent() {
               {twitchData && (
                 <div style={{ padding: '0 18px 14px', display: 'flex', gap: '20px' }}>
                   <div>
-                    <p style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>{fmtNum(twitchData.followerCount)}</p>
-                    <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>followers</p>
+                    <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{fmtNum(twitchData.followerCount)}</p>
+                    <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>followers</p>
                   </div>
                   {twitchData.viewCount > 0 && (
                     <div>
-                      <p style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>{fmtNum(twitchData.viewCount)}</p>
-                      <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>vues canal</p>
+                      <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{fmtNum(twitchData.viewCount)}</p>
+                      <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>vues canal</p>
                     </div>
                   )}
                 </div>
               )}
 
               {/* Action */}
-              <div style={{ borderTop: '1px solid #f1f5f9', padding: '12px 14px' }}>
+              <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 14px' }}>
                 {twitchError ? (
-                  <p style={{ fontSize: '12px', color: '#dc2626' }}>⚠ {twitchError}</p>
+                  <p style={{ fontSize: '12px', color: '#ef4444', fontFamily: SYNE }}>⚠ {twitchError}</p>
                 ) : twitchData ? (
                   <button onClick={() => disconnectPlatform('twitch')} disabled={twitchDisconnecting}
-                    style={{ width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontSize: '13px', fontWeight: 600, cursor: twitchDisconnecting ? 'wait' : 'pointer', transition: 'background 150ms' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#fee2e2' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fef2f2' }}>
+                    style={{ width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '13px', fontWeight: 600, cursor: twitchDisconnecting ? 'wait' : 'pointer', transition: 'background 150ms', fontFamily: SYNE }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.18)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.1)' }}>
                     {twitchDisconnecting ? 'Déconnexion...' : 'Déconnecter'}
                   </button>
                 ) : !twitchLoading && (
                   <button
                     onClick={() => signIn('twitch', { callbackUrl: '/dashboard?connected=twitch' })}
-                    style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: '#9146ff', color: 'white', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px' }}
+                    style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: '#9146ff', color: 'white', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', fontFamily: SYNE }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
@@ -403,18 +415,18 @@ function DashboardContent() {
 
         {/* Public link */}
         <div style={{ maxWidth: '560px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', marginBottom: '16px' }}>Ton lien public</h3>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: TEXT, marginBottom: '16px', fontFamily: SYNE }}>Ton lien public</h3>
           {publicPseudo ? (
-            <div style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500 }}>sponsorable.gg/{publicPseudo}</span>
+            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <span style={{ fontSize: '14px', color: TEXT, fontWeight: 500, fontFamily: SYNE }}>sponsorable.gg/{publicPseudo}</span>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.gg/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Copier"><Copy size={15} /></button>
-                <button onClick={() => router.push(`/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }} title="Ouvrir"><ExternalLink size={15} /></button>
+                <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.gg/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED }} title="Copier"><Copy size={15} /></button>
+                <button onClick={() => router.push(`/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED }} title="Ouvrir"><ExternalLink size={15} /></button>
               </div>
             </div>
           ) : (
-            <div style={{ background: '#f8fafc', border: '1px dashed rgba(0,0,0,0.12)', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px' }}>
-              <span style={{ fontSize: '14px', color: '#94a3b8' }}>Configure ton pseudo dans le media kit pour obtenir ton lien →</span>
+            <div style={{ background: SURFACE, border: `1px dashed ${BORDER}`, borderRadius: '10px', padding: '14px 16px', marginBottom: '16px' }}>
+              <span style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>Configure ton pseudo dans le media kit pour obtenir ton lien →</span>
             </div>
           )}
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -424,16 +436,16 @@ function DashboardContent() {
                 href={`/${publicPseudo}?print=1`}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.12)', background: 'white', color: '#0f172a', fontSize: '14px', fontWeight: 600, textDecoration: 'none', cursor: 'pointer', transition: 'background 150ms' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'white' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: `1px solid ${BORDER}`, background: CARD, color: TEXT, fontSize: '14px', fontWeight: 600, textDecoration: 'none', cursor: 'pointer', transition: 'background 150ms', fontFamily: SYNE }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = SURFACE }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = CARD }}
               >
                 Télécharger PDF
               </a>
             ) : (
               <Button variant="outline" onClick={() => router.push('/dashboard/mediakit')}>
                 Télécharger PDF
-                <span style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.10)', borderRadius: '9999px', padding: '1px 8px', fontSize: '10px', fontWeight: 600, color: '#94a3b8', marginLeft: '4px' }}>Configurer pseudo d&apos;abord</span>
+                <span style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '9999px', padding: '1px 8px', fontSize: '10px', fontWeight: 600, color: MUTED, marginLeft: '4px', fontFamily: SYNE }}>Configurer pseudo d&apos;abord</span>
               </Button>
             )}
           </div>

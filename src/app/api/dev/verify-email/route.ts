@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Empêche Next de pré-rendre/collecter cette route au build (elle utilise Prisma)
+export const dynamic = 'force-dynamic'
+
 // Route DEV ONLY — force-vérifie un email sans token
 // Ne jamais exposer en production
 export async function POST(req: NextRequest) {

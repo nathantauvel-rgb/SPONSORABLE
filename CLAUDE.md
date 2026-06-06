@@ -13,6 +13,8 @@ En 2 minutes, un créateur connecte ses plateformes et obtient un lien public à
 
 **Cible principale** : Créateurs de contenu gaming/streaming francophones (YouTubers, streamers Twitch FR).
 
+**Cible de la landing (positionnement marketing, validé)** : créateurs gaming FR **établis, 10k–200k abonnés**, déjà sollicités par des marques, qui font déjà des deals mais se présentent encore avec un PDF Canva / Drive / screenshots. Angle = **négo/tarif** (« arrête de te brader / de négocier en dessous de ta valeur »), pas « deviens crédible ». Ton **cash, direct, pair à pair**. Le petit créateur (3k–8k) = cible secondaire seulement.
+
 ---
 
 ## Ce qui nous différencie des concurrents
@@ -43,6 +45,8 @@ En 2 minutes, un créateur connecte ses plateformes et obtient un lien public à
 - **Paiement** : Stripe (abonnement Pro)
 - **Email** : Resend
 - **Style** : CSS-in-JS inline (pas de Tailwind, pas de composants UI tiers)
+- **Typographie** : Space Grotesk (titres, var `--font-sans`) + Hanken Grotesk (corps, var `--font-body`) — importées dans `layout.tsx`. Plus jamais d'Inter (hardcode supprimé de `globals.css`).
+- **Hébergement** : Vercel (plan Hobby), auto-deploy sur push `main`
 
 ---
 
@@ -80,6 +84,28 @@ Toujours développer sur `Test`, merger vers `main` quand stable.
 - Connexion Google OAuth (création de compte + login)
 - Twitch OAuth réservé au linking de plateforme dans le dashboard (PAS pour créer un compte Sponsorable)
 - Protection profil : connecter Twitch/Google ne modifie pas la photo de profil si l'utilisateur avait déjà un compte
+- **Config Edge-safe séparée** : `src/auth.config.ts` (sans bcrypt, providers vides, callback `authorized`) est utilisé par `src/middleware.ts`. Le `src/auth.ts` complet (Credentials + bcrypt + Prisma) ne tourne qu'en Node runtime. Évite l'erreur Edge Runtime sur `crypto`/bcrypt.
+
+### Dashboard "Sponsorabilité" (`/dashboard/sponsors`)
+- Page **privée créateur** (pas visible par les marques) — coach/roadmap, pas un score vanity
+- Score /100 sur 6 dimensions (complétude profil, présence plateforme, taille audience, activité/contenu, engagement, dispo sponsor)
+- Niveaux : "Profil à structurer / en montée / sponsor-ready / très attractif"
+- Microcopy obligatoire : "Ce score est privé, pas visible par les marques, sert à améliorer ton profil"
+- "Tes 3 priorités" triées par **impact sponsor/business réel** (niche/contenu récent avant micro-actions type Calendly)
+- Catégories de marques : wording doux "À viser maintenant" / "Accessible prochainement"
+- Bloc final "Ton profil aujourd'hui"
+- Pro gate équilibré : score + priorité #1 gratuits ; recommandations détaillées + plan complet réservés Pro
+
+### Landing page (`src/app/page.tsx`) — V3 "Neon Arena"
+- Structure de conversion validée (11 blocs, ne pas re-discuter) : Hero → Problème → Solution → Exemples → Comment ça marche → Différenciation → Pour qui → Pourquoi → FAQ → Pricing → CTA final
+- Palette : **vert = action/marque**, **violet = atmosphère uniquement (halos basse opacité, ressenti pas vu)**, **corail = la perte (Problème)**, **or = micro-valeur (badge vérifié)**. Pas de rainbow.
+- Motion maîtrisé : composant `src/components/ui/Reveal.tsx` (IntersectionObserver, fade+rise) + hook `useInView`. Halos qui dérivent, mockup flottant, ligne lumineuse qui se trace, FAQ animée. **Une animation principale par bloc max.** Garde-fou `prefers-reduced-motion` coupe tout.
+- Contrainte forte : **aucune fausse preuve sociale** (pas de faux témoignages/logos/compteurs). Crédibilité = produit (mockup + exemples live) + ton honnête.
+- "Deviens Sponsorable" = signature de marque (kicker Hero + climax CTA final), pas le H1.
+- Faux PDF Canva amateur (CSS) vs carte live = motif "mort vs vivant" dans la Différenciation.
+
+### Données démo (`prisma/seed-demo.ts`)
+- `npx tsx prisma/seed-demo.ts` crée 5 profils de test : `/valcrest`, `/hexara`, `/lankdower-test`, `/newdrop`, `/nightbyte`. Idempotent (delete-by-email puis create).
 
 ### Photo de profil — Priorité
 1. YouTube (miniature chaîne) — priorité maximale
@@ -112,6 +138,9 @@ Toujours développer sur `Test`, merger vers `main` quand stable.
 - **Déconnexion plateforme silencieuse** : `DELETE /api/platforms/youtube` et `/twitch` n'avaient pas de handler DELETE dans les routes statiques (écrasées par la route dynamique `[type]`). Corrigé en ajoutant les handlers dans chaque fichier spécifique.
 - **Photo de profil écrasée par Twitch OAuth** : le check `isLinking` ne fonctionnait que pour les comptes email/password. Corrigé en comptant les Account existants en DB.
 - **Stats section vide sur page publique** : la `<section>` rendait toujours avec padding même sans plateformes. Corrigé avec un wrapper IIFE conditionnel.
+- **Build Vercel — bcryptjs en Edge Runtime** : le middleware importait le `auth` complet (avec bcrypt) → erreur `crypto not supported in Edge`. Corrigé en séparant `auth.config.ts` (Edge-safe) pour le middleware.
+- **Build Vercel — "Failed to collect page data"** : Next tentait de pré-rendre les routes API qui utilisent Prisma/auth. Corrigé en ajoutant `export const dynamic = 'force-dynamic'` sur toutes les routes `src/app/api/**`.
+- **Build Vercel — cron Hobby** : `vercel.json` avait un cron horaire (`0 * * * *`), interdit en plan Hobby (1×/jour max). Corrigé en `0 6 * * *` (quotidien).
 
 ---
 

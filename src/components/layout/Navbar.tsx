@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 const navLinks = [
   { label: 'Comment ça marche', id: 'comment-ca-marche' },
@@ -22,7 +21,6 @@ const scrollToSection = (id: string) => {
 
 const Navbar = ({ dark = false }: { dark?: boolean }) => {
   const [scrolled, setScrolled] = useState(false)
-  const router = useRouter()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60)
@@ -31,7 +29,7 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
   }, [])
 
   const isDark = dark && !scrolled
-  const linkColor = isDark ? 'rgba(255,255,255,0.65)' : '#475569'
+  const linkColor = isDark ? 'rgba(255,255,255,0.55)' : '#475569'
   const linkHover  = isDark ? '#ffffff' : '#0f172a'
 
   return (
@@ -41,12 +39,12 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
         top: 0, left: 0, right: 0,
         height: `${NAVBAR_HEIGHT}px`,
         zIndex: 50,
-        background: isDark ? 'rgba(8,13,20,0.6)' : 'rgba(255,255,255,0.92)',
-        backdropFilter: 'blur(14px)',
-        WebkitBackdropFilter: 'blur(14px)',
+        background: isDark ? 'rgba(10,10,12,0.72)' : 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         borderBottom: scrolled
-          ? '1px solid rgba(0,0,0,0.07)'
-          : isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
+          ? '1px solid rgba(0,0,0,0.08)'
+          : isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent',
         transition: 'all 250ms ease',
         display: 'flex',
         alignItems: 'center',
@@ -55,9 +53,23 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
 
-        {/* Logo */}
-        <Link href="/" style={{ fontWeight: 700, fontSize: '18px', color: '#16a34a', textDecoration: 'none', letterSpacing: '-0.01em', flexShrink: 0 }}>
-          Sponsorable
+        {/* Logo wordmark — "Sponsor" blanc + "able" vert, Georgia serif */}
+        <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, lineHeight: 1 }}>
+          <span style={{
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontWeight: 700,
+            fontSize: '19px',
+            letterSpacing: '-0.01em',
+            color: isDark ? '#ffffff' : '#0f172a',
+            transition: 'color 250ms ease',
+          }}>Sponsor</span>
+          <span style={{
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontWeight: 700,
+            fontSize: '19px',
+            letterSpacing: '-0.01em',
+            color: '#22c55e',
+          }}>able</span>
         </Link>
 
         {/* Nav links — masqués sur mobile */}
@@ -66,7 +78,17 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
             <button
               key={id}
               onClick={() => scrollToSection(id)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: linkColor, fontSize: '15px', fontWeight: 500, transition: 'color 150ms ease', padding: 0 }}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: linkColor,
+                fontFamily: '"Syne", system-ui, sans-serif',
+                fontSize: '14px',
+                fontWeight: 500,
+                transition: 'color 150ms ease',
+                padding: 0,
+              }}
               onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = linkHover)}
               onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = linkColor)}
             >
@@ -80,27 +102,35 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
           <Link
             href="/login"
             style={{
-              padding: '10px 16px', fontSize: '14px', fontWeight: 500,
-              borderRadius: '10px', textDecoration: 'none',
-              color: isDark ? 'rgba(255,255,255,0.65)' : '#475569',
+              padding: '10px 16px',
+              fontFamily: '"Syne", system-ui, sans-serif',
+              fontSize: '14px',
+              fontWeight: 500,
+              borderRadius: '8px',
+              textDecoration: 'none',
+              color: isDark ? 'rgba(255,255,255,0.55)' : '#475569',
               transition: 'all 150ms ease',
             }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = isDark ? '#ffffff' : '#0f172a' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = isDark ? 'rgba(255,255,255,0.65)' : '#475569' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = isDark ? 'rgba(255,255,255,0.55)' : '#475569' }}
           >
             Se connecter
           </Link>
           <Link
             href="/login?register=1"
             style={{
-              padding: '10px 20px', fontSize: '14px', fontWeight: 600,
-              borderRadius: '10px', textDecoration: 'none',
-              background: isDark ? 'rgba(255,255,255,0.10)' : '#0f172a',
-              color: 'white',
+              padding: '10px 20px',
+              fontFamily: '"Syne", system-ui, sans-serif',
+              fontSize: '14px',
+              fontWeight: 700,
+              borderRadius: '8px',
+              textDecoration: 'none',
+              background: '#22c55e',
+              color: '#0d0d0f',
               transition: 'all 150ms ease',
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(255,255,255,0.18)' : '#1e293b' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isDark ? 'rgba(255,255,255,0.10)' : '#0f172a' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#1daa50' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#22c55e' }}
           >
             S&apos;inscrire →
           </Link>
