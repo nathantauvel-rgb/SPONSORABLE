@@ -63,15 +63,6 @@ const PlatformIcon = ({ id, color }: { id: string; color: string }) => {
   return null
 }
 
-const timeSince = (iso: string) => {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "à l'instant"
-  if (mins < 60) return `il y a ${mins} min`
-  return `il y a ${Math.floor(mins / 60)}h`
-}
-
-
 // Scopes YouTube (sensibles) demandés UNIQUEMENT lors de la connexion de la chaîne,
 // pas au login. Autorisation incrémentale via le 3e argument de signIn().
 const YOUTUBE_AUTH_PARAMS = {
@@ -237,9 +228,11 @@ function DashboardContent() {
             <h1 style={{ fontSize: '26px', fontWeight: 700, color: TEXT, marginBottom: '6px', letterSpacing: '-0.02em', fontFamily: DISPLAY }}>
               Bonjour {displayName} 👋
             </h1>
-            <p style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>
-              {ytData ? `YouTube synchronisé ${timeSince(ytData.lastFetched)}` : 'Connecte tes plateformes pour voir tes stats'}
-            </p>
+            {!ytData && (
+              <p style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>
+                Connecte tes plateformes pour voir tes stats
+              </p>
+            )}
           </div>
           {publicPseudo && (
             <Button variant="outline" arrow onClick={() => router.push(`/${publicPseudo}`)}>
