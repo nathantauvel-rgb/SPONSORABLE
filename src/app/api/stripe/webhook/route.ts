@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
+import type Stripe from 'stripe'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { stripe, mapStripeStatus } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY!
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET
 
-const stripe = new Stripe(STRIPE_SECRET_KEY)
-
-async function getUserIdFromCustomer(customerId: string): Promise<string | null> {
+/** Retrouve l'userId à partir du customer Stripe (fallback metadata). */
+async function resolveUserId(customerId: string | null, metadataUserId?: string | null): Promise<string | null> {
+  if (metadataUserId) return metadataUserId
+  if (!customerId) return null
   const user = await prisma.user.findFirst({
     where: { stripeCustomerId: customerId },
     select: { id: true },
@@ -18,29 +19,43 @@ async function getUserIdFromCustomer(customerId: string): Promise<string | null>
   return user?.id ?? null
 }
 
+/** Lit le statut réel de l'abonnement depuis Stripe et le synchronise en base. */
+async function syncSubscription(subscriptionId: string, customerId: string, metadataUserId?: string | null) {
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+  const userId = await resolveUserId(customerId, metadataUserId ?? subscription.metadata?.userId)
+  if (!userId) {
+    console.error('[stripe-webhook] userId introuvable', { customerId, subscriptionId })
+    return
+  }
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subscription.id,
+      stripeSubscriptionStatus: mapStripeStatus(subscription.status),
+    },
+  })
+}
+
 export async function POST(req: NextRequest) {
   if (!STRIPE_WEBHOOK_SECRET) {
-    console.error('STRIPE_WEBHOOK_SECRET manquant')
-    return NextResponse.json({ error: 'Configuration manquante' }, { status: 500 })
+    console.error('[stripe-webhook] STRIPE_WEBHOOK_SECRET manquant')
+    return NextResponse.json({ error: 'Webhook non configuré' }, { status: 500 })
   }
 
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')
-
-  if (!sig) {
-    return NextResponse.json({ error: 'Signature manquante' }, { status: 400 })
-  }
+  if (!sig) return NextResponse.json({ error: 'Signature manquante' }, { status: 400 })
 
   let event: Stripe.Event
   try {
     event = stripe.webhooks.constructEvent(body, sig, STRIPE_WEBHOOK_SECRET)
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Signature invalide'
-    console.error('Webhook signature invalide:', message)
-    return NextResponse.json({ error: `Webhook error: ${message}` }, { status: 400 })
+    console.error('[stripe-webhook] signature invalide:', err)
+    return NextResponse.json({ error: 'Signature invalide' }, { status: 400 })
   }
 
-  // Idempotence : si cet event a déjà été traité, on acquitte sans rejouer.
+  // Idempotence : Stripe redélivre les events. On ignore tout event déjà traité.
   try {
     await prisma.stripeEvent.create({ data: { id: event.id } })
   } catch (err) {
@@ -53,93 +68,62 @@ export async function POST(req: NextRequest) {
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session
-        if (session.mode !== 'subscription') break
-
-        const customerId = session.customer as string
-        const subscriptionId = session.subscription as string
-        const userId = (session.metadata?.userId) ?? await getUserIdFromCustomer(customerId)
-        if (!userId) {
-          console.error('checkout.session.completed: userId introuvable', { customerId })
-          break
-        }
-
-        // Récupérer le statut réel de l'abonnement
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            stripeCustomerId: customerId,
-            stripeSubscriptionId: subscriptionId,
-            stripeSubscriptionStatus: subscription.status, // 'active', 'trialing', etc.
-          },
-        })
-        console.log(`✅ Paiement confirmé pour userId=${userId}, status=${subscription.status}`)
+        const s = event.data.object as Stripe.Checkout.Session
+        if (s.mode !== 'subscription') break
+        await syncSubscription(s.subscription as string, s.customer as string, s.metadata?.userId ?? s.client_reference_id)
         break
       }
 
+      case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const sub = event.data.object as Stripe.Subscription
-        const customerId = sub.customer as string
-        const userId = await getUserIdFromCustomer(customerId)
-        if (!userId) {
-          console.error('subscription.updated: userId introuvable', { customerId })
-          break
-        }
-
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            stripeSubscriptionId: sub.id,
-            stripeSubscriptionStatus: sub.status, // 'active', 'trialing', 'past_due', 'canceled', etc.
-          },
-        })
-        console.log(`🔄 Abonnement mis à jour pour userId=${userId} → ${sub.status}`)
+        await syncSubscription(sub.id, sub.customer as string, sub.metadata?.userId)
         break
       }
 
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription
-        const customerId = sub.customer as string
-        const userId = await getUserIdFromCustomer(customerId)
-        if (!userId) {
-          console.error('subscription.deleted: userId introuvable', { customerId })
-          break
+        const userId = await resolveUserId(sub.customer as string, sub.metadata?.userId)
+        if (userId) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { stripeSubscriptionId: null, stripeSubscriptionStatus: 'free' },
+          })
         }
+        break
+      }
 
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            stripeSubscriptionId: null,
-            stripeSubscriptionStatus: 'canceled',
-          },
-        })
-        console.log(`❌ Abonnement annulé pour userId=${userId}`)
+      case 'invoice.paid': {
+        // Réactivation après un paiement réussi (retour de past_due → active).
+        const invoice = event.data.object as Stripe.Invoice & { subscription?: string | null }
+        if (invoice.subscription) {
+          await syncSubscription(invoice.subscription, invoice.customer as string)
+        }
         break
       }
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice
-        const customerId = invoice.customer as string
-        const userId = await getUserIdFromCustomer(customerId)
-        if (!userId) break
-
-        // On passe en free si le paiement échoue (après les tentatives Stripe)
-        await prisma.user.update({
-          where: { id: userId },
-          data: { stripeSubscriptionStatus: 'past_due' },
-        })
-        console.log(`⚠️ Paiement échoué pour userId=${userId}`)
+        const userId = await resolveUserId(invoice.customer as string)
+        if (userId) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { stripeSubscriptionStatus: 'past_due' },
+          })
+        }
         break
       }
 
       default:
-        // Événement non géré — on retourne 200 quand même
+        // Event non géré → on acquitte quand même (200).
         break
     }
   } catch (err) {
-    console.error('Erreur lors du traitement du webhook:', err)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    console.error('[stripe-webhook] erreur handler', event.type, err)
+    // 500 → Stripe rejouera ; l'idempotence empêchera le double-traitement réussi.
+    // On retire l'event de la table pour autoriser le retry.
+    await prisma.stripeEvent.delete({ where: { id: event.id } }).catch(() => {})
+    return NextResponse.json({ error: 'Erreur interne' }, { status: 500 })
   }
 
   return NextResponse.json({ received: true })

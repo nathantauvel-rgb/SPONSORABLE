@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
-import Stripe from 'stripe'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { stripe } from '@/lib/stripe'
 import { isProStatus } from '@/lib/subscription'
 
 export async function DELETE() {
@@ -18,9 +18,8 @@ export async function DELETE() {
     select: { stripeSubscriptionId: true, stripeCustomerId: true },
   })
 
-  if (user?.stripeSubscriptionId && process.env.STRIPE_SECRET_KEY) {
+  if (user?.stripeSubscriptionId) {
     try {
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
       await stripe.subscriptions.cancel(user.stripeSubscriptionId)
       if (user.stripeCustomerId) {
         await stripe.customers.del(user.stripeCustomerId).catch(() => {})

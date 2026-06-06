@@ -110,6 +110,26 @@ function SettingsContent() {
     }
   }
 
+  const [portalLoading, setPortalLoading] = useState(false)
+
+  const handlePortal = async () => {
+    setPortalLoading(true)
+    setCheckoutError('')
+    try {
+      const res = await fetch('/api/stripe/portal', { method: 'POST' })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        setCheckoutError(data.error || "Impossible d'ouvrir le portail de facturation")
+      }
+    } catch {
+      setCheckoutError('Impossible de joindre le serveur de paiement')
+    } finally {
+      setPortalLoading(false)
+    }
+  }
+
   const planRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -347,14 +367,24 @@ function SettingsContent() {
                 <span style={{ fontSize: '12px', fontWeight: 600, color: ACCENT, background: 'rgba(34,197,94,0.12)', padding: '4px 10px', borderRadius: '9999px' }}>Actif</span>
               </div>
 
-              {/* Bloc démo */}
-              <div style={{ marginBottom: '16px', padding: '10px 14px', background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.18)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <p style={{ fontSize: '12px', color: '#ca8a04' }}>🧪 Mode démo — simule le plan pour tester l&apos;app</p>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => { setCurrentPlan('free'); localStorage.setItem('sponsorable_plan', 'free') }} style={{ padding: '5px 14px', borderRadius: '8px', border: `1px solid ${BORDER}`, cursor: 'pointer', fontSize: '12px', fontWeight: 600, background: currentPlan === 'free' ? TEXT : CARD, color: currentPlan === 'free' ? BG : MUTED }}>Gratuit</button>
-                  <button onClick={() => { setCurrentPlan('pro'); localStorage.setItem('sponsorable_plan', 'pro') }} style={{ padding: '5px 14px', borderRadius: '8px', border: `1px solid ${BORDER}`, cursor: 'pointer', fontSize: '12px', fontWeight: 600, background: currentPlan === 'pro' ? ACCENT : CARD, color: currentPlan === 'pro' ? BG : MUTED }}>Pro</button>
-                </div>
-              </div>
+              {/* Abonné Pro : gérer son abonnement via le portail Stripe */}
+              {currentPlan === 'pro' && (
+                <>
+                  <button
+                    onClick={handlePortal}
+                    disabled={portalLoading}
+                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: `1px solid ${BORDER}`, cursor: portalLoading ? 'wait' : 'pointer', background: CARD, color: TEXT, fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: portalLoading ? 0.8 : 1 }}
+                  >
+                    {portalLoading ? 'Ouverture…' : 'Gérer mon abonnement'}
+                  </button>
+                  <p style={{ textAlign: 'center', fontSize: '11px', color: MUTED, marginTop: '10px' }}>
+                    Annuler, changer de carte ou consulter tes factures via Stripe.
+                  </p>
+                  {checkoutError && (
+                    <p style={{ textAlign: 'center', fontSize: '12px', color: '#fca5a5', marginTop: '8px' }}>⚠️ {checkoutError}</p>
+                  )}
+                </>
+              )}
 
               {currentPlan !== 'pro' && (
                 <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '24px', color: TEXT }}>
