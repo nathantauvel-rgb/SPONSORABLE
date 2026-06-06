@@ -19,12 +19,13 @@ if (AUTH_GOOGLE_ID && AUTH_GOOGLE_SECRET) {
     providers.push(Google({
         clientId: AUTH_GOOGLE_ID,
         clientSecret: AUTH_GOOGLE_SECRET,
+        // Scopes basiques uniquement pour le login : non-sensibles, donc accessibles
+        // à tout le monde sans vérification Google. Les scopes YouTube (sensibles)
+        // sont demandés à la demande lors de la connexion de la chaîne (cf. dashboard
+        // signIn('google', ..., YOUTUBE_AUTH_PARAMS)) — autorisation incrémentale.
         authorization: {
             params: {
-                scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly",
-                prompt: "consent",
-                access_type: "offline",
-                response_type: "code",
+                scope: "openid email profile",
             },
         },
     }))

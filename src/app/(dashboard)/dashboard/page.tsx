@@ -60,6 +60,14 @@ const timeSince = (iso: string) => {
 }
 
 
+// Scopes YouTube (sensibles) demandés UNIQUEMENT lors de la connexion de la chaîne,
+// pas au login. Autorisation incrémentale via le 3e argument de signIn().
+const YOUTUBE_AUTH_PARAMS = {
+  scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
+  access_type: 'offline',
+  prompt: 'consent',
+}
+
 function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -113,7 +121,7 @@ function DashboardContent() {
       await fetch('/api/platforms/google-reauth', { method: 'DELETE' })
     } catch { /* continue */ }
     // Lancer un nouveau OAuth Google avec tous les scopes YouTube + prompt consent
-    signIn('google', { callbackUrl: '/dashboard?connected=youtube' })
+    signIn('google', { callbackUrl: '/dashboard?connected=youtube' }, YOUTUBE_AUTH_PARAMS)
   }
 
   const fetchTwitch = async () => {
@@ -317,7 +325,7 @@ function DashboardContent() {
                   <button
                     onClick={async () => {
                       await fetch('/api/platforms/google-reauth', { method: 'DELETE' }).catch(() => {})
-                      signIn('google', { callbackUrl: '/dashboard?connected=youtube' })
+                      signIn('google', { callbackUrl: '/dashboard?connected=youtube' }, YOUTUBE_AUTH_PARAMS)
                     }}
                     style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: '#ef4444', color: 'white', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88' }}
