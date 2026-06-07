@@ -29,8 +29,11 @@ const emailHtml = (verifyUrl: string) => `
 `
 
 function getAppUrl(reqUrl: string) {
-  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  // Priorité au domaine officiel (AUTH_URL = https://sponsorable.fr).
+  const envUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_URL
+  if (envUrl) {
+    try { return new URL(envUrl).origin } catch { /* fall through */ }
+  }
   return new URL(reqUrl).origin
 }
 
