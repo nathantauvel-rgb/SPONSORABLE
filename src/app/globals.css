@@ -293,6 +293,18 @@
   }
 }
 
+/* ── Navbar landing : liens centraux masqués sur mobile (CSS pur, fiable) ── */
+.nav-desktop-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+@media (max-width: 768px) {
+  .nav-desktop-links {
+    display: none !important;
+  }
+}
+
 /* ── Dashboard responsive : neutralise la marge de la sidebar fixe sur mobile ── */
 /* Le !important surcharge le marginLeft/padding inline des pages dashboard. */
 @media (max-width: 768px) {

@@ -74,9 +74,8 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
           }}>able</span>
         </Link>
 
-        {/* Nav links — masqués sur mobile (via JS, Tailwind hidden non fiable ici) */}
-        {!isMobile && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+        {/* Nav links — masqués sur mobile via CSS pur (.nav-desktop-links) */}
+        <div className="nav-desktop-links">
           {navLinks.map(({ label, id }) => (
             <button
               key={id}
@@ -99,7 +98,6 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
             </button>
           ))}
         </div>
-        )}
 
         {/* CTAs */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '8px', flexShrink: 0 }}>
