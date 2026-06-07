@@ -17,6 +17,59 @@ En 2 minutes, un créateur connecte ses plateformes et obtient un lien public à
 
 ---
 
+## ⚙️ Infra & Prod — RÉCAP IMPORTANT (session juin 2026)
+
+### Dépôt & déploiement
+- **On ne travaille QUE sur le dépôt `nathantauvel-rgb/SPONSORABLE`** (remote git `perso`). **Ne plus jamais toucher au dépôt `shanome-hub`** (remote `origin`).
+- Branches : développement sur **`Test`**, puis merge/fast-forward vers **`main`** = déploiement auto Vercel.
+- **Domaine de prod : `sponsorable.fr`** (acheté chez OVH), pointe sur Vercel. `sponsorable.vercel.app` reste actif aussi.
+
+### DNS OVH (pièges rencontrés — à connaître)
+- L'apex `sponsorable.fr` doit avoir **uniquement** un `A` → `76.76.21.21` (Vercel) + `www` CNAME → `cname.vercel-dns.com`.
+- ⚠️ **Bug résolu** : un enregistrement **AAAA (IPv6) OVH parasite** (`2001:41d0:...`) sur l'apex faisait tomber le site sur OVH (« Site en construction » / erreur cert TLS) en IPv6. **Toujours supprimer tout AAAA/A OVH sur l'apex.**
+- Email Resend : MX `send` → `feedback-smtp.eu-west-1.amazonses.com` + TXT `resend._domainkey` (DKIM), `send` (SPF), `_dmarc`.
+
+### Variables d'environnement Vercel (critiques)
+- `AUTH_URL=https://sponsorable.fr` (NextAuth + génération des liens email — voir `getAppUrl`).
+- `AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`, `AUTH_TWITCH_ID/SECRET`.
+- `DATABASE_URL` (Supabase, marquée **Sensitive** → non visible/réaffichable dans Vercel ; la récupérer depuis Supabase si besoin).
+- `RESEND_API_KEY` + **`EMAIL_FROM=noreply@sponsorable.fr`** (domaine vérifié dans Resend, sinon l'envoi d'email échoue).
+- Stripe : `STRIPE_SECRET_KEY`, **`STRIPE_PRICE_ID`** (prix du produit Pro), `STRIPE_WEBHOOK_SECRET`. (Actuellement en clés **Test** ; repasser en **Live** avant lancement public.)
+- `REDIS_URL` (rate-limiting ; fail-open si absent).
+
+### Google OAuth (console cloud)
+- Écran de consentement **publié (En production)** → tout le monde peut se connecter.
+- URIs de redirection autorisés : `https://sponsorable.fr/api/auth/callback/google` + `.../callback/twitch`, idem `sponsorable.vercel.app` + `localhost:3000`. Origines JS : `https://sponsorable.fr` etc.
+- **Scopes YouTube découplés du login** : le login Google ne demande que `openid email profile` (non-sensible). Les scopes YouTube (sensibles) sont demandés **à la connexion de chaîne** via le 3e arg de `signIn('google', ..., YOUTUBE_AUTH_PARAMS)`. Évite la vérification Google pour le simple login.
+
+### Stripe — réécrit de zéro (source de vérité unique)
+- `src/lib/stripe.ts` : client unique + `mapStripeStatus`. Tout passe par là (plus de `new Stripe()` éparpillé).
+- **Un seul webhook : `/api/stripe/webhook`** (l'ancien `/api/webhook/stripe` a été supprimé). Idempotent via table **`StripeEvent`** (créée en DB). Cycle complet : checkout.completed, subscription.created/updated/deleted, invoice.paid/payment_failed.
+- Checkout via `STRIPE_PRICE_ID` (produit propre, plus de `price_data` inline). Bloque le double abonnement.
+- **Billing Portal** : `/api/stripe/portal` + bouton « Gérer mon abonnement » (settings) pour les abonnés payants.
+- Suppression de compte (`/api/me` DELETE) annule l'abonnement Stripe avant delete.
+
+### Essai gratuit 14 jours (signup)
+- Logique dans `src/lib/subscription.ts` : `isProUser({status, createdAt})` = abonnement payant **OU** essai actif (≤ 14 j depuis `createdAt`). **Aucune colonne DB ajoutée.**
+- `/api/me` expose `isPro`, `isPaid`, `inTrial`, `trialDaysLeft`. Gating cohérent : dashboard, page publique, sidebar.
+- Checkout reste possible pendant l'essai (le blocage double-abo ne porte que sur `isProStatus` payant).
+
+### Sécurité / RGPD (audit appliqué)
+- Emails : `escapeHtml` sur tout contenu user (contact, resend-verification). Rate-limit sur `/contact`, `/pageview`, `/resend-verification`.
+- `/pageview` ne stocke **plus l'IP ni le user-agent** (RGPD). Tracking conditionné au consentement.
+- **Cookie banner** (`src/components/CookieBanner.tsx` + `src/lib/consent.ts`) + pages **`/mentions-legales`** et **`/confidentialite`** (⚠️ champs `[À COMPLÉTER]` à remplir : nom, SIRET, adresse, email).
+- `safeCalendlyUrl` corrigé (bypass `endsWith`). Upload : `type` whitelisté.
+
+### Responsive / Mobile-first (en cours)
+- Hook **`src/hooks/useIsMobile.ts`** (matchMedia ≤768px) pour adapter les styles inline.
+- Classe CSS **`.dash-main`** dans `globals.css` (+ `!important` en media query) neutralise la marge sidebar 240px sur mobile.
+- **Sidebar** : drawer/hamburger sur mobile. **Navbar landing** : liens centraux masqués via `.nav-desktop-links` (CSS pur — ⚠️ un style inline `display:flex` battait le `hidden` Tailwind). **Login** : panneau gauche masqué, form pleine largeur.
+- `globals.css` : `overflow-x:hidden` global + viewport `initial-scale=1` dans `layout.tsx`.
+- ⏳ **Reste à faire** : page publique `/[pseudo]`, grilles internes dashboard (stats, sponsors).
+- ⚠️ Piège : un **style inline gagne toujours** sur une classe CSS (même Tailwind/`!important` de classe normale). Pour surcharger de l'inline en responsive → soit `useIsMobile`, soit CSS avec `!important`.
+
+---
+
 ## Ce qui nous différencie des concurrents
 
 | Nous | Concurrents (CreatorsJet, Beacons, MySocial…) |
