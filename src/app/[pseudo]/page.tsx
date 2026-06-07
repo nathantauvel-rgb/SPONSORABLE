@@ -148,6 +148,7 @@ const PublicMediaKitPage = () => {
   const isMobile = useIsMobile()
 
   const [remoteData, setRemoteData] = useState<Record<string, unknown> | null>(null)
+  const [loaded, setLoaded] = useState(false)
   const [printReady, setPrintReady] = useState(false)
   const isPrintMode = typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search).get('print') === '1'
@@ -157,8 +158,8 @@ const PublicMediaKitPage = () => {
     if (!slug) return
     fetch(`/api/public/${slug}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setRemoteData(data); setPrintReady(true) })
-      .catch(() => { setPrintReady(true) })
+      .then(data => { if (data) setRemoteData(data); setPrintReady(true); setLoaded(true) })
+      .catch(() => { setPrintReady(true); setLoaded(true) })
 
     // RGPD : on ne déclenche la mesure d'audience que si le visiteur a explicitement consenti.
     if (!new URLSearchParams(window.location.search).has('print') && hasAnalyticsConsent()) {
@@ -329,6 +330,18 @@ const PublicMediaKitPage = () => {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // Tant que les vraies données ne sont pas chargées, on n'affiche PAS le contenu
+  // (sinon le mock "AlexPlays" issu de `creator` s'affiche une fraction de seconde).
+  // En mode impression on laisse le flux normal (géré par printReady).
+  if (!loaded && !isPrintMode) {
+    return (
+      <div style={{ minHeight: '100vh', background: theme.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ width: '28px', height: '28px', border: `3px solid ${theme.border}`, borderTopColor: theme.accent, borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+      </div>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSubmitting(true); setSubmitError('')

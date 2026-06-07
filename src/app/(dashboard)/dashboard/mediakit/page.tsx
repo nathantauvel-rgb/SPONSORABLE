@@ -110,7 +110,7 @@ function ReadinessWidget({ score }: { score: ReturnType<typeof computeReadinessS
 }
 
 export default function MediaKitEditorPage() {
-  const [pro, setPro] = useState(false)
+  const [pro, setPro] = useState<boolean | null>(null)
   const [showTemplates, setShowTemplates] = useState(false)
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(() => {
     try { return localStorage.getItem('sponsorable_template') || null } catch { return null }
@@ -144,7 +144,7 @@ export default function MediaKitEditorPage() {
   const [platformsData, setPlatformsData] = useState<{ platformConnected: boolean; hasRecentContent: boolean }>({ platformConnected: false, hasRecentContent: false })
 
   useEffect(() => {
-    fetch('/api/me').then(r => r.ok ? r.json() : null).then(d => { if (d?.isPro) setPro(true) }).catch(() => {})
+    fetch('/api/me').then(r => r.ok ? r.json() : null).then(d => { if (d) setPro(!!d.isPro) }).catch(() => {})
 
     fetch('/api/profile').then(r => r.ok ? r.json() : null).then(data => {
       if (!data?.profile) return
@@ -294,20 +294,20 @@ export default function MediaKitEditorPage() {
           {/* Templates */}
           <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '20px 28px' }}>
             <button
-              onClick={() => pro ? setShowTemplates(v => !v) : undefined}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: pro ? 'pointer' : 'default', padding: 0 }}
+              onClick={() => pro === true ? setShowTemplates(v => !v) : undefined}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: pro === true ? 'pointer' : 'default', padding: 0 }}
             >
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <p style={{ fontSize: '15px', fontWeight: 600, color: TEXT, textAlign: 'left', fontFamily: SYNE }}>Partir d&apos;un exemple</p>
-                  {!pro && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
+                  {pro === false && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
                 </div>
                 <p style={{ fontSize: '13px', color: MUTED, textAlign: 'left', marginTop: '2px', fontFamily: SYNE }}>Pré-remplis ton media kit à partir d&apos;un profil type.</p>
               </div>
-              {pro ? (showTemplates ? <ChevronUp size={18} color={MUTED} /> : <ChevronDown size={18} color={MUTED} />) : <Lock size={16} color={BORDER} />}
+              {pro === true ? (showTemplates ? <ChevronUp size={18} color={MUTED} /> : <ChevronDown size={18} color={MUTED} />) : pro === false ? <Lock size={16} color={BORDER} /> : null}
             </button>
 
-            {!pro && (
+            {pro === false && (
               <div style={{ marginTop: '14px', padding: '14px 16px', background: CARD, border: `1px dashed ${BORDER}`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>Les templates de design sont réservés au plan Pro</p>
                 <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(34,197,94,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
@@ -589,17 +589,17 @@ export default function MediaKitEditorPage() {
           </div>
 
           {/* Bannière */}
-          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px', opacity: pro ? 1 : 0.7 }}>
+          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px', opacity: pro === false ? 0.7 : 1 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '18px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <h3 style={sectionTitle}>Bannière personnalisée</h3>
-                  {!pro && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
+                  {pro === false && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
                 </div>
                 <p style={subText}>Image affichée en haut de ta page publique</p>
               </div>
             </div>
-            {pro ? (
+            {pro === true ? (
               <div>
                 {bannerUrl ? (
                   <div style={{ position: 'relative', marginBottom: '12px' }}>
@@ -608,12 +608,12 @@ export default function MediaKitEditorPage() {
                   </div>
                 ) : <BannerUploader onUrl={url => setBannerUrl(url)} />}
               </div>
-            ) : (
+            ) : pro === false ? (
               <div style={{ padding: '14px 16px', background: CARD, border: `1px dashed ${BORDER}`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>Disponible avec le plan Pro</p>
                 <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(34,197,94,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Réseaux sociaux */}
@@ -634,24 +634,24 @@ export default function MediaKitEditorPage() {
           </div>
 
           {/* Lien de réservation */}
-          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px', opacity: pro ? 1 : 0.7 }}>
+          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px', opacity: pro === false ? 0.7 : 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <h3 style={sectionTitle}>Lien de réservation</h3>
-              {!pro && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
+              {pro === false && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
             </div>
             <p style={{ ...subText, marginBottom: '16px' }}>Intègre ton lien Calendly pour que les marques bookent un appel directement</p>
-            {pro ? (
+            {pro === true ? (
               <div>
                 <label style={labelStyle}>Lien Calendly</label>
                 <input style={inputStyle} value={calendlyUrl} onChange={e => setCalendlyUrl(e.target.value)} onFocus={onFocus} onBlur={onBlur} placeholder="https://calendly.com/ton-pseudo" />
                 {calendlyUrl && <p style={{ fontSize: '12px', color: ACCENT, marginTop: '8px', fontWeight: 500, fontFamily: SYNE }}>✓ Un bouton &quot;Réserver un appel&quot; apparaîtra sur ta page publique</p>}
               </div>
-            ) : (
+            ) : pro === false ? (
               <div style={{ padding: '14px 16px', background: CARD, border: `1px dashed ${BORDER}`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>Disponible avec le plan Pro</p>
                 <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(34,197,94,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
               </div>
-            )}
+            ) : null}
           </div>
 
         </div>

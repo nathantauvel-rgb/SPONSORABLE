@@ -505,7 +505,7 @@ export default function SponsorsPage() {
       <main className="dash-main" style={{ marginLeft: '240px', padding: '40px 48px', maxWidth: '1100px' }}>
 
         {/* Bandeau Pro */}
-        {!pro && (
+        {!loading && !pro && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '14px 20px', marginBottom: '28px', color: TEXT }}>
             <div>
               <p style={{ fontSize: '13px', fontWeight: 600, fontFamily: SYNE }}>Score visible gratuitement.</p>

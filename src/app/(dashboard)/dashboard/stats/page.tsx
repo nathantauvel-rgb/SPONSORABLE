@@ -63,7 +63,7 @@ const StatCard = ({ label, value, sub, positive }: { label: string; value: strin
 )
 
 export default function StatsPage() {
-  const [pro, setPro] = useState(false)
+  const [pro, setPro] = useState<boolean | null>(null)
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -111,7 +111,7 @@ export default function StatsPage() {
       <Sidebar />
       <main className="dash-main" style={{ marginLeft: '240px', padding: '40px 48px' }}>
 
-        {!pro && (
+        {pro === false && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', borderRadius: '14px', padding: '16px 24px', marginBottom: '28px', color: TEXT }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `rgba(34,197,94,0.15)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ACCENT }}>
@@ -133,7 +133,7 @@ export default function StatsPage() {
             <h1 style={{ fontSize: '26px', fontWeight: 700, color: TEXT, marginBottom: '6px', letterSpacing: '-0.02em', fontFamily: DISPLAY }}>Statistiques</h1>
             <p style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>Analytics de ton media kit · 30 derniers jours</p>
           </div>
-          {pro ? (
+          {pro === true ? (
             <button
               onClick={() => window.print()}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: `1px solid ${BORDER}`, background: CARD, color: TEXT, fontSize: '14px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.30)', transition: 'all 150ms', fontFamily: SYNE }}
@@ -142,11 +142,11 @@ export default function StatsPage() {
             >
               <Download size={15} /> Exporter PDF
             </button>
-          ) : (
+          ) : pro === false ? (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: `1px dashed ${BORDER}`, background: SURFACE, color: MUTED, fontSize: '13px', fontWeight: 500, cursor: 'default', fontFamily: SYNE }}>
               <Lock size={13} /> Export PDF · Pro
             </div>
-          )}
+          ) : null}
         </div>
 
         {loading ? (
@@ -284,7 +284,7 @@ export default function StatsPage() {
               </div>
             </div>
 
-            {!pro && (
+            {pro === false && (
               <div style={{ position: 'relative', marginTop: '24px' }}>
                 <div style={{ height: '80px', position: 'relative' }}>
                   <ProGate />

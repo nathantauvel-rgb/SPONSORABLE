@@ -353,6 +353,13 @@ function SettingsContent() {
           <SectionCard>
             <SectionHeader icon={<Shield size={16} />} title="Mon plan" desc="Abonnement actuel et fonctionnalités" />
             <div style={{ padding: '20px 24px' }}>
+              {planLoading ? (
+                <div aria-hidden style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ height: '64px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '12px', opacity: 0.5 }} />
+                  <div style={{ height: '180px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '14px', opacity: 0.5 }} />
+                </div>
+              ) : (
+              <>
               {/* Carte plan actuel */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: CARD, border: `1px solid ${ACCENT}`, borderRadius: '12px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -446,6 +453,8 @@ function SettingsContent() {
                   )}
                   <p style={{ textAlign: 'center', fontSize: '11px', color: MUTED, marginTop: '10px' }}>Sans engagement · Annulable à tout moment · Paiement sécurisé Stripe</p>
                 </div>
+              )}
+              </>
               )}
             </div>
           </SectionCard>

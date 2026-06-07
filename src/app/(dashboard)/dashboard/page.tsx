@@ -76,13 +76,17 @@ function DashboardContent() {
   const searchParams = useSearchParams()
   const { data: session, update: updateSession } = useSession()
 
-  const [ytData, setYtData] = useState<YTData | null>(null)
+  const [ytData, setYtData] = useState<YTData | null>(() => {
+    try { const s = localStorage.getItem('sponsorable_yt_data'); return s ? JSON.parse(s) as YTData : null } catch { return null }
+  })
   const [ytLoading, setYtLoading] = useState(false)
   const [ytError, setYtError] = useState('')
   const [ytNeedsReauth, setYtNeedsReauth] = useState(false)
   const [ytReauthLoading, setYtReauthLoading] = useState(false)
 
-  const [twitchData, setTwitchData] = useState<TwitchData | null>(null)
+  const [twitchData, setTwitchData] = useState<TwitchData | null>(() => {
+    try { const s = localStorage.getItem('sponsorable_twitch_data'); return s ? JSON.parse(s) as TwitchData : null } catch { return null }
+  })
   const [twitchLoading, setTwitchLoading] = useState(false)
   const [twitchError, setTwitchError] = useState('')
 
