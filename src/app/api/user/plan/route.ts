@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { isProStatus } from '@/lib/subscription'
+import { isProUser } from '@/lib/subscription'
 
 export async function GET() {
   const session = await auth()
@@ -11,9 +11,9 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { stripeSubscriptionStatus: true },
+    select: { stripeSubscriptionStatus: true, createdAt: true },
   })
 
-  const isPro = isProStatus(user?.stripeSubscriptionStatus)
+  const isPro = user ? isProUser({ status: user.stripeSubscriptionStatus, createdAt: user.createdAt }) : false
   return NextResponse.json({ plan: isPro ? 'pro' : 'free', status: user?.stripeSubscriptionStatus ?? 'free' })
 }

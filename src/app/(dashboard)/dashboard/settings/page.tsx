@@ -85,6 +85,9 @@ function SettingsContent() {
   const [niche, setNiche] = useState(profile.niche)
 
   const [currentPlan, setCurrentPlan] = useState(loadPlan)
+  const [isPaid, setIsPaid] = useState(false)
+  const [inTrial, setInTrial] = useState(false)
+  const [trialDaysLeft, setTrialDaysLeft] = useState(0)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
   const [planLoading, setPlanLoading] = useState(true)
@@ -146,9 +149,10 @@ function SettingsContent() {
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data) {
-          const plan = data.isPro ? 'pro' : 'free'
-          setCurrentPlan(plan)
-          try { localStorage.setItem('sponsorable_plan', plan) } catch {}
+          setCurrentPlan(data.isPro ? 'pro' : 'free')
+          setIsPaid(!!data.isPaid)
+          setInTrial(!!data.inTrial)
+          setTrialDaysLeft(data.trialDaysLeft ?? 0)
         }
       })
       .catch(() => {})
@@ -163,10 +167,8 @@ function SettingsContent() {
         fetch('/api/me')
           .then(r => r.ok ? r.json() : null)
           .then(data => {
-            if (data?.isPro) {
-              setCurrentPlan('pro')
-              try { localStorage.setItem('sponsorable_plan', 'pro') } catch {}
-            }
+            if (data?.isPro) setCurrentPlan('pro')
+            if (data?.isPaid) { setIsPaid(true); setInTrial(false) }
           }).catch(() => {})
       }, 2000)
       setTimeout(() => {
@@ -356,19 +358,25 @@ function SettingsContent() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: ACCENT }} />
                   <div>
-                    <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT }}>Plan {currentPlan === 'pro' ? 'Pro' : 'Gratuit'}</p>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT }}>
+                      {inTrial ? 'Pro — Essai gratuit' : currentPlan === 'pro' ? 'Plan Pro' : 'Plan Gratuit'}
+                    </p>
                     <p style={{ fontSize: '12px', color: MUTED, marginTop: '1px' }}>
-                      {currentPlan === 'pro'
+                      {inTrial
+                        ? `Il te reste ${trialDaysLeft} jour${trialDaysLeft > 1 ? 's' : ''} d'essai — toutes les fonctions Pro débloquées`
+                        : currentPlan === 'pro'
                         ? 'Toutes les plateformes · Templates · Analytics · PDF · Calendly'
                         : '1 plateforme · Template par défaut · Pas d\'accès aux stats'}
                     </p>
                   </div>
                 </div>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: ACCENT, background: 'rgba(34,197,94,0.12)', padding: '4px 10px', borderRadius: '9999px' }}>Actif</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: ACCENT, background: 'rgba(34,197,94,0.12)', padding: '4px 10px', borderRadius: '9999px' }}>
+                  {inTrial ? 'Essai' : currentPlan === 'pro' ? 'Actif' : 'Gratuit'}
+                </span>
               </div>
 
-              {/* Abonné Pro : gérer son abonnement via le portail Stripe */}
-              {currentPlan === 'pro' && (
+              {/* Abonné payant : gérer son abonnement via le portail Stripe */}
+              {isPaid && (
                 <>
                   <button
                     onClick={handlePortal}
@@ -386,8 +394,15 @@ function SettingsContent() {
                 </>
               )}
 
-              {currentPlan !== 'pro' && (
+              {!isPaid && (
                 <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '24px', color: TEXT }}>
+                  {inTrial && (
+                    <div style={{ marginBottom: '16px', padding: '10px 14px', background: 'rgba(34,197,94,0.08)', border: `1px solid ${ACCENT}`, borderRadius: '10px' }}>
+                      <p style={{ fontSize: '12px', color: ACCENT, fontWeight: 600 }}>
+                        🎁 Tu profites de l&apos;essai Pro gratuit — {trialDaysLeft} jour{trialDaysLeft > 1 ? 's' : ''} restant{trialDaysLeft > 1 ? 's' : ''}. Abonne-toi pour ne pas perdre l&apos;accès.
+                      </p>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                     <Zap size={16} color={ACCENT} />
                     <p style={{ fontSize: '15px', fontWeight: 700, fontFamily: SYNE }}>Plan Pro — 19€/mois</p>

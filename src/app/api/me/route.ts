@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
-import { isProStatus } from '@/lib/subscription'
+import { isProStatus, isProUser, isInTrial, trialDaysLeft } from '@/lib/subscription'
 
 export async function DELETE() {
   const session = await auth()
@@ -51,6 +51,7 @@ export async function GET() {
     where: { id: session.user.id },
     select: {
       stripeSubscriptionStatus: true,
+      createdAt: true,
       password: true,
       platforms: {
         select: { type: true, stats: true },
@@ -62,8 +63,17 @@ export async function GET() {
     return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
   }
 
-  const isPro = isProStatus(user.stripeSubscriptionStatus)
+  const isPaid = isProStatus(user.stripeSubscriptionStatus)
+  const inTrial = !isPaid && isInTrial(user.createdAt)
+  const isPro = isProUser({ status: user.stripeSubscriptionStatus, createdAt: user.createdAt })
   const hasPassword = !!user.password
 
-  return NextResponse.json({ isPro, hasPassword, platforms: user.platforms })
+  return NextResponse.json({
+    isPro,                                   // accès Pro effectif (abonnement OU essai)
+    isPaid,                                  // a un vrai abonnement payant
+    inTrial,                                 // est en période d'essai gratuit
+    trialDaysLeft: inTrial ? trialDaysLeft(user.createdAt) : 0,
+    hasPassword,
+    platforms: user.platforms,
+  })
 }
