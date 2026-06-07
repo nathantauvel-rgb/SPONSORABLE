@@ -5,10 +5,12 @@ import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const isMobile = useIsMobile()
 
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
@@ -86,10 +88,10 @@ function LoginForm() {
         @keyframes float { 0%, 100% { transform: translateY(0px) } 50% { transform: translateY(-8px) } }
       `}</style>
 
-      {/* Panneau gauche — identité visuelle */}
+      {/* Panneau gauche — identité visuelle (masqué sur mobile) */}
       <div style={{
         flex: '0 0 45%', background: '#0a0f1a', position: 'relative', overflow: 'hidden',
-        display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '48px',
+        display: isMobile ? 'none' : 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '48px',
       }}>
         {/* Glows */}
         <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '60%', height: '60%', background: 'radial-gradient(ellipse, rgba(22,163,74,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
@@ -133,8 +135,18 @@ function LoginForm() {
       </div>
 
       {/* Panneau droit — formulaire */}
-      <div style={{ flex: 1, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 48px' }}>
+      <div style={{ flex: 1, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '32px 20px' : '40px 48px' }}>
         <div style={{ width: '100%', maxWidth: '380px' }}>
+
+          {/* Logo (visible sur mobile, car le panneau gauche est masqué) */}
+          {isMobile && (
+            <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '28px' }}>
+              <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+              <span style={{ fontWeight: 800, fontSize: '18px', color: '#0f172a', letterSpacing: '-0.02em' }}>Sponsorable</span>
+            </Link>
+          )}
 
           {/* Titre */}
           <div style={{ marginBottom: '32px' }}>
