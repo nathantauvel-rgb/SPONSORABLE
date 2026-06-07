@@ -87,6 +87,11 @@
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
   }
+  /* Garde-fou mobile : empêche le scroll horizontal dû à un élément trop large */
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-sans, system-ui), sans-serif;
   }
