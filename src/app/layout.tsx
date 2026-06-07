@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Space_Grotesk, Hanken_Grotesk, Syne, Martian_Mono } from 'next/font/google'
 import localFont from 'next/font/local'
 import './globals.css'
@@ -46,6 +46,12 @@ export const metadata: Metadata = {
   title: 'Sponsorable — Ton media kit pour créateurs gaming',
   description:
     'Connecte YouTube et Twitch, génère un media kit professionnel et partage un lien à tes sponsors en 2 minutes.',
+}
+
+// Viewport mobile correct (zoom autorisé pour l'accessibilité).
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({

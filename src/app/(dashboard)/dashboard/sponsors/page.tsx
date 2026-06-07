@@ -478,7 +478,7 @@ export default function SponsorsPage() {
   return (
     <div style={{ background: BG, minHeight: '100vh', fontFamily: SYNE }}>
       <Sidebar />
-      <main style={{ marginLeft: '240px', padding: '40px 48px', maxWidth: '1100px' }}>
+      <main className="dash-main" style={{ marginLeft: '240px', padding: '40px 48px', maxWidth: '1100px' }}>
 
         {/* Bandeau Pro */}
         {!pro && (

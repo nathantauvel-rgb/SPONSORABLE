@@ -109,7 +109,7 @@ export default function StatsPage() {
   return (
     <div style={{ background: BG, minHeight: '100vh' }}>
       <Sidebar />
-      <main style={{ marginLeft: '240px', padding: '40px 48px' }}>
+      <main className="dash-main" style={{ marginLeft: '240px', padding: '40px 48px' }}>
 
         {!pro && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', borderRadius: '14px', padding: '16px 24px', marginBottom: '28px', color: TEXT }}>

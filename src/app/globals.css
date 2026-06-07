@@ -288,6 +288,27 @@
   }
 }
 
+/* ── Dashboard responsive : neutralise la marge de la sidebar fixe sur mobile ── */
+/* Le !important surcharge le marginLeft/padding inline des pages dashboard. */
+@media (max-width: 768px) {
+  .dash-main {
+    margin-left: 0 !important;
+    padding: 72px 16px 32px !important;
+    max-width: 100% !important;
+  }
+  /* Page media kit : a une barre fixe sous la topbar mobile → plus de padding haut */
+  .dash-main-mediakit {
+    margin-left: 0 !important;
+    padding: 128px 16px 32px !important;
+    max-width: 100% !important;
+  }
+  .mediakit-topbar {
+    left: 0 !important;
+    top: 56px !important;
+    padding: 10px 16px !important;
+  }
+}
+
 /* ── V3 — ligne lumineuse "Comment ça marche" ── */
 .steps-wrap {
   position: relative;

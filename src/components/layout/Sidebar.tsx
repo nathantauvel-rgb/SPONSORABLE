@@ -1,12 +1,16 @@
 'use client'
 
-import { BarChart2, FileText, LayoutDashboard, LogOut, Mail, Settings, Star, Zap } from 'lucide-react'
+import { BarChart2, FileText, LayoutDashboard, LogOut, Mail, Menu, Settings, Star, X, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Image from 'next/image'
-import { BG, SURFACE, CARD, ACCENT, TEXT, MUTED, BORDER, SYNE } from '@/lib/ds'
+import { BG, SURFACE, ACCENT, TEXT, MUTED, BORDER, SYNE } from '@/lib/ds'
+import { useIsMobile } from '@/hooks/useIsMobile'
+
+/** Hauteur de la barre supérieure mobile — exportée pour le padding des pages. */
+export const MOBILE_TOPBAR_H = 56
 
 const navItems = [
   { label: 'Tableau de bord', icon: LayoutDashboard, to: '/dashboard' },
@@ -48,10 +52,15 @@ const Avatar = ({ name, image, size }: { name: string | null | undefined; image:
 
 const Sidebar = () => {
   const pathname = usePathname()
+  const isMobile = useIsMobile()
+  const [open, setOpen] = useState(false)
   const [isPro, setIsPro] = useState(false)
   const [platformImage, setPlatformImage] = useState<string | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
   const { data: session } = useSession()
+
+  // Ferme le menu mobile à chaque changement de page.
+  useEffect(() => { setOpen(false) }, [pathname])
 
   useEffect(() => {
     try {
@@ -93,19 +102,68 @@ const Sidebar = () => {
   const userEmail = session?.user?.email
   const userImage = platformImage ?? session?.user?.image
 
+  const asideStyle: React.CSSProperties = isMobile
+    ? {
+        width: '260px', position: 'fixed', top: 0, left: 0, bottom: 0,
+        background: SURFACE, borderRight: `1px solid ${BORDER}`,
+        display: 'flex', flexDirection: 'column', zIndex: 60,
+        transform: open ? 'translateX(0)' : 'translateX(-110%)',
+        transition: 'transform 220ms ease',
+        boxShadow: open ? '0 0 40px rgba(0,0,0,0.5)' : 'none',
+      }
+    : {
+        width: '240px', position: 'fixed', top: 0, left: 0, bottom: 0,
+        background: SURFACE, borderRight: `1px solid ${BORDER}`,
+        display: 'flex', flexDirection: 'column', zIndex: 40,
+      }
+
   return (
-    <aside style={{
-      width: '240px', position: 'fixed', top: 0, left: 0, bottom: 0,
-      background: SURFACE,
-      borderRight: `1px solid ${BORDER}`,
-      display: 'flex', flexDirection: 'column', zIndex: 40,
-    }}>
+    <>
+      {/* Barre supérieure mobile (logo + hamburger) */}
+      {isMobile && (
+        <header style={{
+          position: 'fixed', top: 0, left: 0, right: 0, height: MOBILE_TOPBAR_H,
+          background: SURFACE, borderBottom: `1px solid ${BORDER}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 16px', zIndex: 50,
+        }}>
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: '18px', color: TEXT }}>Sponsor</span>
+            <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: '18px', color: ACCENT }}>able</span>
+          </Link>
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="Ouvrir le menu"
+            style={{ background: 'none', border: 'none', color: TEXT, cursor: 'pointer', padding: '6px', display: 'flex', position: 'relative' }}
+          >
+            <Menu size={24} />
+            {unreadCount > 0 && (
+              <span style={{ position: 'absolute', top: 2, right: 2, width: 8, height: 8, borderRadius: '50%', background: ACCENT }} />
+            )}
+          </button>
+        </header>
+      )}
+
+      {/* Overlay sombre derrière le drawer */}
+      {isMobile && open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 55 }}
+        />
+      )}
+
+      <aside style={asideStyle}>
       {/* Logo */}
-      <div style={{ padding: '24px 20px 20px', borderBottom: `1px solid ${BORDER}` }}>
+      <div style={{ padding: '24px 20px 20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
           <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: '18px', letterSpacing: '-0.01em', color: TEXT }}>Sponsor</span>
           <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: '18px', letterSpacing: '-0.01em', color: ACCENT }}>able</span>
         </Link>
+        {isMobile && (
+          <button onClick={() => setOpen(false)} aria-label="Fermer le menu" style={{ background: 'none', border: 'none', color: MUTED, cursor: 'pointer', padding: '4px', display: 'flex' }}>
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -209,6 +267,7 @@ const Sidebar = () => {
         </button>
       </div>
     </aside>
+    </>
   )
 }
 

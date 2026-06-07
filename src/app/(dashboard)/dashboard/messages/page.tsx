@@ -55,7 +55,7 @@ export default function MessagesPage() {
   return (
     <div style={{ background: BG, minHeight: '100vh' }}>
       <Sidebar />
-      <main style={{ marginLeft: '240px', padding: '40px 48px' }}>
+      <main className="dash-main" style={{ marginLeft: '240px', padding: '40px 48px' }}>
 
         {/* En-tête */}
         <div style={{ marginBottom: '32px' }}>

@@ -272,7 +272,7 @@ export default function MediaKitEditorPage() {
       <Sidebar />
 
       {/* Barre de navigation fixe */}
-      <div style={{ position: 'fixed', top: 0, left: '240px', right: 0, zIndex: 40, backdropFilter: 'blur(12px)', background: `rgba(13,13,15,0.92)`, borderBottom: `1px solid ${BORDER}`, padding: '12px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="mediakit-topbar" style={{ position: 'fixed', top: 0, left: '240px', right: 0, zIndex: 40, backdropFilter: 'blur(12px)', background: `rgba(13,13,15,0.92)`, borderBottom: `1px solid ${BORDER}`, padding: '12px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>Mon media kit</p>
           <p style={{ fontSize: '12px', color: MUTED, fontFamily: SYNE }}>Personnalise ce que voient les sponsors.</p>
@@ -280,7 +280,7 @@ export default function MediaKitEditorPage() {
         <Button variant="primary" onClick={handleSave}>Sauvegarder</Button>
       </div>
 
-      <main style={{ marginLeft: '240px', padding: '80px 48px 40px' }}>
+      <main className="dash-main-mediakit" style={{ marginLeft: '240px', padding: '80px 48px 40px' }}>
         <div style={{ marginBottom: '32px' }}>
           <h1 style={{ fontSize: '26px', fontWeight: 700, color: TEXT, marginBottom: '6px', letterSpacing: '-0.02em', fontFamily: DISPLAY }}>Mon media kit</h1>
           <p style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>Personnalise ce que voient les sponsors.</p>

@@ -270,7 +270,7 @@ function SettingsContent() {
   return (
     <div style={{ background: BG, minHeight: '100vh' }}>
       <Sidebar />
-      <main style={{ marginLeft: '240px', padding: '40px 48px', maxWidth: '800px' }}>
+      <main className="dash-main" style={{ marginLeft: '240px', padding: '40px 48px', maxWidth: '800px' }}>
 
         <div style={{ marginBottom: '36px' }}>
           <h1 style={{ fontSize: '26px', fontWeight: 700, color: TEXT, marginBottom: '6px', letterSpacing: '-0.02em', fontFamily: DISPLAY }}>Paramètres</h1>
