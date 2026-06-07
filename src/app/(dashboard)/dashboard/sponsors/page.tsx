@@ -105,9 +105,9 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
 
   if (hasBio) profileScore += 6; else profileComments.push('bio')
   if (hasNiche) profileScore += 6; else profileComments.push('niche')
-  if (hasFormats) profileScore += 5; else profileComments.push('formats')
-  if (hasPositioning) profileScore += 5; else profileComments.push('phrase de positionnement')
-  if (hasCountry || hasLanguages) profileScore += 3
+  if (hasFormats) profileScore += 4; else profileComments.push('formats')
+  if (hasPositioning) profileScore += 4; else profileComments.push('phrase de positionnement')
+  if (hasCountry || hasLanguages) profileScore += 2
 
   const completenessItems = [hasBio, hasNiche, hasFormats, hasPositioning, hasCountry || hasLanguages]
   const completedCount = completenessItems.filter(Boolean).length
@@ -123,9 +123,9 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
   let platformScore = 0
   const ytConnected = !!yt
   const twConnected = !!tw
-  if (ytConnected) platformScore += 8
-  if (twConnected) platformScore += 8
-  if (ytConnected && twConnected) platformScore += 4
+  if (ytConnected) platformScore += 6
+  if (twConnected) platformScore += 6
+  if (ytConnected && twConnected) platformScore += 3
 
   const platformComment = ytConnected && twConnected
     ? 'Présence multi-plateforme vérifiée via OAuth'
@@ -135,13 +135,13 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
 
   // 3. Taille d'audience (20 pts)
   let audienceScore = 0
-  if (totalAudience >= 500000) audienceScore = 20
-  else if (totalAudience >= 100000) audienceScore = 17
-  else if (totalAudience >= 50000) audienceScore = 14
-  else if (totalAudience >= 10000) audienceScore = 10
-  else if (totalAudience >= 5000) audienceScore = 7
-  else if (totalAudience >= 1000) audienceScore = 4
-  else if (totalAudience >= 100) audienceScore = 2
+  if (totalAudience >= 500000) audienceScore = 13
+  else if (totalAudience >= 100000) audienceScore = 11
+  else if (totalAudience >= 50000) audienceScore = 9
+  else if (totalAudience >= 10000) audienceScore = 7
+  else if (totalAudience >= 5000) audienceScore = 5
+  else if (totalAudience >= 1000) audienceScore = 3
+  else if (totalAudience >= 100) audienceScore = 1
 
   const audienceComment = totalAudience >= 10000
     ? 'Audience solide — tu entres dans les radars des marques gaming'
@@ -151,53 +151,77 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
         ? 'Audience encore faible — les petits programmes d\'affiliation restent accessibles'
         : 'Pas encore de données d\'audience disponibles'
 
-  // 4. Activité & contenu (15 pts)
+  // 4. Activité & régularité (20 pts) — la régularité prouve un partenaire fiable
   let activityScore = 0
-  const hasRecentVideos = (yt?.stats?.recentVideos?.length ?? 0) > 0
-  const hasRecentStreams = (tw?.stats?.recentStreams?.length ?? 0) > 0
+  const videoCount = yt?.stats?.recentVideos?.length ?? 0
+  const streamCount = tw?.stats?.recentStreams?.length ?? 0
+  const hasRecentVideos = videoCount > 0
+  const hasRecentStreams = streamCount > 0
   const hasClips = (tw?.stats?.topClips?.length ?? 0) > 0
   const hasPartnerships = (profile.partnerships ?? []).length > 0
-  if (hasRecentVideos) activityScore += 5
-  if (hasRecentStreams) activityScore += 5
+  // Plusieurs contenus récents (régularité) valent mieux qu'un seul
+  if (videoCount >= 3) activityScore += 6; else if (hasRecentVideos) activityScore += 4
+  if (streamCount >= 3) activityScore += 5; else if (hasRecentStreams) activityScore += 3
   if (hasClips) activityScore += 3
-  if (hasPartnerships) activityScore += 2
+  if (hasPartnerships) activityScore += 3
+  // Présence de contenu sur les deux plateformes
+  if (hasRecentVideos && hasRecentStreams) activityScore += 3
+  activityScore = Math.min(20, activityScore)
 
-  const activityComment = activityScore >= 10
+  const activityComment = activityScore >= 14
     ? 'Contenu régulier visible — bon indicateur d\'activité pour les marques'
-    : activityScore >= 5
+    : activityScore >= 7
       ? 'Contenu récent présent — une régularité plus visible renforcerait ton profil'
       : (ytConnected || twConnected)
         ? 'Peu de contenu récent visible — les marques attendent des preuves d\'activité'
         : 'Connecte une plateforme pour rendre ton contenu visible'
 
-  // 5. Engagement (15 pts)
-  let engagementScore = 0
-  if (yt?.stats?.engagementRate) {
-    const rate = Number(yt.stats.engagementRate)
-    engagementScore = Math.min(10, rate >= 10 ? 10 : rate >= 5 ? 8 : rate >= 2 ? 6 : rate >= 0.5 ? 3 : 1)
-  } else if (yt?.stats?.viewCount && yt?.stats?.videoCount && ytSubs > 0) {
-    const views = parseInt(String(yt.stats.viewCount)) || 0
-    const videos = parseInt(String(yt.stats.videoCount)) || 1
-    const avgViews = views / videos
-    const engRate = (avgViews / ytSubs) * 100
-    engagementScore = Math.min(10, engRate >= 10 ? 10 : engRate >= 5 ? 8 : engRate >= 2 ? 6 : engRate >= 0.5 ? 3 : 1)
-  } else if (ytConnected) {
-    engagementScore = 3
-  }
-  if (tw?.stats?.avgVodViews && twFollowers > 0) {
-    const avgVod = Number(tw.stats.avgVodViews)
-    const twitchEng = (avgVod / twFollowers) * 100
-    engagementScore = Math.min(15, engagementScore + (twitchEng >= 5 ? 5 : twitchEng >= 2 ? 3 : 1))
-  } else if (twConnected) {
-    engagementScore = Math.min(15, engagementScore + 2)
+  // 5. Engagement & qualité d'audience (25 pts) — le vrai levier de négociation.
+  // On mesure la QUALITÉ de l'engagement via des ratios réels, indépendamment de
+  // la taille : un créateur établi qui se sous-vend a souvent un engagement fort.
+  const platformQualities: number[] = []
+
+  // YouTube : taux d'engagement réel, sinon estimation vues/abonné (reach)
+  if (ytConnected) {
+    let q: number
+    if (yt?.stats?.engagementRate) {
+      q = Math.min(1, Number(yt.stats.engagementRate) / 8) // 8 %+ = excellent
+    } else if (yt?.stats?.viewCount && yt?.stats?.videoCount && ytSubs > 0) {
+      const views = parseInt(String(yt.stats.viewCount)) || 0
+      const videos = parseInt(String(yt.stats.videoCount)) || 1
+      const avgViews = yt.stats.avgViewsPerVideo ? Number(yt.stats.avgViewsPerVideo) : views / videos
+      const reachRate = (avgViews / ytSubs) * 100
+      q = Math.min(1, reachRate / 12) // 12 % de vues/abonné = excellent
+    } else {
+      q = 0.3 // connecté mais données insuffisantes
+    }
+    platformQualities.push(q)
   }
 
-  const engagementComment = engagementScore >= 10
-    ? 'Bon taux d\'engagement — ton audience interagit activement'
-    : engagementScore >= 5
-      ? 'Engagement correct — des données plus détaillées permettraient une meilleure estimation'
+  // Twitch : spectateurs moyens / followers (concurrence live réelle)
+  if (twConnected) {
+    let q: number
+    if (tw?.stats?.avgVodViews && twFollowers > 0) {
+      const liveRate = (Number(tw.stats.avgVodViews) / twFollowers) * 100
+      q = Math.min(1, liveRate / 8) // 8 % d'audience live/followers = excellent
+    } else {
+      q = 0.3
+    }
+    platformQualities.push(q)
+  }
+
+  // On prend la MEILLEURE qualité (un créateur fort sur une seule plateforme n'est
+  // pas pénalisé — la présence multi-plateforme est déjà notée ailleurs) + bonus multi.
+  const bestQuality = platformQualities.length ? Math.max(...platformQualities) : 0
+  let engagementScore = Math.round(bestQuality * 23 + (platformQualities.length > 1 ? 2 : 0))
+  engagementScore = Math.min(25, engagementScore)
+
+  const engagementComment = engagementScore >= 18
+    ? 'Excellent engagement — ton audience interagit fortement, c\'est ton meilleur argument de négo'
+    : engagementScore >= 10
+      ? 'Engagement correct — c\'est le levier qui justifie tes tarifs auprès des marques'
       : (ytConnected || twConnected)
-        ? 'Données d\'engagement limitées — la qualité de l\'audience prime sur la quantité'
+        ? 'Engagement à valoriser — la qualité d\'audience compte plus que la taille pour négocier'
         : 'Pas de données d\'engagement disponibles'
 
   // 6. Sponsor readiness (5 pts)
@@ -213,11 +237,11 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
       : 'Aucune disponibilité ni lien de contact renseigné'
 
   const dimensions: Dimension[] = [
-    { key: 'profile', label: 'Complétude du profil', score: profileScore, max: 25, comment: profileDimComment },
-    { key: 'platform', label: 'Présence plateforme', score: platformScore, max: 20, comment: platformComment },
-    { key: 'audience', label: 'Taille d\'audience', score: audienceScore, max: 20, comment: audienceComment },
-    { key: 'activity', label: 'Activité & contenu', score: activityScore, max: 15, comment: activityComment },
-    { key: 'engagement', label: 'Engagement', score: engagementScore, max: 15, comment: engagementComment },
+    { key: 'profile', label: 'Complétude du profil', score: profileScore, max: 22, comment: profileDimComment },
+    { key: 'platform', label: 'Présence plateforme', score: platformScore, max: 15, comment: platformComment },
+    { key: 'audience', label: 'Taille d\'audience', score: audienceScore, max: 13, comment: audienceComment },
+    { key: 'activity', label: 'Activité & régularité', score: activityScore, max: 20, comment: activityComment },
+    { key: 'engagement', label: 'Engagement & qualité d\'audience', score: engagementScore, max: 25, comment: engagementComment },
     { key: 'readiness', label: 'Disponibilité sponsor', score: readinessScore, max: 5, comment: readinessComment },
   ]
 

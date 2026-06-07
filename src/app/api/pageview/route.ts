@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 import { isRateLimited } from '@/lib/redis'
 import { z } from 'zod'
 
@@ -26,9 +27,16 @@ export async function POST(req: NextRequest) {
 
     const profile = await prisma.profile.findUnique({
       where: { slug },
-      select: { id: true, isPublic: true },
+      select: { id: true, isPublic: true, userId: true },
     })
     if (!profile || !profile.isPublic) return NextResponse.json({ ok: false }, { status: 404 })
+
+    // Ne pas compter les visites du créateur sur sa propre page : les stats doivent
+    // refléter de vraies vues externes (marques, visiteurs), pas l'auto-consultation.
+    const session = await auth()
+    if (session?.user?.id === profile.userId) {
+      return NextResponse.json({ ok: true }) // silencieux : pas une vraie vue
+    }
 
     // RGPD : on ne stocke PAS l'IP ni le user-agent (données personnelles jamais
     // exploitées par les analytics). Seuls le pays et le referer, non identifiants,

@@ -8,6 +8,7 @@ import { creator, exampleCreators, pastPartners, platforms } from '@/data/mockDa
 import type { Platform } from '@/types'
 import { safeUrl, safeCalendlyUrl } from '@/lib/safeUrl'
 import { hasAnalyticsConsent } from '@/lib/consent'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { inferProfileData, computeEditorialScore, computeProfileStrategy, selectBriefCards } from '@/lib/profileInference'
 import { generatePositioningPhrase } from '@/lib/profileCopyGenerator'
 import type { ProfileStrategy, BriefCard } from '@/types/mediakit'
@@ -144,6 +145,7 @@ function getSectionOrder(strategy: ProfileStrategy): string[] {
 const PublicMediaKitPage = () => {
   const params = useParams()
   const slug = typeof params?.pseudo === 'string' ? params.pseudo : ''
+  const isMobile = useIsMobile()
 
   const [remoteData, setRemoteData] = useState<Record<string, unknown> | null>(null)
   const [printReady, setPrintReady] = useState(false)
@@ -369,7 +371,7 @@ const PublicMediaKitPage = () => {
             </p>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(briefCards.length, 4)}, 1fr)`, gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(briefCards.length, isMobile ? 2 : 4)}, 1fr)`, gap: '12px' }}>
             {briefCards.map((card, i) => (
               <div key={i} style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '8px', padding: '20px 18px', borderTop: `3px solid ${theme.accent}`, boxShadow: theme.boxShadow !== 'none' ? theme.boxShadow : '0 1px 4px rgba(0,0,0,0.04)' }}>
                 <p style={{ fontSize: '10px', fontWeight: 700, color: mutedText, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>{card.label}</p>
@@ -518,7 +520,7 @@ const PublicMediaKitPage = () => {
             {lastSync && <span style={{ fontSize: '12px', color: mutedText }}>Dernière synchronisation {timeSince(lastSync)}</span>}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: secondaryPlatform ? '1fr 1fr' : '1fr', gap: '16px', alignItems: 'stretch' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: secondaryPlatform && !isMobile ? '1fr 1fr' : '1fr', gap: '16px', alignItems: 'stretch' }}>
             {renderPlatformCard({ ...heroPlatform, hero: true }, heroState, heroRawStats)}
             {secondaryPlatform && secondaryState && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: '100%' }}>
@@ -559,7 +561,7 @@ const PublicMediaKitPage = () => {
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: topCountries?.length ? '1fr 1fr' : '1fr', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: topCountries?.length && !isMobile ? '1fr 1fr' : '1fr', gap: '24px' }}>
             {(ageGroups?.length || gender) && (
               <div style={{ background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '10px', padding: '24px' }}>
                 <p style={{ fontSize: '14px', fontWeight: 600, color: theme.subtext, marginBottom: '20px', letterSpacing: '0.02em' }}>Démographie</p>
@@ -819,12 +821,12 @@ const PublicMediaKitPage = () => {
           <div style={{ position: 'absolute', top: '-10%', left: '-5%', width: '55%', height: '70%', borderRadius: '60% 40% 70% 30% / 50% 60% 40% 50%', background: 'radial-gradient(ellipse, rgba(122,156,60,0.22) 0%, transparent 70%)', filter: 'blur(40px)' }} />
           <div style={{ position: 'absolute', top: '20%', right: '-10%', width: '50%', height: '60%', borderRadius: '40% 60% 30% 70% / 60% 40% 60% 40%', background: 'radial-gradient(ellipse, rgba(90,120,40,0.16) 0%, transparent 70%)', filter: 'blur(50px)' }} />
         </div>
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: '860px', margin: '0 auto', padding: '80px 40px 60px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '56px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '20px' }}>
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: '860px', margin: '0 auto', padding: isMobile ? '56px 24px 48px' : '80px 40px 60px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isMobile ? '36px' : '56px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '20px' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: theme.subtext }}>Media Kit</span>
             <span style={{ fontSize: '11px', color: theme.subtext, letterSpacing: '0.06em' }}>sponsorable.gg</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '48px', alignItems: 'end', marginBottom: '32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto', gap: isMobile ? '24px' : '48px', alignItems: 'end', marginBottom: '32px' }}>
             <div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
                 {displayCreator.niches.map((n: string) => <span key={n} style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: theme.accent, background: `${theme.accent}18`, border: `1px solid ${theme.accent}35`, borderRadius: '4px', padding: '3px 10px' }}>{n}</span>)}
@@ -851,12 +853,12 @@ const PublicMediaKitPage = () => {
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse at 70% 40%, rgba(255,255,255,0.04) 0%, transparent 60%)' }} />
           <div style={{ position: 'absolute', bottom: 0, left: '10%', right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent)' }} />
         </div>
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: '860px', margin: '0 auto', padding: '72px 40px 56px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '64px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '18px' }}>
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: '860px', margin: '0 auto', padding: isMobile ? '56px 24px 48px' : '72px 40px 56px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isMobile ? '40px' : '64px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '18px' }}>
             <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>Media Kit</span>
             <span style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>sponsorable.gg</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '40px', alignItems: 'start', marginBottom: '40px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 140px', gap: isMobile ? '24px' : '40px', alignItems: 'start', marginBottom: '40px' }}>
             <div>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px' }}>
                 {displayCreator.niches.map((n: string) => <span key={n} style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.40)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: '3px', padding: '3px 10px' }}>{n}</span>)}
@@ -911,7 +913,7 @@ const PublicMediaKitPage = () => {
   const renderContact = () => (
     <section id="contact-form" style={{ padding: '0 24px 96px', background: theme.bg }} key="contact">
       <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-        <div style={{ background: theme.cardBg, borderRadius: '12px', padding: '40px', border: `1px solid ${theme.border}` }}>
+        <div style={{ background: theme.cardBg, borderRadius: '12px', padding: isMobile ? '24px 20px' : '40px', border: `1px solid ${theme.border}` }}>
           {sent ? (
             <div role="alert" style={{ textAlign: 'center', padding: '24px 0' }}>
               <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: `${theme.accent}30`, border: `2px solid ${theme.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '24px', color: theme.accent }}>✓</div>
