@@ -8,6 +8,7 @@ import { useSession, signOut } from 'next-auth/react'
 import Image from 'next/image'
 import { BG, SURFACE, ACCENT, TEXT, MUTED, BORDER, SYNE } from '@/lib/ds'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import Logo from '@/components/ui/Logo'
 
 /** Hauteur de la barre supérieure mobile — exportée pour le padding des pages. */
 export const MOBILE_TOPBAR_H = 56
@@ -127,10 +128,7 @@ const Sidebar = () => {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0 16px', zIndex: 50,
         }}>
-          <Link href="/" style={{ textDecoration: 'none' }}>
-            <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: '18px', color: TEXT }}>Sponsor</span>
-            <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: '18px', color: ACCENT }}>able</span>
-          </Link>
+          <Logo tone="dark" size={18} />
           <button
             onClick={() => setOpen(true)}
             aria-label="Ouvrir le menu"
@@ -155,10 +153,7 @@ const Sidebar = () => {
       <aside style={asideStyle}>
       {/* Logo */}
       <div style={{ padding: '24px 20px 20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: '18px', letterSpacing: '-0.01em', color: TEXT }}>Sponsor</span>
-          <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: '18px', letterSpacing: '-0.01em', color: ACCENT }}>able</span>
-        </Link>
+        <Logo tone="dark" size={18} />
         {isMobile && (
           <button onClick={() => setOpen(false)} aria-label="Fermer le menu" style={{ background: 'none', border: 'none', color: MUTED, cursor: 'pointer', padding: '4px', display: 'flex' }}>
             <X size={20} />

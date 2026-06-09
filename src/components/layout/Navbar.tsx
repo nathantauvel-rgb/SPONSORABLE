@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import Logo from '@/components/ui/Logo'
 
 const navLinks = [
   { label: 'Comment ça marche', id: 'comment-ca-marche' },
@@ -55,24 +56,8 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
 
-        {/* Logo wordmark — "Sponsor" blanc + "able" vert, Georgia serif */}
-        <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, lineHeight: 1 }}>
-          <span style={{
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontWeight: 700,
-            fontSize: '19px',
-            letterSpacing: '-0.01em',
-            color: isDark ? '#ffffff' : '#0f172a',
-            transition: 'color 250ms ease',
-          }}>Sponsor</span>
-          <span style={{
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontWeight: 700,
-            fontSize: '19px',
-            letterSpacing: '-0.01em',
-            color: '#22c55e',
-          }}>able</span>
-        </Link>
+        {/* Logo — symbole S2 + wordmark Cabinet 800 (composant partagé) */}
+        <Logo tone={isDark ? 'dark' : 'light'} size={19} />
 
         {/* Nav links — masqués sur mobile via CSS pur (.nav-desktop-links) */}
         <div className="nav-desktop-links">
