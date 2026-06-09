@@ -21,8 +21,14 @@ const CORAL   = '#fb7185'
 const GOLD    = '#f5b544'
 const MONO    = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
 const SYNE    = '"Syne", var(--font-syne), system-ui, sans-serif'
+const SANS    = '"Space Grotesk", var(--font-sans), system-ui, sans-serif'
 const DISPLAY = '"Cabinet Grotesk", var(--font-display), system-ui, sans-serif'
 const NUM     = '"Martian Mono", var(--font-num), ui-monospace, monospace'
+
+/* ── Surfaces premium pricing (dégradé + profondeur) ──────── */
+const CARD_GRAD   = `linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.008) 100%), ${SURFACE}`
+const CARD_BORDER = '1px solid rgba(255,255,255,0.09)'
+const PRO_GRAD    = `radial-gradient(125% 85% at 50% -12%, rgba(34,197,94,0.16) 0%, transparent 55%), linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.012) 100%), ${CARD}`
 
 /* ── Halo atmosphérique ───────────────────────────────────── */
 const Halo = ({ color, size, opacity = 0.12, anim = 'haloDrift', dur = '22s', ...pos }: {
@@ -49,6 +55,36 @@ const SectionLabel = ({ children }: { children: string }) => (
     <span style={{ color: MUTED }}>{children}</span>
   </div>
 )
+
+/* ── Coche features pricing (cercle stroke, style réf) ───────── */
+const Check = () => (
+  <span aria-hidden style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="7" stroke={ACCENT} strokeWidth="1.2" />
+      <path d="M5 8.2L7 10.2L11 6" stroke={ACCENT} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  </span>
+)
+
+/* ── Prix d'un plan (gère mensuel / annuel -17%) ──────────── */
+const fmt = (n: number) => n.toLocaleString('fr-FR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })
+const PlanPrice = ({ monthly, yearly }: { monthly: number; yearly: boolean }) => {
+  const Num = ({ children }: { children: React.ReactNode }) => (
+    <span style={{ fontFamily: SANS, fontSize: '52px', fontWeight: 700, color: TEXT, letterSpacing: '-0.02em', lineHeight: 1 }}>{children}</span>
+  )
+  const Cur = () => <span style={{ fontFamily: SANS, fontSize: '24px', fontWeight: 600, color: TEXT, letterSpacing: '-0.01em' }}>€</span>
+  const Per = () => <span style={{ fontFamily: MONO, fontSize: '13px', color: MUTED, marginLeft: '6px' }}>/mois</span>
+  const note = (txt: string) => <p style={{ fontFamily: MONO, fontSize: '12px', color: MUTED, margin: '6px 0 22px', minHeight: '16px' }}>{txt}</p>
+  if (monthly === 0) return (<><div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}><Num>0</Num><Cur /></div>{note('gratuit, pour toujours')}</>)
+  const yearTotal = monthly * 10 /* 2 mois offerts → ~-17% */
+  const eq = yearTotal / 12
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}><Num>{yearly ? fmt(eq) : monthly}</Num><Cur /><Per /></div>
+      {note(yearly ? `soit ${fmt(yearTotal)}€ facturés par an` : 'facturé chaque mois')}
+    </>
+  )
+}
 
 /* ── Browser mockup (Hero) ───────────────────────────────── */
 const BrowserMockup = () => (
@@ -259,6 +295,7 @@ const faqs = [
 export default function LandingPage() {
   const [email, setEmail]     = useState('')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const [yearly, setYearly]   = useState(false) /* toggle pricing : false = mensuel, true = annuel (-17%) */
   const router                = useRouter()
   const goRegister = () => router.push('/login?register=1')
 
@@ -678,59 +715,76 @@ export default function LandingPage() {
             </p>
           </Reveal>
 
-          {/* Stagger 0 / 200 / 400ms */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '40px', alignItems: 'start' }}>
+          {/* Toggle global Mensuel / Annuel (-17%) */}
+          <Reveal>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '48px' }}>
+              <div role="group" aria-label="Période de facturation" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '9999px', padding: '5px' }}>
+                <button
+                  onClick={() => setYearly(false)}
+                  style={{ fontFamily: SYNE, fontSize: '14px', fontWeight: 600, padding: '9px 20px', borderRadius: '9999px', border: 'none', cursor: 'pointer', transition: 'background 200ms ease, color 200ms ease', background: !yearly ? ACCENT : 'transparent', color: !yearly ? BG : MUTED }}
+                >Mensuel</button>
+                <button
+                  onClick={() => setYearly(true)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: SYNE, fontSize: '14px', fontWeight: 600, padding: '9px 20px', borderRadius: '9999px', border: 'none', cursor: 'pointer', transition: 'background 200ms ease, color 200ms ease', background: yearly ? ACCENT : 'transparent', color: yearly ? BG : MUTED }}
+                >
+                  Annuel
+                  <span style={{ fontFamily: SYNE, fontSize: '11px', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', background: yearly ? 'rgba(13,13,15,0.18)' : 'rgba(34,197,94,0.16)', color: yearly ? BG : ACCENT }}>-17%</span>
+                </button>
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Grille 3 cartes — même fond, Pro distingué par contour vert uniquement */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '40px', alignItems: 'stretch' }}>
+            {/* ── GRATUIT ── */}
             <Reveal delay={0}>
-              <div style={{ background: SURFACE, border: `0.5px solid ${BORDER}`, borderRadius: '12px', padding: '32px', height: '100%' }}>
-                <p style={{ fontFamily: SYNE, fontSize: '12px', fontWeight: 600, color: MUTED, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Gratuit</p>
-                <p style={{ marginBottom: '10px' }}><span style={{ fontFamily: SYNE, fontSize: '36px', fontWeight: 800, color: TEXT, letterSpacing: '-0.02em' }}>0€</span></p>
-                <p style={{ fontFamily: SYNE, fontSize: '14px', color: MUTED, marginBottom: '24px', lineHeight: 1.65 }}>Pour créer ton lien et voir ce que ça donne.</p>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', background: SURFACE, border: `1px solid rgba(255,255,255,0.08)`, borderRadius: '16px', padding: '32px', height: '100%' }}>
+                <p style={{ fontFamily: SANS, fontSize: '20px', fontWeight: 700, color: TEXT, marginBottom: '6px' }}>Gratuit</p>
+                <p style={{ fontFamily: SYNE, fontSize: '13px', color: MUTED, marginBottom: '20px', lineHeight: 1.5 }}>Pour créer ton lien et voir ce que ça donne.</p>
+                <PlanPrice monthly={0} yearly={yearly} />
+                <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.07)', margin: '4px 0 20px' }} />
+                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '11px', marginBottom: '28px' }}>
                   {['1 plateforme connectée (YouTube ou Twitch)', 'Page publique avec watermark', 'Lien sponsorable.gg/tonpseudo', 'Stats mises à jour manuellement'].map(feat => (
-                    <li key={feat} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontFamily: SYNE, fontSize: '14px', color: MUTED }}>
-                      <span style={{ color: ACCENT, fontWeight: 700, marginTop: '1px', flexShrink: 0 }}>✓</span>{feat}
+                    <li key={feat} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontFamily: SYNE, fontSize: '14px', color: MUTED, lineHeight: 1.4 }}>
+                      <Check />{feat}
                     </li>
                   ))}
                 </ul>
+                <button
+                  onClick={goRegister}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)' }}
+                  style={{ marginTop: 'auto', width: '100%', padding: '13px', borderRadius: '10px', border: `1px solid rgba(255,255,255,0.12)`, background: 'rgba(255,255,255,0.05)', color: TEXT, fontFamily: SYNE, fontSize: '15px', fontWeight: 600, cursor: 'pointer', transition: 'background 180ms ease' }}
+                >Commencer gratuitement</button>
               </div>
             </Reveal>
 
+            {/* ── PRO — contour vert uniquement, même fond ── */}
             <Reveal delay={200}>
-              <div style={{ position: 'relative', background: SURFACE, border: `2px solid ${ACCENT}`, borderRadius: '12px', padding: '32px', boxShadow: '0 12px 40px rgba(34,197,94,0.12)', height: '100%' }}>
-                <span style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: `linear-gradient(100deg, ${ACCENT}, ${VIOLET})`, color: 'white', borderRadius: '9999px', padding: '4px 16px', fontFamily: SYNE, fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>Le plus complet</span>
-                <p style={{ fontFamily: SYNE, fontSize: '12px', fontWeight: 600, color: ACCENT, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Pro</p>
-                <p style={{ marginBottom: '10px' }}>
-                  <span style={{ fontFamily: SYNE, fontSize: '36px', fontWeight: 800, color: TEXT, letterSpacing: '-0.02em' }}>19€</span>
-                  <span style={{ fontFamily: SYNE, fontSize: '14px', color: MUTED, marginLeft: '4px' }}>/mois</span>
-                </p>
-                <p style={{ fontFamily: SYNE, fontSize: '14px', color: MUTED, marginBottom: '24px', lineHeight: 1.65 }}>Pour négocier tes deals avec des chiffres vérifiés, sans bricoler.</p>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', background: SURFACE, border: `1px solid ${ACCENT}`, borderRadius: '16px', padding: '32px', height: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                  <p style={{ fontFamily: SANS, fontSize: '20px', fontWeight: 700, color: ACCENT, margin: 0 }}>Pro</p>
+                  <span style={{ fontFamily: SYNE, fontSize: '11px', fontWeight: 700, color: '#0d0d0f', background: ACCENT, padding: '3px 10px', borderRadius: '6px', letterSpacing: '0.04em' }}>Le plus populaire</span>
+                </div>
+                <p style={{ fontFamily: SYNE, fontSize: '13px', color: MUTED, marginBottom: '20px', lineHeight: 1.5 }}>Pour négocier tes deals avec des chiffres vérifiés, sans bricoler.</p>
+                <PlanPrice monthly={19} yearly={yearly} />
+                <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.07)', margin: '4px 0 20px' }} />
+                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '11px', marginBottom: '28px' }}>
                   {['YouTube + Twitch + TikTok + Instagram', 'Page sans watermark, design personnalisé', 'Stats synchronisées automatiquement (API)', 'Analytics kit : qui visite, quand, combien de fois', 'Export PDF pour les marques qui le demandent'].map(feat => (
-                    <li key={feat} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontFamily: SYNE, fontSize: '14px', color: MUTED }}>
-                      <span style={{ color: ACCENT, fontWeight: 700, marginTop: '1px', flexShrink: 0 }}>✓</span>{feat}
+                    <li key={feat} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontFamily: SYNE, fontSize: '14px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>
+                      <Check />{feat}
                     </li>
                   ))}
                 </ul>
+                <button
+                  onClick={goRegister}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)' }}
+                  style={{ marginTop: 'auto', width: '100%', padding: '13px', borderRadius: '10px', border: `1px solid rgba(255,255,255,0.12)`, background: 'rgba(255,255,255,0.05)', color: TEXT, fontFamily: SYNE, fontSize: '15px', fontWeight: 600, cursor: 'pointer', transition: 'background 180ms ease' }}
+                >S&apos;abonner</button>
               </div>
             </Reveal>
 
-            <Reveal delay={400}>
-              <div style={{ background: SURFACE, border: `0.5px solid ${BORDER}`, borderRadius: '12px', padding: '32px', height: '100%' }}>
-                <p style={{ fontFamily: SYNE, fontSize: '12px', fontWeight: 600, color: MUTED, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Agence</p>
-                <p style={{ marginBottom: '10px' }}>
-                  <span style={{ fontFamily: SYNE, fontSize: '36px', fontWeight: 800, color: TEXT, letterSpacing: '-0.02em' }}>49€</span>
-                  <span style={{ fontFamily: SYNE, fontSize: '14px', color: MUTED, marginLeft: '4px' }}>/mois</span>
-                </p>
-                <p style={{ fontFamily: SYNE, fontSize: '14px', color: MUTED, marginBottom: '24px', lineHeight: 1.65 }}>Pour les managers et agences multi-créateurs.</p>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {["Jusqu'à 20 créateurs gérés", 'Dashboard manager centralisé', 'White-label (votre domaine)', 'Priorité support'].map(feat => (
-                    <li key={feat} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontFamily: SYNE, fontSize: '14px', color: MUTED }}>
-                      <span style={{ color: ACCENT, fontWeight: 700, marginTop: '1px', flexShrink: 0 }}>✓</span>{feat}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </Reveal>
           </div>
         </div>
       </section>
