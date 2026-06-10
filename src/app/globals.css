@@ -355,6 +355,125 @@
   }
 }
 
+/* ══ Landing v3.1 — système de motion & composition ══════════ */
+
+/* CTA avec micro-interactions : flèche qui glisse + press state */
+.cta-btn {
+  transition: background 180ms ease, box-shadow 180ms ease, transform 120ms ease;
+}
+.cta-btn:active {
+  transform: scale(0.97);
+}
+.cta-arrow {
+  display: inline-block;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cta-btn:hover .cta-arrow {
+  transform: translateX(4px);
+}
+
+/* Grain photographique très léger : casse le rendu "flat AI" des fonds sombres */
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Grille technique du hero : lignes fines masquées en radial (présence, pas décor) */
+.hero-bg-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 65% at 65% 35%, black 0%, transparent 70%);
+  mask-image: radial-gradient(ellipse 70% 65% at 65% 35%, black 0%, transparent 70%);
+}
+
+/* Mockup hero : perspective 3D qui s'aplatit au survol (produit qu'on "prend en main") */
+.hero-mockup-stage {
+  perspective: 1400px;
+}
+.hero-mockup-tilt {
+  transform: rotateY(-7deg) rotateX(3deg);
+  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+}
+.hero-mockup-stage:hover .hero-mockup-tilt {
+  transform: rotateY(0deg) rotateX(0deg);
+}
+
+/* Flottements déphasés des éléments qui débordent du mockup */
+@keyframes floatYSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes floatYOffset {
+  0%, 100% { transform: translateY(-4px); }
+  50% { transform: translateY(6px); }
+}
+
+/* "Comment ça marche" : timeline + visuel résultat côte à côte sur desktop */
+.howit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 560px) minmax(280px, 1fr);
+  gap: 64px;
+  align-items: center;
+}
+@media (max-width: 900px) {
+  .howit-grid {
+    grid-template-columns: 1fr;
+  }
+  .howit-visual {
+    display: none;
+  }
+}
+
+/* "Pour qui" : carte centrale décalée sur desktop (casse l'alignement au cordeau) */
+@media (min-width: 901px) {
+  .profile-card-offset {
+    transform: translateY(28px);
+  }
+}
+
+/* Ligne lumineuse qui se trace (CTA final) */
+.draw-line {
+  height: 1px;
+  width: 120px;
+  margin: 0 auto 28px;
+  background: linear-gradient(90deg, transparent, #22c55e 30%, #22c55e 70%, transparent);
+  transform: scaleX(0);
+  transition: transform 1100ms cubic-bezier(0.22, 1, 0.36, 1) 150ms;
+}
+.draw-line--in {
+  transform: scaleX(1);
+}
+
+/* Hairlines éditoriales de la Différenciation : l'accent monte au survol */
+.diff-cell {
+  border-top: 1px solid #222222;
+  position: relative;
+}
+.diff-cell::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  height: 1px;
+  width: 0;
+  background: #22c55e;
+  transition: width 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.diff-cell:hover::before {
+  width: 48px;
+}
+
 /* ── Garde-fou accessibilité : coupe tout le mouvement ── */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -365,5 +484,11 @@
   }
   .steps-line {
     transform: scaleX(1);
+  }
+  .draw-line {
+    transform: scaleX(1);
+  }
+  .hero-mockup-tilt {
+    transform: none;
   }
 }

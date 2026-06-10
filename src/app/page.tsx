@@ -271,10 +271,10 @@ const steps = [
 ]
 
 const diffAxes = [
-  { n: '01', t: 'Vérifié, pas recopié',          d: 'Tes stats viennent direct des API YouTube et Twitch. La marque sait qu\'elles sont réelles, elle arrête de négocier dans le doute.',          c: ACCENT  },
-  { n: '02', t: 'Vivant, pas figé',              d: 'Ton lien se met à jour seul. Tu ne renverras plus jamais des chiffres d\'il y a 6 mois. Ta croissance joue pour toi.',                        c: VIOLET  },
-  { n: '03', t: 'Tu choisis ce que tu montres',  d: 'Tu mets en avant tes meilleures plateformes et métriques. Le reste, tu le masques. Plus de contrôle qu\'un screenshot, pas moins.',           c: ACCENT  },
-  { n: '04', t: 'Zéro admin',                    d: 'Une marque te DM ? Tu envoies un lien. Pas de PDF à rouvrir, réexporter, réuploader. Tu récupères ce temps.',                                c: VIOLET  },
+  { n: '01', t: 'Vérifié, pas recopié',          d: 'Tes stats viennent direct des API YouTube et Twitch. La marque sait qu\'elles sont réelles, elle arrête de négocier dans le doute.' },
+  { n: '02', t: 'Vivant, pas figé',              d: 'Ton lien se met à jour seul. Tu ne renverras plus jamais des chiffres d\'il y a 6 mois. Ta croissance joue pour toi.' },
+  { n: '03', t: 'Tu choisis ce que tu montres',  d: 'Tu mets en avant tes meilleures plateformes et métriques. Le reste, tu le masques. Plus de contrôle qu\'un screenshot, pas moins.' },
+  { n: '04', t: 'Zéro admin',                    d: 'Une marque te DM ? Tu envoies un lien. Pas de PDF à rouvrir, réexporter, réuploader. Tu récupères ce temps.' },
 ]
 
 const profiles = [
@@ -296,6 +296,7 @@ export default function LandingPage() {
   const [email, setEmail]     = useState('')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
   const [yearly, setYearly]   = useState(false) /* toggle pricing : false = mensuel, true = annuel (-17%) */
+  const ctaLine               = useInView<HTMLDivElement>() /* ligne qui se trace au-dessus du CTA final */
   const router                = useRouter()
   const goRegister = () => router.push('/login?register=1')
 
@@ -313,9 +314,12 @@ export default function LandingPage() {
       <Navbar dark />
 
       {/* ═══ 01 · HERO ═══════════════════════════════════════ */}
-      <section style={{ position: 'relative', paddingTop: '96px', paddingBottom: '88px', overflow: 'hidden', background: BG }}>
+      <section style={{ position: 'relative', paddingTop: '96px', paddingBottom: '104px', overflow: 'hidden', background: BG }}>
         <Halo color={ACCENT}  size="620px" opacity={0.15} anim="haloDrift"    dur="24s" bottom="-180px" left="-160px" />
         <Halo color={VIOLET}  size="560px" opacity={0.09} anim="haloDriftAlt" dur="28s" top="-160px"    right="-120px" />
+        {/* Grille technique + grain : profondeur de fond, plus de "noir flat" */}
+        <div className="hero-bg-grid" aria-hidden />
+        <div className="grain-overlay" aria-hidden />
         <div className="hero-grid">
           {/* Colonne texte — stagger 0 / 150 / 300ms */}
           <div>
@@ -361,21 +365,52 @@ export default function LandingPage() {
                 />
                 <button
                   type="submit"
+                  className="cta-btn"
                   style={{ ...ctaPrimary, fontSize: '15px', padding: '14px 22px' }}
                   onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = '#1daa50'; el.style.boxShadow = '0 8px 28px rgba(34,197,94,0.5)' }}
                   onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = ACCENT; el.style.boxShadow = '0 6px 24px rgba(34,197,94,0.35)' }}
                 >
-                  Créer mon lien →
+                  Créer mon lien <span className="cta-arrow">→</span>
                 </button>
               </form>
             </Reveal>
 
+            {/* Micro-réassurance : occupe le vide sous le form, là où l'œil termine */}
+            <Reveal delay={450}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', marginTop: '22px', fontFamily: MONO, fontSize: '11px', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.38)' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: ACCENT, animation: 'livePulse 2.4s ease-out infinite' }} />
+                  gratuit
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.14)' }}>/</span>
+                <span>prêt en 2 min</span>
+                <span style={{ color: 'rgba(255,255,255,0.14)' }}>/</span>
+                <span>stats vérifiées OAuth</span>
+              </div>
+            </Reveal>
           </div>
 
-          {/* Colonne mockup */}
-          <div className="hero-mockup">
-            <div style={{ width: '100%', maxWidth: '520px', animation: 'floatY 6s ease-in-out infinite' }}>
-              <BrowserMockup />
+          {/* Colonne mockup — mise en scène : perspective qui s'aplatit au survol,
+              et deux éléments qui débordent du cadre pour casser le rectangle figé */}
+          <div className="hero-mockup hero-mockup-stage">
+            <div style={{ position: 'relative', width: '100%', maxWidth: '520px' }}>
+              <div className="hero-mockup-tilt" style={{ animation: 'floatY 7s ease-in-out infinite' }}>
+                <BrowserMockup />
+              </div>
+              {/* Chip "vérifié" qui déborde en haut à droite (or = micro-valeur) */}
+              <div aria-hidden style={{ position: 'absolute', top: '-16px', right: '-14px', zIndex: 2, display: 'flex', alignItems: 'center', gap: '7px', background: '#15130c', border: '1px solid rgba(245,181,68,0.45)', borderRadius: '9999px', padding: '7px 13px', boxShadow: '0 10px 28px rgba(0,0,0,0.5)', animation: 'floatYOffset 8s ease-in-out infinite' }}>
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke={GOLD} strokeWidth="1.4" /><path d="M5 8.2L7 10.2L11 6" stroke={GOLD} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: GOLD }}>Stats vérifiées API</span>
+              </div>
+              {/* Notification sponsor qui déborde en bas à gauche : le produit "vit" */}
+              <div aria-hidden style={{ position: 'absolute', bottom: '34px', left: '-38px', zIndex: 2, background: CARD, border: `1px solid rgba(34,197,94,0.35)`, borderRadius: '10px', padding: '12px 16px', boxShadow: '0 18px 44px rgba(0,0,0,0.6)', maxWidth: '230px', animation: 'floatYSlow 9s ease-in-out infinite' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '5px' }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, animation: 'livePulse 2s ease-out infinite' }} />
+                  <span style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: ACCENT }}>Nouvelle proposition</span>
+                </div>
+                <p style={{ fontFamily: SYNE, fontSize: '13px', fontWeight: 600, color: TEXT, lineHeight: 1.4 }}>NordVPN · intégration vidéo</p>
+                <p style={{ fontFamily: NUM, fontSize: '11px', color: MUTED, marginTop: '3px' }}>budget 2 000 – 5 000 €</p>
+              </div>
             </div>
           </div>
         </div>
@@ -402,7 +437,11 @@ export default function LandingPage() {
             {leaks.map((l, i) => (
               <Reveal key={i} delay={i * 80}>
                 {/* borderLeft > 1px = ban absolu Impeccable §skill-ban-side-stripe-borders → remplacé par bg tint + border uniforme */}
-                <div style={{ background: 'rgba(251,113,133,0.06)', border: `1px solid rgba(251,113,133,0.22)`, borderRadius: '10px', padding: '28px 26px', height: '100%' }}>
+                <div
+                  style={{ background: 'rgba(251,113,133,0.06)', border: `1px solid rgba(251,113,133,0.22)`, borderRadius: '10px', padding: '28px 26px', height: '100%', transition: 'border-color 200ms ease, transform 200ms ease' }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(251,113,133,0.5)'; el.style.transform = 'translateY(-3px)' }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(251,113,133,0.22)'; el.style.transform = 'translateY(0)' }}
+                >
                   <div style={{ fontFamily: MONO, fontSize: '13px', color: CORAL, marginBottom: '14px' }}>{String(i + 1).padStart(2, '0')}</div>
                   <h3 style={{ fontFamily: SYNE, fontSize: '17px', fontWeight: 600, color: TEXT, marginBottom: '10px' }}>{l.t}</h3>
                   <p style={{ fontFamily: SYNE, fontSize: '14px', color: MUTED, lineHeight: 1.7 }}>{l.d}</p>
@@ -411,10 +450,15 @@ export default function LandingPage() {
             ))}
           </div>
 
+          {/* Punch final : moment typographique, pas un simple paragraphe */}
           <Reveal delay={120}>
-            <p style={{ fontFamily: SYNE, fontSize: '20px', color: TEXT, fontWeight: 600, lineHeight: 1.5, maxWidth: '640px', marginTop: '48px' }}>
-              Tu fais un contenu de pro. Au moment où tu parles d&apos;argent, tu te présentes comme un amateur.
-            </p>
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'stretch', marginTop: '64px', maxWidth: '720px' }}>
+              <div aria-hidden style={{ width: '2px', flexShrink: 0, background: `linear-gradient(180deg, ${CORAL}, transparent)`, borderRadius: '2px' }} />
+              <p style={{ fontFamily: DISPLAY, fontSize: 'clamp(22px, 2.8vw, 30px)', color: TEXT, fontWeight: 700, lineHeight: 1.35, letterSpacing: '-0.01em', textWrap: 'balance' } as React.CSSProperties}>
+                Tu fais un contenu de pro.{' '}
+                <span style={{ color: CORAL }}>Au moment où tu parles d&apos;argent, tu te présentes comme un amateur.</span>
+              </p>
+            </div>
           </Reveal>
         </div>
       </section>
@@ -424,10 +468,15 @@ export default function LandingPage() {
         <Halo color="#4ade80" size="480px" opacity={0.4} anim="haloBreathe" dur="9s" top="-160px" left="40%" />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '1100px', margin: '0 auto' }}>
           <Reveal>
-            <p style={{ fontFamily: DISPLAY, fontSize: 'clamp(24px, 3.2vw, 36px)', fontWeight: 700, letterSpacing: '-0.02em', color: '#fff', lineHeight: 1.25, maxWidth: '900px', marginBottom: '52px' }}>
-              Sponsorable transforme tes vraies stats en un media kit que les marques prennent au sérieux.{' '}
-              <span style={{ color: 'rgba(255,255,255,0.72)' }}>Un lien. Toujours à jour.</span>
-            </p>
+            {/* Intro = chapeau blanc ; signature à la ligne, plus grosse, en encre sombre sur le vert */}
+            <div style={{ maxWidth: '900px', marginBottom: '52px' }}>
+              <p style={{ fontFamily: DISPLAY, fontSize: 'clamp(21px, 2.6vw, 30px)', fontWeight: 700, letterSpacing: '-0.02em', color: '#fff', lineHeight: 1.3 }}>
+                Sponsorable transforme tes vraies stats en un media kit que les marques prennent au sérieux.
+              </p>
+              <p style={{ fontFamily: DISPLAY, fontSize: 'clamp(34px, 4.6vw, 52px)', fontWeight: 800, letterSpacing: '-0.02em', color: '#0c2912', lineHeight: 1.1, marginTop: '14px' }}>
+                Un lien. Toujours à jour.
+              </p>
+            </div>
           </Reveal>
 
           {/* StatCards animées */}
@@ -446,12 +495,12 @@ export default function LandingPage() {
         <Halo color={VIOLET} size="600px" opacity={0.07} anim="haloDrift" dur="30s" top="120px" left="50%" />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '1100px', margin: '0 auto' }}>
           <Reveal>
-            <SectionLabel>Exemples réels</SectionLabel>
+            <SectionLabel>Aperçu des styles</SectionLabel>
             <h2 style={{ fontFamily: DISPLAY, fontSize: 'clamp(28px, 3.5vw, 40px)', fontWeight: 700, letterSpacing: '-0.02em', color: TEXT, marginBottom: '14px', lineHeight: 1.18 }}>
               Voilà ce qu&apos;une marque voit<br />quand tu envoies ton lien.
             </h2>
             <p style={{ fontFamily: SYNE, fontSize: '17px', color: MUTED, maxWidth: '520px', marginBottom: '52px' }}>
-              Des profils de démonstration, dans plusieurs styles. Le tien ressemblera à ça, avec tes vraies stats.
+              Plusieurs directions visuelles, du clair au sombre. Le tien ressemblera à ça, avec tes vraies stats.
             </p>
           </Reveal>
 
@@ -495,14 +544,12 @@ export default function LandingPage() {
                           </div>
                         ))}
                       </div>
-                      <a
-                        href={`/${c.pseudo}`}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, color: t.accent, textDecoration: 'none', background: `${t.accent}14`, border: `1px solid ${t.accent}30`, borderRadius: '8px', padding: '8px 14px', transition: 'background 150ms' }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${t.accent}22` }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${t.accent}14` }}
-                      >
-                        Voir le kit →
-                      </a>
+                      {/* Pill URL non cliquable : les profils démo n'existent plus en base,
+                          on montre le format du lien sans pointer vers une page introuvable */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', fontFamily: MONO, fontSize: '11px', color: t.subtext, background: t.statBg, border: `1px solid ${t.statBorder}`, borderRadius: '8px', padding: '8px 14px' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: t.accent, flexShrink: 0 }} />
+                        sponsorable.fr/{c.pseudo.toLowerCase()}
+                      </div>
                     </div>
                   </div>
                 </Reveal>
@@ -524,7 +571,8 @@ export default function LandingPage() {
             </p>
           </Reveal>
 
-          {/* Timeline verticale — remplace les 3 colonnes égales (pattern interdit §9.C) */}
+          {/* Timeline verticale à gauche + visuel "résultat" à droite : le vide devient intentionnel */}
+          <div className="howit-grid">
           <div style={{ maxWidth: '560px' }}>
             {steps.map((s, i) => {
               const accent = i === 1 ? VIOLET : ACCENT
@@ -549,6 +597,32 @@ export default function LandingPage() {
                 </Reveal>
               )
             })}
+          </div>
+
+          {/* Le résultat : ce que le créateur obtient à la fin des 3 étapes */}
+          <div className="howit-visual">
+            <Reveal delay={250}>
+              <div style={{ position: 'relative', background: CARD, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '14px', padding: '28px 26px', boxShadow: '0 24px 60px rgba(0,0,0,0.45)', animation: 'floatYSlow 9s ease-in-out infinite' }}>
+                <p style={{ fontFamily: MONO, fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: MUTED, marginBottom: '18px' }}>Le résultat</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.04)', border: `1px solid ${BORDER}`, borderRadius: '9999px', padding: '11px 18px', marginBottom: '20px' }}>
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: ACCENT, flexShrink: 0, animation: 'livePulse 2s ease-out infinite' }} />
+                  <span style={{ fontFamily: MONO, fontSize: '13px', color: TEXT }}>sponsorable.fr/<span style={{ color: ACCENT }}>tonpseudo</span></span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {[
+                    { k: 'Stats', v: 'synchronisées via API' },
+                    { k: 'Mise à jour', v: 'automatique, en continu' },
+                    { k: 'À refaire', v: 'jamais' },
+                  ].map(r => (
+                    <div key={r.k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px', borderBottom: `1px solid rgba(255,255,255,0.06)`, paddingBottom: '10px' }}>
+                      <span style={{ fontFamily: MONO, fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: MUTED }}>{r.k}</span>
+                      <span style={{ fontFamily: SYNE, fontSize: '13px', fontWeight: 600, color: r.k === 'À refaire' ? ACCENT : TEXT }}>{r.v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+          </div>
           </div>
         </div>
       </section>
@@ -584,17 +658,18 @@ export default function LandingPage() {
             </Reveal>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+          {/* Grille éditoriale à filets : casse le moule "cartes" utilisé ailleurs.
+              Pas de boîtes — hairline qui s'allume en vert au survol (.diff-cell) */}
+          {/* minmax 340px → 2 colonnes max sur desktop : 2×2 propre, jamais d'orphelin */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', columnGap: '56px', rowGap: '8px' }}>
             {diffAxes.map((a, i) => (
               <Reveal key={a.n} delay={i * 70}>
-                <div
-                  style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`, borderTop: `2px solid ${a.c}`, borderRadius: '10px', padding: '28px 26px', height: '100%', transition: 'background 200ms ease' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)' }}
-                >
-                  <div style={{ fontFamily: MONO, fontSize: '13px', color: a.c, marginBottom: '14px' }}>{a.n}</div>
-                  <h3 style={{ fontFamily: SYNE, fontSize: '17px', fontWeight: 600, color: TEXT, marginBottom: '10px' }}>{a.t}</h3>
-                  <p style={{ fontFamily: SYNE, fontSize: '14px', color: MUTED, lineHeight: 1.7 }}>{a.d}</p>
+                <div className="diff-cell" style={{ padding: '26px 4px 30px', height: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', marginBottom: '10px' }}>
+                    <span style={{ fontFamily: MONO, fontSize: '12px', color: ACCENT }}>{a.n}</span>
+                    <h3 style={{ fontFamily: SYNE, fontSize: '18px', fontWeight: 600, color: TEXT }}>{a.t}</h3>
+                  </div>
+                  <p style={{ fontFamily: SYNE, fontSize: '14px', color: MUTED, lineHeight: 1.7, paddingLeft: '34px' }}>{a.d}</p>
                 </div>
               </Reveal>
             ))}
@@ -610,7 +685,8 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ 07 · POUR QUI ═══════════════════════════════════ */}
-      <section style={{ position: 'relative', background: SURFACE, padding: '96px 24px', overflow: 'hidden', borderTop: `1px solid ${BORDER}` }}>
+      {/* Padding bas élargi : absorbe le décalage de la carte centrale */}
+      <section style={{ position: 'relative', background: SURFACE, padding: '96px 24px 128px', overflow: 'hidden', borderTop: `1px solid ${BORDER}` }}>
         <Halo color={VIOLET} size="560px" opacity={0.08} anim="haloDrift" dur="28s" top="-120px" right="10%" />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '1100px', margin: '0 auto' }}>
           <Reveal>
@@ -621,7 +697,10 @@ export default function LandingPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', alignItems: 'start' }}>
             {profiles.map((p, i) => (
+              /* La carte du milieu descend de 28px sur desktop : rythme visuel, fin de la rangée au cordeau.
+                 ⚠️ La classe est sur un wrapper interne : Reveal pose un transform inline qui écraserait la classe. */
               <Reveal key={p.title} delay={i * 80}>
+                <div className={i === 1 ? 'profile-card-offset' : undefined}>
                 <div
                   style={{ background: CARD, border: `0.5px solid ${BORDER}`, borderTop: `2px solid ${p.accent}`, borderRadius: '10px', padding: p.tall ? '44px 28px' : '32px 28px', transition: 'transform 200ms ease, box-shadow 200ms ease', height: '100%' }}
                   onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = `0 18px 40px ${p.glow}` }}
@@ -631,6 +710,7 @@ export default function LandingPage() {
                   <h3 style={{ fontFamily: SYNE, fontSize: '18px', fontWeight: 700, color: TEXT, marginBottom: '12px', lineHeight: 1.3 }}>{p.title}</h3>
                   <p style={{ fontFamily: SYNE, fontSize: '14px', color: MUTED, lineHeight: 1.75 }}>{p.desc}</p>
                 </div>
+                </div>
               </Reveal>
             ))}
           </div>
@@ -638,7 +718,8 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ 08 · POURQUOI ═══════════════════════════════════ */}
-      <section style={{ background: BG, padding: '96px 24px', borderTop: `1px solid ${BORDER}` }}>
+      {/* Respiration volontaire : bloc éditorial étroit, padding plus généreux que les sections produit */}
+      <section style={{ background: BG, padding: '128px 24px', borderTop: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: '680px', margin: '0 auto' }}>
           <Reveal>
             <h2 style={{ fontFamily: DISPLAY, fontSize: 'clamp(26px, 3vw, 36px)', fontWeight: 700, letterSpacing: '-0.02em', color: TEXT, marginBottom: '32px', lineHeight: 1.2 }}>
@@ -657,8 +738,10 @@ export default function LandingPage() {
                 Un lien. Des stats vérifiées via API officielle. Un design qui ne fait pas amateur. C&apos;est tout ce qu&apos;il faut pour négocier à la hauteur de ce que tu vaux vraiment.
               </p>
             </div>
-            <div style={{ marginTop: '40px', paddingTop: '32px', borderTop: `1px solid ${BORDER}` }}>
-              <p style={{ fontFamily: SYNE, fontSize: '14px', color: '#3a3a3a', fontStyle: 'italic', lineHeight: 1.65 }}>
+            {/* Note bêta : signature lisible (l'ancien #3a3a3a était invisible sur fond noir) */}
+            <div style={{ marginTop: '40px', paddingTop: '32px', borderTop: `1px solid ${BORDER}`, display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+              <span aria-hidden style={{ width: '20px', height: '1px', background: ACCENT, flexShrink: 0, marginTop: '11px' }} />
+              <p style={{ fontFamily: SYNE, fontSize: '14px', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic', lineHeight: 1.65 }}>
                 Sponsorable est en bêta privée. On le construit avec des créateurs qui font déjà des partenariats, pas pour eux. Si t&apos;as des retours, on lit tout.
               </p>
             </div>
@@ -681,7 +764,11 @@ export default function LandingPage() {
               const open = openFaq === i
               return (
                 <Reveal key={i} delay={i * 60}>
-                  <div style={{ borderBottom: `1px solid ${BORDER}`, background: open ? 'rgba(34,197,94,0.03)' : 'transparent', transition: 'background 200ms ease' }}>
+                  <div
+                    style={{ borderBottom: `1px solid ${BORDER}`, background: open ? 'rgba(34,197,94,0.03)' : 'transparent', transition: 'background 200ms ease' }}
+                    onMouseEnter={e => { if (!open) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.025)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = open ? 'rgba(34,197,94,0.03)' : 'transparent' }}
+                  >
                     <button
                       onClick={() => setOpenFaq(open ? null : i)}
                       style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', background: 'none', border: 'none', cursor: 'pointer', padding: '22px 12px', textAlign: 'left', outline: 'none', borderRadius: '4px' }}
@@ -790,10 +877,13 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ 11 · CTA FINAL ══════════════════════════════════ */}
-      <section style={{ position: 'relative', background: BG, padding: '120px 24px', textAlign: 'center', overflow: 'hidden', borderTop: `1px solid ${BORDER}` }}>
+      <section style={{ position: 'relative', background: BG, padding: '150px 24px 140px', textAlign: 'center', overflow: 'hidden', borderTop: `1px solid ${BORDER}` }}>
         <Halo color={ACCENT}  size="640px" opacity={0.18} anim="haloBreathe"  dur="10s" top="-180px"   left="50%" />
         <Halo color={VIOLET}  size="420px" opacity={0.09} anim="haloDriftAlt" dur="24s" bottom="-120px" left="20%" />
+        <div className="grain-overlay" aria-hidden />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '720px', margin: '0 auto' }}>
+          {/* Ligne lumineuse qui se trace à l'entrée dans le viewport : annonce le climax */}
+          <div ref={ctaLine.ref} className={`draw-line${ctaLine.inView ? ' draw-line--in' : ''}`} aria-hidden />
           <Reveal>
             <h2 style={{ fontFamily: DISPLAY, fontSize: 'clamp(48px, 6vw, 72px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.05, marginBottom: '20px' }}>
               <span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>Deviens</span>{' '}
@@ -804,13 +894,14 @@ export default function LandingPage() {
             </p>
             <button
               onClick={goRegister}
+              className="cta-btn"
               style={ctaPrimary}
               onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = '#1daa50'; el.style.boxShadow = '0 8px 32px rgba(34,197,94,0.5)' }}
               onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = ACCENT; el.style.boxShadow = '0 6px 24px rgba(34,197,94,0.35)' }}
             >
-              Créer mon lien gratuitement →
+              Créer mon lien gratuitement <span className="cta-arrow">→</span>
             </button>
-            <p style={{ fontFamily: MONO, fontSize: '11px', color: '#333', marginTop: '18px', letterSpacing: '0.03em' }}>
+            <p style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.32)', marginTop: '18px', letterSpacing: '0.03em' }}>
               Sans carte bancaire · Annulable à tout moment
             </p>
           </Reveal>
