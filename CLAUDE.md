@@ -20,7 +20,7 @@ En 2 minutes, un créateur connecte ses plateformes et obtient un lien public à
 ## ⚙️ Infra & Prod — RÉCAP IMPORTANT (session juin 2026)
 
 ### Dépôt & déploiement
-- **On ne travaille QUE sur le dépôt `nathantauvel-rgb/SPONSORABLE`** (remote git `perso`). **Ne plus jamais toucher au dépôt `shanome-hub`** (remote `origin`).
+- **On ne travaille QUE sur le dépôt `nathantauvel-rgb/SPONSORABLE`** — c'est désormais le remote **`origin`** (le remote `perso` et le dépôt `shanome-hub` n'existent plus dans la config locale).
 - Branches : développement sur **`Test`**, puis merge/fast-forward vers **`main`** = déploiement auto Vercel.
 - **Domaine de prod : `sponsorable.fr`** (acheté chez OVH), pointe sur Vercel. `sponsorable.vercel.app` reste actif aussi.
 
