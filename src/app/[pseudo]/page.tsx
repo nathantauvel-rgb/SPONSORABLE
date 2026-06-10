@@ -92,7 +92,9 @@ const loadFormats = (): string[] => {
   catch { return ['YouTube', 'Twitch', 'Réseaux sociaux', 'Ambassadeur'] }
 }
 const loadShowPartnerships = (): boolean => {
-  const s = localStorage.getItem('sponsorable_show_partnerships'); return s === null ? true : s === 'true'
+  // try/catch obligatoire : localStorage n'existe pas côté serveur (SSR) → 500 sinon
+  try { const s = localStorage.getItem('sponsorable_show_partnerships'); return s === null ? true : s === 'true' }
+  catch { return true }
 }
 const loadPartnerships = () => {
   try { const s = localStorage.getItem('sponsorable_partnerships'); return s ? JSON.parse(s) : pastPartners } catch { return pastPartners }
