@@ -72,7 +72,7 @@ async function sendVerificationEmail(email: string, verifyUrl: string) {
     auth: { user: testAccount.user, pass: testAccount.pass },
   })
   const info = await transporter.sendMail({
-    from: '"Sponsorable" <noreply@sponsorable.gg>',
+    from: '"Sponsorable" <noreply@sponsorable.fr>',
     to: email,
     subject: "Confirmez votre adresse email — Sponsorable",
     html: emailHtml(verifyUrl),

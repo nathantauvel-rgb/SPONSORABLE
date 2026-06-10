@@ -100,7 +100,7 @@ const BrowserMockup = () => (
         ))}
       </div>
       <div style={{ flex: 1, background: 'white', borderRadius: '5px', padding: '4px 12px', fontSize: '11px', color: '#94a3b8', border: '1px solid rgba(0,0,0,0.08)' }}>
-        sponsorable.gg/tonpseudo
+        sponsorable.fr/tonpseudo
       </div>
     </div>
     <div style={{ height: '380px', overflow: 'hidden' }}>
@@ -216,7 +216,7 @@ const LiveKitCard = () => (
   <div style={{ position: 'relative', background: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '26px 24px', boxShadow: '0 18px 50px rgba(34,197,94,0.22)', maxWidth: '380px', width: '100%' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px', paddingBottom: '14px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: ACCENT, flexShrink: 0, animation: 'livePulse 2s ease-out infinite' }} />
-      <span style={{ fontFamily: MONO, fontSize: '12px', color: '#64748b' }}>sponsorable.gg/alexplays</span>
+      <span style={{ fontFamily: MONO, fontSize: '12px', color: '#64748b' }}>sponsorable.fr/alexplays</span>
     </div>
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
       <div style={{ width: '46px', height: '46px', borderRadius: '50%', background: ACCENT, color: 'white', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>AP</div>
@@ -744,7 +744,7 @@ export default function LandingPage() {
                 <PlanPrice monthly={0} yearly={yearly} />
                 <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.07)', margin: '4px 0 20px' }} />
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '11px', marginBottom: '28px' }}>
-                  {['1 plateforme connectée (YouTube ou Twitch)', 'Page publique avec watermark', 'Lien sponsorable.gg/tonpseudo', 'Stats mises à jour manuellement'].map(feat => (
+                  {['1 plateforme connectée (YouTube ou Twitch)', 'Page publique avec watermark', 'Lien sponsorable.fr/tonpseudo', 'Stats mises à jour manuellement'].map(feat => (
                     <li key={feat} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontFamily: SYNE, fontSize: '14px', color: MUTED, lineHeight: 1.4 }}>
                       <Check />{feat}
                     </li>

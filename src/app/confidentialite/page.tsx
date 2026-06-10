@@ -32,7 +32,9 @@ export default function ConfidentialitePage() {
         <li><strong>Compte</strong>&nbsp;: email, nom, mot de passe (chiffré), photo de profil.</li>
         <li><strong>Plateformes connectées</strong>&nbsp;: statistiques publiques YouTube/Twitch
           récupérées via API officielle (abonnés, vues, etc.) après ton autorisation.</li>
-        <li><strong>Messages sponsors</strong>&nbsp;: contenu des demandes envoyées via ton media kit.</li>
+        <li><strong>Messages sponsors</strong>&nbsp;: contenu des demandes envoyées via ton media kit,
+          ainsi que l&apos;email de contact laissé par le sponsor (transmis uniquement au créateur concerné
+          pour lui permettre de répondre).</li>
         <li><strong>Mesure d'audience</strong>&nbsp;: pays et page référente des visites de ton media kit
           (données <strong>anonymes</strong> — nous ne stockons ni adresse IP ni user-agent), uniquement
           si tu as accepté les cookies de mesure d'audience.</li>

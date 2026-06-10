@@ -7,6 +7,7 @@ import { z } from 'zod'
 const ContactSchema = z.object({
   slug: z.string().min(1).max(64),
   company: z.string().min(1).max(200),
+  email: z.string().email().max(255),
   budget: z.string().min(1).max(100),
   type: z.string().min(1).max(100),
   message: z.string().min(1).max(5000),
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Données invalides' }, { status: 400 })
     }
 
-    const { slug, company, budget, type, message } = parsed.data
+    const { slug, company, email, budget, type, message } = parsed.data
 
     const profile = await prisma.profile.findUnique({
       where: { slug },
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     await prisma.message.create({
-      data: { profileId: profile.id, company, budget, type, message },
+      data: { profileId: profile.id, company, email, budget, type, message },
     })
 
     // Envoi email si Resend est configuré
@@ -57,8 +58,10 @@ export async function POST(req: NextRequest) {
           Authorization: `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: 'Sponsorable <noreply@sponsorable.gg>',
+          from: process.env.EMAIL_FROM ?? 'Sponsorable <noreply@sponsorable.fr>',
           to: profile.user.email,
+          // Le créateur peut répondre directement au sponsor depuis sa boîte mail
+          reply_to: email,
           subject: `💼 Nouvelle proposition de ${company}`,
           html: `
             <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#f8fafc;border-radius:12px">
@@ -66,11 +69,12 @@ export async function POST(req: NextRequest) {
               <p style="color:#64748b;margin-bottom:24px">Reçue via ton media kit Sponsorable</p>
               <div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:16px">
                 <p style="margin:0 0 12px"><strong>Entreprise :</strong> ${escapeHtml(company)}</p>
+                <p style="margin:0 0 12px"><strong>Email :</strong> ${escapeHtml(email)}</p>
                 <p style="margin:0 0 12px"><strong>Budget :</strong> ${escapeHtml(budget)}</p>
                 <p style="margin:0 0 12px"><strong>Type :</strong> ${escapeHtml(type)}</p>
                 <p style="margin:0"><strong>Message :</strong><br/>${escapeHtml(message).replace(/\n/g, '<br/>')}</p>
               </div>
-              <a href="https://sponsorable.gg/dashboard/messages" style="display:inline-block;background:#16a34a;color:white;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600">
+              <a href="${(process.env.AUTH_URL ?? 'https://sponsorable.fr').replace(/\/$/, '')}/dashboard/messages" style="display:inline-block;background:#16a34a;color:white;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:600">
                 Voir dans le dashboard →
               </a>
             </div>

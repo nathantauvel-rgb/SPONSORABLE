@@ -80,6 +80,8 @@ model Message {
   id          String   @id @default(cuid())
   profileId   String
   company     String
+  // Email de réponse du sponsor (optionnel : les anciens messages n'en ont pas)
+  email       String?
   budget      String
   type        String
   message     String   @db.Text

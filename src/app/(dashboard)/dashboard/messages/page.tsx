@@ -8,6 +8,7 @@ import { BG, SURFACE, CARD, ACCENT, TEXT, MUTED, BORDER, SYNE, DISPLAY } from '@
 type Message = {
   id: string
   company: string
+  email: string | null
   budget: string
   type: string
   message: string
@@ -159,7 +160,9 @@ export default function MessagesPage() {
                   </div>
                   <div>
                     <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, margin: 0, fontFamily: SYNE }}>{selected.company}</p>
-                    <p style={{ fontSize: '12px', color: MUTED, margin: 0, fontFamily: SYNE }}>{timeAgo(selected.createdAt)}</p>
+                    <p style={{ fontSize: '12px', color: MUTED, margin: 0, fontFamily: SYNE }}>
+                      {selected.email ? <>{selected.email} · </> : null}{timeAgo(selected.createdAt)}
+                    </p>
                   </div>
                   <MailOpen size={16} style={{ marginLeft: 'auto', color: ACCENT }} />
                 </div>
@@ -191,7 +194,7 @@ export default function MessagesPage() {
 
                 {/* CTA répondre */}
                 <a
-                  href={`mailto:?subject=Re: Partenariat ${selected.company}&body=${encodeURIComponent(`Bonjour,\n\nMerci pour votre proposition de partenariat...\n`)}`}
+                  href={`mailto:${selected.email ?? ''}?subject=${encodeURIComponent(`Re: Partenariat ${selected.company}`)}&body=${encodeURIComponent(`Bonjour,\n\nMerci pour votre proposition de partenariat...\n`)}`}
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: '8px',
                     padding: '10px 20px', borderRadius: '10px',

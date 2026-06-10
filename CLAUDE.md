@@ -157,8 +157,9 @@ Toujours développer sur `Test`, merger vers `main` quand stable.
 - "Deviens Sponsorable" = signature de marque (kicker Hero + climax CTA final), pas le H1.
 - Faux PDF Canva amateur (CSS) vs carte live = motif "mort vs vivant" dans la Différenciation.
 
-### Données démo (`prisma/seed-demo.ts`)
-- `npx tsx prisma/seed-demo.ts` crée 5 profils de test : `/valcrest`, `/hexara`, `/lankdower-test`, `/newdrop`, `/nightbyte`. Idempotent (delete-by-email puis create).
+### Données démo — SUPPRIMÉES (juin 2026)
+- Les 5 profils de test (`/valcrest`, `/hexara`, etc.) et le script `prisma/seed-demo.ts` ont été supprimés (DB + repo) : pas de faux media kits accessibles publiquement.
+- La page publique `/[pseudo]` affiche désormais une vraie page « introuvable » quand le slug n'existe pas ou que la page est désactivée (avant : elle affichait le mock AlexPlays).
 
 ### Photo de profil — Priorité
 1. YouTube (miniature chaîne) — priorité maximale

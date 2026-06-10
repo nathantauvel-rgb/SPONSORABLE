@@ -475,10 +475,10 @@ function SettingsContent() {
                 <p style={{ fontSize: '12px', fontWeight: 600, color: MUTED, letterSpacing: '0.03em', textTransform: 'uppercase', marginBottom: '8px' }}>Lien public</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{ flex: 1, padding: '10px 14px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', fontSize: '13px', color: MUTED, fontFamily: 'monospace' }}>
-                    sponsorable.gg/<strong style={{ color: TEXT }}>{publicSlug || pseudo.toLowerCase().replace(/\s+/g, '-')}</strong>
+                    sponsorable.fr/<strong style={{ color: TEXT }}>{publicSlug || pseudo.toLowerCase().replace(/\s+/g, '-')}</strong>
                   </div>
                   <button
-                    onClick={() => navigator.clipboard.writeText(`https://sponsorable.gg/${publicSlug || pseudo.toLowerCase().replace(/\s+/g, '-')}`)}
+                    onClick={() => navigator.clipboard.writeText(`https://sponsorable.fr/${publicSlug || pseudo.toLowerCase().replace(/\s+/g, '-')}`)}
                     style={{ padding: '10px 16px', borderRadius: '10px', border: `1px solid ${BORDER}`, cursor: 'pointer', background: CARD, fontSize: '13px', fontWeight: 500, color: TEXT, whiteSpace: 'nowrap' }}
                   >
                     Copier

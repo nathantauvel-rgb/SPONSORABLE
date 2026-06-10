@@ -423,9 +423,9 @@ function DashboardContent() {
           <h3 style={{ fontSize: '16px', fontWeight: 600, color: TEXT, marginBottom: '16px', fontFamily: SYNE }}>Ton lien public</h3>
           {publicPseudo ? (
             <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <span style={{ fontSize: '14px', color: TEXT, fontWeight: 500, fontFamily: SYNE }}>sponsorable.gg/{publicPseudo}</span>
+              <span style={{ fontSize: '14px', color: TEXT, fontWeight: 500, fontFamily: SYNE }}>sponsorable.fr/{publicPseudo}</span>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.gg/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED }} title="Copier"><Copy size={15} /></button>
+                <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.fr/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED }} title="Copier"><Copy size={15} /></button>
                 <button onClick={() => router.push(`/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED }} title="Ouvrir"><ExternalLink size={15} /></button>
               </div>
             </div>

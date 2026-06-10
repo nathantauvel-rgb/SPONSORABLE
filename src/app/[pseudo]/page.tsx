@@ -148,6 +148,7 @@ const PublicMediaKitPage = () => {
   const isMobile = useIsMobile()
 
   const [remoteData, setRemoteData] = useState<Record<string, unknown> | null>(null)
+  const [notFound, setNotFound] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [printReady, setPrintReady] = useState(false)
   const isPrintMode = typeof window !== 'undefined'
@@ -158,8 +159,8 @@ const PublicMediaKitPage = () => {
     if (!slug) return
     fetch(`/api/public/${slug}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setRemoteData(data); setPrintReady(true); setLoaded(true) })
-      .catch(() => { setPrintReady(true); setLoaded(true) })
+      .then(data => { if (data) setRemoteData(data); else setNotFound(true); setPrintReady(true); setLoaded(true) })
+      .catch(() => { setNotFound(true); setPrintReady(true); setLoaded(true) })
 
     // RGPD : on ne déclenche la mesure d'audience que si le visiteur a explicitement consenti.
     if (!new URLSearchParams(window.location.search).has('print') && hasAnalyticsConsent()) {
@@ -207,7 +208,7 @@ const PublicMediaKitPage = () => {
     niches: effectiveProfile?.niche ? String(effectiveProfile.niche).split(/\s*[·]\s*/).map((s: string) => s.trim()).filter(Boolean) : creator.niches,
   }
 
-  const [form, setForm] = useState({ company: '', budget: '', type: '', message: '' })
+  const [form, setForm] = useState({ company: '', email: '', budget: '', type: '', message: '' })
   const [sent, setSent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -339,6 +340,25 @@ const PublicMediaKitPage = () => {
       <div style={{ minHeight: '100vh', background: theme.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         <div style={{ width: '28px', height: '28px', border: `3px solid ${theme.border}`, borderTopColor: theme.accent, borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+      </div>
+    )
+  }
+
+  // Pseudo inexistant ou page désactivée : vraie page "introuvable",
+  // on n'affiche JAMAIS le media kit de démonstration à un visiteur.
+  if (notFound) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0a0f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: 'var(--font-syne), system-ui, sans-serif' }}>
+        <div style={{ textAlign: 'center', maxWidth: '420px' }}>
+          <p style={{ fontSize: '13px', fontWeight: 700, color: '#22c55e', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '16px' }}>Sponsorable</p>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#f1f5f9', marginBottom: '12px', letterSpacing: '-0.02em' }}>Ce media kit n&apos;existe pas</h1>
+          <p style={{ fontSize: '15px', color: '#94a3b8', lineHeight: 1.7, marginBottom: '28px' }}>
+            Le lien est peut-être erroné, ou le créateur a désactivé sa page publique.
+          </p>
+          <a href="/" style={{ display: 'inline-block', background: '#22c55e', color: '#0a0a0f', padding: '12px 24px', borderRadius: '9999px', fontSize: '14px', fontWeight: 700, textDecoration: 'none' }}>
+            Créer mon media kit →
+          </a>
+        </div>
       </div>
     )
   }
@@ -837,7 +857,7 @@ const PublicMediaKitPage = () => {
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '860px', margin: '0 auto', padding: isMobile ? '56px 24px 48px' : '80px 40px 60px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isMobile ? '36px' : '56px', borderBottom: `1px solid ${theme.border}`, paddingBottom: '20px' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: theme.subtext }}>Media Kit</span>
-            <span style={{ fontSize: '11px', color: theme.subtext, letterSpacing: '0.06em' }}>sponsorable.gg</span>
+            <span style={{ fontSize: '11px', color: theme.subtext, letterSpacing: '0.06em' }}>sponsorable.fr</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto', gap: isMobile ? '24px' : '48px', alignItems: 'end', marginBottom: '32px' }}>
             <div>
@@ -869,7 +889,7 @@ const PublicMediaKitPage = () => {
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '860px', margin: '0 auto', padding: isMobile ? '56px 24px 48px' : '72px 40px 56px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isMobile ? '40px' : '64px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '18px' }}>
             <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>Media Kit</span>
-            <span style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>sponsorable.gg</span>
+            <span style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>sponsorable.fr</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 140px', gap: isMobile ? '24px' : '40px', alignItems: 'start', marginBottom: '40px' }}>
             <div>
@@ -940,6 +960,7 @@ const PublicMediaKitPage = () => {
               <p style={{ fontSize: '13px', color: mutedText, marginBottom: '28px', opacity: 0.8 }}>Décrivez votre besoin, la demande est transmise directement au créateur.</p>
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} noValidate>
                 <div><label htmlFor="c-company" style={labelStyle}>Entreprise / marque</label><input id="c-company" required placeholder="NordVPN, Corsair…" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} style={inputStyle} onFocus={focusStyle} onBlur={blurStyle} /></div>
+                <div><label htmlFor="c-email" style={labelStyle}>Email de contact</label><input id="c-email" type="email" required placeholder="prenom@marque.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} style={inputStyle} onFocus={focusStyle} onBlur={blurStyle} /></div>
                 <div>
                   <label htmlFor="c-budget" style={labelStyle}>Budget estimé</label>
                   <select id="c-budget" required value={form.budget} onChange={e => setForm({ ...form, budget: e.target.value })} style={{ ...inputStyle, cursor: 'pointer', colorScheme: isDark ? 'dark' : 'light' }} onFocus={focusStyle} onBlur={blurStyle}>
@@ -957,6 +978,10 @@ const PublicMediaKitPage = () => {
                 <div><label htmlFor="c-msg" style={labelStyle}>Message</label><textarea id="c-msg" required rows={4} placeholder={`Bonjour ${displayCreator.pseudo}, je représente… et je souhaite vous proposer…`} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6 }} onFocus={focusStyle} onBlur={blurStyle} /></div>
                 {submitError && <p style={{ fontSize: '13px', color: '#ef4444', textAlign: 'center', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', borderRadius: '8px' }}>{submitError}</p>}
                 <button type="submit" disabled={submitting} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: theme.accent, color: btnTextColor, border: 'none', borderRadius: '9999px', padding: '14px 28px', fontSize: '15px', fontWeight: 600, width: '100%', cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.7 : 1, transition: 'opacity 150ms ease' }} onMouseEnter={e => { if (!submitting) (e.currentTarget as HTMLElement).style.opacity = '0.85' }} onMouseLeave={e => { if (!submitting) (e.currentTarget as HTMLElement).style.opacity = '1' }}>{submitting ? 'Envoi en cours…' : 'Envoyer la proposition →'}</button>
+                <p style={{ fontSize: '12px', color: mutedText, textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
+                  Vos coordonnées sont transmises uniquement à {displayCreator.pseudo} pour répondre à votre demande.{' '}
+                  <a href="/confidentialite" target="_blank" rel="noopener" style={{ color: 'inherit', textDecoration: 'underline' }}>Politique de confidentialité</a>
+                </p>
               </form>
             </>
           )}

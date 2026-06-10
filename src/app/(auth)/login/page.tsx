@@ -279,7 +279,9 @@ function LoginForm() {
 
           <p style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', marginTop: '20px' }}>
             En continuant, tu acceptes nos{' '}
-            <span style={{ color: '#64748b', textDecoration: 'underline', cursor: 'pointer' }}>conditions d&apos;utilisation</span>.
+            <a href="/cgu" target="_blank" rel="noopener" style={{ color: '#64748b', textDecoration: 'underline' }}>conditions d&apos;utilisation</a>
+            {' '}et notre{' '}
+            <a href="/confidentialite" target="_blank" rel="noopener" style={{ color: '#64748b', textDecoration: 'underline' }}>politique de confidentialité</a>.
           </p>
         </div>
       </div>

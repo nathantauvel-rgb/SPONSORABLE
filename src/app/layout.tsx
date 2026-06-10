@@ -43,9 +43,25 @@ const cabinetGrotesk = localFont({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://sponsorable.fr'),
   title: 'Sponsorable — Ton media kit pour créateurs gaming',
   description:
     'Connecte YouTube et Twitch, génère un media kit professionnel et partage un lien à tes sponsors en 2 minutes.',
+  openGraph: {
+    type: 'website',
+    locale: 'fr_FR',
+    url: 'https://sponsorable.fr',
+    siteName: 'Sponsorable',
+    title: 'Sponsorable — Ton media kit pour créateurs gaming',
+    description:
+      'Connecte YouTube et Twitch, génère un media kit professionnel et partage un lien à tes sponsors en 2 minutes.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sponsorable — Ton media kit pour créateurs gaming',
+    description:
+      'Connecte YouTube et Twitch, génère un media kit professionnel et partage un lien à tes sponsors en 2 minutes.',
+  },
 }
 
 // Viewport mobile correct (zoom autorisé pour l'accessibilité).
