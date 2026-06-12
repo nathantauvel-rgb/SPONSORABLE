@@ -1,12 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Footer from '@/components/layout/Footer'
 import Navbar from '@/components/layout/Navbar'
 import Reveal, { useInView } from '@/components/ui/Reveal'
 import StatCard from '@/components/ui/StatCard'
 import { exampleCreators } from '@/data/mockData'
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  useInView as fmInView,
+  useReducedMotion,
+  animate as fmAnimate,
+} from 'framer-motion'
 
 /* ── Palette ──────────────────────────────────────────────── */
 const BG      = '#0d0d0f'
@@ -86,7 +95,23 @@ const PlanPrice = ({ monthly, yearly }: { monthly: number; yearly: boolean }) =>
 }
 
 /* ── Browser mockup (Hero) ───────────────────────────────── */
-const BrowserMockup = () => (
+const BrowserMockup = ({ inView = false }: { inView?: boolean }) => {
+  const [ytSubs, setYtSubs] = useState(0)
+
+  useEffect(() => {
+    if (!inView) return
+    const controls = fmAnimate(0, 87400, {
+      duration: 1.5,
+      delay: 0.35,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: v => setYtSubs(Math.round(v)),
+    })
+    return () => controls.stop()
+  }, [inView])
+
+  const displaySubs = ytSubs.toLocaleString('fr-FR')
+
+  return (
   <div style={{
     borderRadius: '10px', overflow: 'hidden',
     boxShadow: '0 24px 70px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4)',
@@ -124,7 +149,7 @@ const BrowserMockup = () => (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', borderTop: '3px solid #ef4444', borderRadius: '8px', padding: '16px' }}>
               <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px', fontWeight: 500 }}>YouTube</p>
-              <p style={{ fontSize: '32px', fontWeight: 800, color: '#0f172a', lineHeight: 1, letterSpacing: '-0.03em' }}>87 400</p>
+              <p style={{ fontSize: '32px', fontWeight: 800, color: '#0f172a', lineHeight: 1, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{displaySubs || '87 400'}</p>
               <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>abonnés</p>
               <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: '12px' }}>
                 <div><p style={{ fontSize: '13px', fontWeight: 700, color: ACCENT }}>54 000</p><p style={{ fontSize: '10px', color: '#94a3b8' }}>vues / vidéo</p></div>
@@ -168,7 +193,8 @@ const BrowserMockup = () => (
       </div>
     </div>
   </div>
-)
+  )
+}
 
 /* ── Faux PDF Canva (AVANT) ───────────────────────────────── */
 const StalePdfMock = () => (
@@ -209,6 +235,97 @@ const StalePdfMock = () => (
     </div>
   </div>
 )
+
+/* ── Hero : mockup animé Framer Motion ───────────────────── */
+const HeroMockupScene = () => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isInView = fmInView(containerRef, { once: true, amount: 0.3 })
+  const reduceMotion = useReducedMotion()
+
+  /* Tilt réactif à la souris */
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), { stiffness: 150, damping: 22 })
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [5, -5]), { stiffness: 150, damping: 22 })
+
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    mouseX.set((e.clientX - r.left) / r.width - 0.5)
+    mouseY.set((e.clientY - r.top) / r.height - 0.5)
+  }
+  const onMouseLeave = () => { mouseX.set(0); mouseY.set(0) }
+
+  return (
+    <div
+      ref={containerRef}
+      className="hero-mockup"
+      style={{ perspective: '1400px' }}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+    >
+      <div style={{ position: 'relative', width: '100%', maxWidth: '520px' }}>
+
+        {/* Entrée du mockup — puis flottement + tilt en continu */}
+        <motion.div
+          initial={{ opacity: 0, y: 60 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ type: 'spring', stiffness: 70, damping: 18 }}
+        >
+          <motion.div
+            animate={reduceMotion ? {} : { y: [0, -10, 0] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ rotateX, rotateY, transformStyle: 'preserve-3d' } as React.CSSProperties}
+          >
+            <BrowserMockup inView={isInView} />
+          </motion.div>
+        </motion.div>
+
+        {/* Chip "Stats vérifiées API" — pop-in décalé */}
+        <motion.div
+          aria-hidden
+          initial={{ opacity: 0, scale: 0.5, y: -10 }}
+          animate={isInView ? { opacity: 1, scale: 1, y: 0 } : {}}
+          transition={{ delay: 0.55, type: 'spring', stiffness: 380, damping: 20 }}
+          style={{
+            position: 'absolute', top: '-16px', right: '-14px', zIndex: 2,
+            display: 'flex', alignItems: 'center', gap: '7px',
+            background: '#15130c', border: '1px solid rgba(245,181,68,0.45)',
+            borderRadius: '9999px', padding: '7px 13px',
+            boxShadow: '0 10px 28px rgba(0,0,0,0.5)',
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="7" stroke={GOLD} strokeWidth="1.4" />
+            <path d="M5 8.2L7 10.2L11 6" stroke={GOLD} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: GOLD }}>Stats vérifiées API</span>
+        </motion.div>
+
+        {/* Notification sponsor — pop-in depuis la gauche */}
+        <motion.div
+          aria-hidden
+          initial={{ opacity: 0, scale: 0.5, x: 20 }}
+          animate={isInView ? { opacity: 1, scale: 1, x: 0 } : {}}
+          transition={{ delay: 0.75, type: 'spring', stiffness: 320, damping: 22 }}
+          style={{
+            position: 'absolute', bottom: '34px', left: '-38px', zIndex: 2,
+            background: CARD, border: `1px solid rgba(34,197,94,0.35)`,
+            borderRadius: '10px', padding: '12px 16px',
+            boxShadow: '0 18px 44px rgba(0,0,0,0.6)', maxWidth: '230px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '5px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, animation: 'livePulse 2s ease-out infinite' }} />
+            <span style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: ACCENT }}>Nouvelle proposition</span>
+          </div>
+          <p style={{ fontFamily: SYNE, fontSize: '13px', fontWeight: 600, color: TEXT, lineHeight: 1.4 }}>NordVPN · intégration vidéo</p>
+          <p style={{ fontFamily: NUM, fontSize: '11px', color: MUTED, marginTop: '3px' }}>budget 2 000 – 5 000 €</p>
+        </motion.div>
+
+      </div>
+    </div>
+  )
+}
 
 /* ── Carte lien vivant (APRÈS) ────────────────────────────── */
 const LiveKitCard = () => (
@@ -389,29 +506,8 @@ export default function LandingPage() {
             </Reveal>
           </div>
 
-          {/* Colonne mockup — mise en scène : perspective qui s'aplatit au survol,
-              et deux éléments qui débordent du cadre pour casser le rectangle figé */}
-          <div className="hero-mockup hero-mockup-stage">
-            <div style={{ position: 'relative', width: '100%', maxWidth: '520px' }}>
-              <div className="hero-mockup-tilt" style={{ animation: 'floatY 7s ease-in-out infinite' }}>
-                <BrowserMockup />
-              </div>
-              {/* Chip "vérifié" qui déborde en haut à droite (or = micro-valeur) */}
-              <div aria-hidden style={{ position: 'absolute', top: '-16px', right: '-14px', zIndex: 2, display: 'flex', alignItems: 'center', gap: '7px', background: '#15130c', border: '1px solid rgba(245,181,68,0.45)', borderRadius: '9999px', padding: '7px 13px', boxShadow: '0 10px 28px rgba(0,0,0,0.5)', animation: 'floatYOffset 8s ease-in-out infinite' }}>
-                <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke={GOLD} strokeWidth="1.4" /><path d="M5 8.2L7 10.2L11 6" stroke={GOLD} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: GOLD }}>Stats vérifiées API</span>
-              </div>
-              {/* Notification sponsor qui déborde en bas à gauche : le produit "vit" */}
-              <div aria-hidden style={{ position: 'absolute', bottom: '34px', left: '-38px', zIndex: 2, background: CARD, border: `1px solid rgba(34,197,94,0.35)`, borderRadius: '10px', padding: '12px 16px', boxShadow: '0 18px 44px rgba(0,0,0,0.6)', maxWidth: '230px', animation: 'floatYSlow 9s ease-in-out infinite' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '5px' }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, animation: 'livePulse 2s ease-out infinite' }} />
-                  <span style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: ACCENT }}>Nouvelle proposition</span>
-                </div>
-                <p style={{ fontFamily: SYNE, fontSize: '13px', fontWeight: 600, color: TEXT, lineHeight: 1.4 }}>NordVPN · intégration vidéo</p>
-                <p style={{ fontFamily: NUM, fontSize: '11px', color: MUTED, marginTop: '3px' }}>budget 2 000 – 5 000 €</p>
-              </div>
-            </div>
-          </div>
+          {/* Colonne mockup — Framer Motion : entrée spring, tilt souris, chips staggerées */}
+          <HeroMockupScene />
         </div>
       </section>
 

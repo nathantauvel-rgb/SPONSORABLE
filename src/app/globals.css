@@ -121,10 +121,6 @@
 }
 
 /* ── V3 Neon Arena — motion ── */
-@keyframes floatY {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-7px); }
-}
 @keyframes haloDrift {
   0%, 100% { transform: translate(0, 0); }
   50% { transform: translate(24px, -18px); }
@@ -401,29 +397,6 @@
   mask-image: radial-gradient(ellipse 70% 65% at 65% 35%, black 0%, transparent 70%);
 }
 
-/* Mockup hero : perspective 3D qui s'aplatit au survol (produit qu'on "prend en main") */
-.hero-mockup-stage {
-  perspective: 1400px;
-}
-.hero-mockup-tilt {
-  transform: rotateY(-7deg) rotateX(3deg);
-  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
-  transform-style: preserve-3d;
-}
-.hero-mockup-stage:hover .hero-mockup-tilt {
-  transform: rotateY(0deg) rotateX(0deg);
-}
-
-/* Flottements déphasés des éléments qui débordent du mockup */
-@keyframes floatYSlow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-@keyframes floatYOffset {
-  0%, 100% { transform: translateY(-4px); }
-  50% { transform: translateY(6px); }
-}
-
 /* "Comment ça marche" : timeline + visuel résultat côte à côte sur desktop */
 .howit-grid {
   display: grid;
@@ -536,8 +509,5 @@
   }
   .draw-line {
     transform: scaleX(1);
-  }
-  .hero-mockup-tilt {
-    transform: none;
   }
 }
