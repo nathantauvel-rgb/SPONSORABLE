@@ -72,6 +72,8 @@ export interface ScoreInputs {
   channelPublishedAt?: string | null
   /** Complétude du profil éditorial, 0..1 (bio, niche, formats…). */
   profileCompleteness: number
+  /** Followers Twitch (optionnel) — déclenche un bonus jusqu'à +8 pts. */
+  twitchFollowers?: number | null
   /** Horodatage de référence (injectable pour des tests déterministes). */
   now?: number
 }
@@ -79,11 +81,11 @@ export interface ScoreInputs {
 // ─── Constantes de barème (faciles à ajuster) ───────────────────────────────
 
 const BASE_WEIGHTS: Record<CriterionKey, number> = {
-  engagement: 0.3,
-  viewsToSubs: 0.25,
-  regularity: 0.2,
-  growth: 0.15,
-  retention: 0.1,
+  engagement:  0.35, // critère #1 pour les marques
+  viewsToSubs: 0.15, // réduit, moins déterminant
+  regularity:  0.25, // remonté, l'activité compte beaucoup
+  growth:      0.20, // remonté, une audience qui grandit = valeur future
+  retention:   0.05, // gardé mais minoré, souvent indisponible
 }
 
 /** Bonus maximum apporté par la complétude du profil (en points de score). */
@@ -137,6 +139,16 @@ function statusFromScore(score: number): Exclude<CriterionStatus, 'unavailable'>
   if (score >= STATUS_STRONG) return 'strong'
   if (score >= STATUS_WEAK) return 'improve'
   return 'weak'
+}
+
+/** Bonus Twitch par paliers de followers. */
+function calcTwitchBonus(followers: number | null | undefined): number {
+  if (!followers || followers <= 0) return 0
+  if (followers >= 50000) return 8
+  if (followers >= 20000) return 6
+  if (followers >= 5000)  return 4
+  if (followers >= 1000)  return 2
+  return 0
 }
 
 // ─── Calcul des valeurs métier (formules du barème) ─────────────────────────
@@ -291,10 +303,13 @@ export function computeSponsorScore(inputs: ScoreInputs): SponsorScore {
     return BASE_WEIGHTS[k] / availableWeightSum
   }
 
-  // 4. Score pondéré + bonus complétude (≤ 5 pts, jamais pénalisant)
+  // 4. Score pondéré + bonus Twitch + bonus complétude (jamais pénalisants)
   const weightedCore = available.reduce((sum, k) => sum + (normalized[k] as number) * effectiveWeight(k), 0)
+  // Bonus Twitch : jusqu'à +8 pts si followers Twitch disponibles
+  // Paliers : 1k→+2, 5k→+4, 20k→+6, 50k→+8
+  const twitchBonus = calcTwitchBonus(inputs.twitchFollowers)
   const profileBonus = clamp(inputs.profileCompleteness, 0, 1) * PROFILE_BONUS_MAX
-  const globalScore = clamp(round(weightedCore + (available.length ? profileBonus : 0)))
+  const globalScore = clamp(round(weightedCore + (available.length ? twitchBonus + profileBonus : 0)))
 
   // 5. Breakdown détaillé (les 5 critères, même indisponibles)
   const breakdown: CriterionResult[] = keys.map(k => {

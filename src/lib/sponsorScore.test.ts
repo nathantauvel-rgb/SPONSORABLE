@@ -162,6 +162,14 @@ test('régularité : chaîne neuve sans historique → indisponible (pas pénali
   assert.equal(r.breakdown.find(b => b.criteria === 'regularity')!.status, 'unavailable')
 })
 
+test('bonus Twitch : 50k followers → +8 pts', () => {
+  // profileCompleteness: 0 pour rester loin du plafond et isoler l'effet Twitch
+  const base = strongInputs({ profileCompleteness: 0 })
+  const without = computeSponsorScore(base)
+  const withTwitch = computeSponsorScore({ ...base, twitchFollowers: 50000 })
+  assert.equal(withTwitch.globalScore - without.globalScore, 8)
+})
+
 test('statsToScoreInputs : champs API string → nombres, snapshot J-30 absent géré', () => {
   const inputs = statsToScoreInputs(
     {
