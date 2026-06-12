@@ -131,14 +131,14 @@ const BrowserMockup = ({ inView = false }: { inView?: boolean }) => {
       <div style={{ animation: 'scrollMockup 7s ease-in-out infinite' }}>
         {/* Profil */}
         <div style={{ padding: '28px 24px 20px', textAlign: 'center', background: 'white' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: ACCENT, color: 'white', fontSize: '18px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', boxShadow: '0 0 0 3px rgba(34,197,94,0.15)' }}>AP</div>
-          <p style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>AlexPlays</p>
+          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: ACCENT, color: 'white', fontSize: '18px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', boxShadow: '0 0 0 3px rgba(34,197,94,0.15)' }}>VC</div>
+          <p style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>Valcrest</p>
           <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '10px' }}>
-            {['Gaming', 'Minecraft', 'FPS'].map(n => (
+            {['Gaming', 'Streaming', 'FPS'].map(n => (
               <span key={n} style={{ background: 'rgba(134,239,172,0.2)', color: '#15803d', border: '1px solid rgba(134,239,172,0.4)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 500 }}>{n}</span>
             ))}
           </div>
-          <p style={{ fontSize: '12px', color: '#475569', lineHeight: 1.5, maxWidth: '300px', margin: '0 auto' }}>Créateur gaming FR depuis 2019. Minecraft, FPS compétitif et streams quotidiens.</p>
+          <p style={{ fontSize: '12px', color: '#475569', lineHeight: 1.5, maxWidth: '300px', margin: '0 auto' }}>Créateur gaming FR, spécialisé FPS compétitif et live streaming quotidien depuis 2020.</p>
         </div>
         {/* Stats */}
         <div style={{ padding: '0 16px 16px', background: '#fff' }}>
@@ -153,24 +153,23 @@ const BrowserMockup = ({ inView = false }: { inView?: boolean }) => {
               <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>abonnés</p>
               <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: '12px' }}>
                 <div><p style={{ fontSize: '13px', fontWeight: 700, color: ACCENT }}>54 000</p><p style={{ fontSize: '10px', color: '#94a3b8' }}>vues / vidéo</p></div>
-                <div><p style={{ fontSize: '13px', fontWeight: 700, color: ACCENT }}>+18%</p><p style={{ fontSize: '10px', color: '#94a3b8' }}>croissance</p></div>
+                <div><p style={{ fontSize: '13px', fontWeight: 700, color: ACCENT }}>4,2 %</p><p style={{ fontSize: '10px', color: '#94a3b8' }}>engagement</p></div>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {[
-                { name: 'Twitch',    color: '#9146ff', value: '12 300', label: 'viewers' },
-                { name: 'TikTok',   color: '#000000', value: '34 200', label: 'abonnés' },
-                { name: 'Instagram',color: '#e1306c', value: '18 500', label: 'abonnés' },
-              ].map(p => (
-                <div key={p.name} style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', borderLeft: `3px solid ${p.color}`, borderRadius: '8px', padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 500 }}>{p.name}</p>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{p.value}</p>
-                    <p style={{ fontSize: '9px', color: '#94a3b8' }}>{p.label}</p>
-                  </div>
+              <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', borderLeft: '3px solid #9146ff', borderRadius: '8px', padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 500 }}>Twitch</p>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>40 500</p>
+                  <p style={{ fontSize: '9px', color: '#94a3b8' }}>followers</p>
                 </div>
-              ))}
+              </div>
             </div>
+          </div>
+          {/* Badge vérifié */}
+          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span style={{ fontSize: '10px', color: ACCENT, fontWeight: 700 }}>✓</span>
+            <span style={{ fontSize: '10px', color: ACCENT, fontWeight: 600, letterSpacing: '0.01em' }}>Vérifié via API</span>
           </div>
         </div>
         {/* Audience */}
@@ -188,6 +187,20 @@ const BrowserMockup = ({ inView = false }: { inView?: boolean }) => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+        {/* Partenariats passés */}
+        <div style={{ padding: '16px', background: '#fff', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+          <p style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginBottom: '12px' }}>Partenariats passés</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '36px', height: '36px', background: '#1c1f26', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: ACCENT }}>RZ</span>
+            </div>
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>Razer</p>
+              <p style={{ fontSize: '11px', color: '#64748b' }}>Intégration produit · 2 vidéos</p>
+              <p style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>Jan 2025</p>
+            </div>
           </div>
         </div>
       </div>
@@ -280,47 +293,6 @@ const HeroMockupScene = () => {
           </motion.div>
         </motion.div>
 
-        {/* Chip "Stats vérifiées API" — pop-in décalé */}
-        <motion.div
-          aria-hidden
-          initial={{ opacity: 0, scale: 0.5, y: -10 }}
-          animate={isInView ? { opacity: 1, scale: 1, y: 0 } : {}}
-          transition={{ delay: 0.55, type: 'spring', stiffness: 380, damping: 20 }}
-          style={{
-            position: 'absolute', top: '-16px', right: '-14px', zIndex: 2,
-            display: 'flex', alignItems: 'center', gap: '7px',
-            background: '#15130c', border: '1px solid rgba(245,181,68,0.45)',
-            borderRadius: '9999px', padding: '7px 13px',
-            boxShadow: '0 10px 28px rgba(0,0,0,0.5)',
-          }}
-        >
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="7" stroke={GOLD} strokeWidth="1.4" />
-            <path d="M5 8.2L7 10.2L11 6" stroke={GOLD} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: GOLD }}>Stats vérifiées API</span>
-        </motion.div>
-
-        {/* Notification sponsor — pop-in depuis la gauche */}
-        <motion.div
-          aria-hidden
-          initial={{ opacity: 0, scale: 0.5, x: 20 }}
-          animate={isInView ? { opacity: 1, scale: 1, x: 0 } : {}}
-          transition={{ delay: 0.75, type: 'spring', stiffness: 320, damping: 22 }}
-          style={{
-            position: 'absolute', bottom: '34px', left: '-38px', zIndex: 2,
-            background: CARD, border: `1px solid rgba(34,197,94,0.35)`,
-            borderRadius: '10px', padding: '12px 16px',
-            boxShadow: '0 18px 44px rgba(0,0,0,0.6)', maxWidth: '230px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '5px' }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, animation: 'livePulse 2s ease-out infinite' }} />
-            <span style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: ACCENT }}>Nouvelle proposition</span>
-          </div>
-          <p style={{ fontFamily: SYNE, fontSize: '13px', fontWeight: 600, color: TEXT, lineHeight: 1.4 }}>NordVPN · intégration vidéo</p>
-          <p style={{ fontFamily: NUM, fontSize: '11px', color: MUTED, marginTop: '3px' }}>budget 2 000 – 5 000 €</p>
-        </motion.div>
 
       </div>
     </div>
