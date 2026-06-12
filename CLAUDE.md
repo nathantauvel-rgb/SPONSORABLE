@@ -98,7 +98,9 @@ En 2 minutes, un créateur connecte ses plateformes et obtient un lien public à
 - **Paiement** : Stripe (abonnement Pro)
 - **Email** : Resend
 - **Style** : CSS-in-JS inline (pas de Tailwind, pas de composants UI tiers)
-- **Typographie** : Space Grotesk (titres, var `--font-sans`) + Hanken Grotesk (corps, var `--font-body`) — importées dans `layout.tsx`. Plus jamais d'Inter (hardcode supprimé de `globals.css`).
+- **Typographie** (refonte juin 2026) : **Space Grotesk** (titres, var `--font-sans`) + **Inter** (corps/UI, var `--font-body`) + **Martian Mono** (chiffres métriques, var `--font-num`) — toutes via `next/font/google` dans `layout.tsx`. Syne, Hanken Grotesk et Cabinet Grotesk ont été retirés.
+  - **Mécanisme de bascule** : `globals.css` aliase les anciens noms de variables → `--font-syne: var(--font-body)` (Inter) et `--font-display: var(--font-sans)` (Space Grotesk). Donc les constantes existantes (`SYNE`, `DISPLAY` dans `ds.ts` et les pages) continuent de marcher sans réécriture, et pointent désormais vers Inter/Space Grotesk.
+  - Les littéraux de police morts (`"Syne"`, `"Cabinet Grotesk"`) ont été retirés des constantes : elles mènent maintenant directement avec `var(--font-…)`.
 - **Hébergement** : Vercel (plan Hobby), auto-deploy sur push `main`
 
 ---

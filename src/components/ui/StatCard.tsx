@@ -66,7 +66,7 @@ export default function StatCard({ target, suffix = '', prefix = '', label }: St
         fontSize: '12px',
         color: '#555555',
         lineHeight: 1.5,
-        fontFamily: '"Syne", system-ui, sans-serif',
+        fontFamily: 'var(--font-syne), system-ui, sans-serif',
       }}>
         {label}
       </p>

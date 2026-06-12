@@ -13,8 +13,9 @@ const ACCENT = '#22c55e'
 const TEXT = '#ffffff'
 const MUTED = '#888888'
 const BORDER = '#222222'
-const SYNE = '"Syne", var(--font-syne), system-ui, sans-serif'
-const DISPLAY = '"Cabinet Grotesk", var(--font-display), system-ui, sans-serif'
+const AMBER = '#d97706'
+const SYNE = 'var(--font-syne), system-ui, sans-serif'
+const DISPLAY = 'var(--font-display), system-ui, sans-serif'
 const NUM = '"Martian Mono", var(--font-num), ui-monospace, monospace'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -58,25 +59,22 @@ type Dimension = {
 
 type Priority = {
   title: string
-  description: string
+  why: string
   gain: number
+  time: string
   cta: string
   href: string
 }
 
+type CategoryTier = 'now' | 'soon' | 'later'
 type BrandCategory = {
   name: string
-  description: string
-  accessible: boolean
+  reason: string
+  tier: CategoryTier
+  missing?: string
 }
 
-type SnapshotItem = {
-  label: string
-  value: string
-  done: boolean
-}
-
-// ─── Score calculation ─────────────────────────────────────────────────────────
+// ─── Score calculation (moteur inchangé) ──────────────────────────────────────
 
 function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
   total: number
@@ -93,9 +91,9 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
   const twFollowers = parseInt(String(tw?.stats?.followerCount ?? '0')) || 0
   const totalAudience = ytSubs + twFollowers
 
-  // 1. Complétude du profil (25 pts)
+  // 1. Complétude du profil (22 pts)
   let profileScore = 0
-  let profileComments: string[] = []
+  const profileComments: string[] = []
   const hasBio = (profile.bio ?? '').length > 20
   const hasNiche = (profile.niche ?? '').length > 0
   const hasFormats = (profile.formats ?? []).length > 0
@@ -114,12 +112,12 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
   const profileCompleteness = Math.round((completedCount / completenessItems.length) * 100)
 
   const profileDimComment = profileComments.length === 0
-    ? 'Ton profil est bien renseigné — bon signal pour les marques'
+    ? 'Profil complet — bon signal pour les marques'
     : profileComments.length <= 2
-      ? `Il te manque : ${profileComments.join(', ')}`
-      : 'Plusieurs éléments clés du profil sont encore vides'
+      ? `Manque : ${profileComments.join(', ')}`
+      : 'Plusieurs éléments clés encore vides'
 
-  // 2. Présence plateforme (20 pts)
+  // 2. Présence plateforme (15 pts)
   let platformScore = 0
   const ytConnected = !!yt
   const twConnected = !!tw
@@ -128,12 +126,12 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
   if (ytConnected && twConnected) platformScore += 3
 
   const platformComment = ytConnected && twConnected
-    ? 'Présence multi-plateforme vérifiée via OAuth'
-    : ytConnected ? 'YouTube connecté — ajoute Twitch pour renforcer ton profil'
-    : twConnected ? 'Twitch connecté — ajoute YouTube pour renforcer ton profil'
-    : 'Aucune plateforme connectée — les marques ont besoin de stats vérifiées'
+    ? 'Multi-plateforme vérifiée via OAuth'
+    : ytConnected ? 'YouTube connecté — Twitch renforcerait le profil'
+    : twConnected ? 'Twitch connecté — YouTube renforcerait le profil'
+    : 'Aucune stat vérifiée disponible'
 
-  // 3. Taille d'audience (20 pts)
+  // 3. Taille d'audience (13 pts)
   let audienceScore = 0
   if (totalAudience >= 500000) audienceScore = 13
   else if (totalAudience >= 100000) audienceScore = 11
@@ -144,12 +142,12 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
   else if (totalAudience >= 100) audienceScore = 1
 
   const audienceComment = totalAudience >= 10000
-    ? 'Audience solide — tu entres dans les radars des marques gaming'
+    ? 'Audience solide — dans les radars des marques gaming'
     : totalAudience >= 1000
-      ? 'Audience en croissance — les premières opportunités sont accessibles'
+      ? 'Audience en croissance — premières opportunités jouables'
       : totalAudience > 0
-        ? 'Audience encore faible — les petits programmes d\'affiliation restent accessibles'
-        : 'Pas encore de données d\'audience disponibles'
+        ? 'Audience petite — l\'affiliation reste accessible'
+        : 'Pas de données d\'audience'
 
   // 4. Activité & régularité (20 pts) — la régularité prouve un partenaire fiable
   let activityScore = 0
@@ -169,11 +167,11 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
   activityScore = Math.min(20, activityScore)
 
   const activityComment = activityScore >= 14
-    ? 'Contenu régulier visible — bon indicateur d\'activité pour les marques'
+    ? 'Contenu régulier visible — bon indicateur d\'activité'
     : activityScore >= 7
-      ? 'Contenu récent présent — une régularité plus visible renforcerait ton profil'
+      ? 'Contenu récent présent — la régularité peut être plus visible'
       : (ytConnected || twConnected)
-        ? 'Peu de contenu récent visible — les marques attendent des preuves d\'activité'
+        ? 'Peu de contenu récent — les marques attendent des preuves d\'activité'
         : 'Connecte une plateforme pour rendre ton contenu visible'
 
   // 5. Engagement & qualité d'audience (25 pts) — le vrai levier de négociation.
@@ -217,12 +215,12 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
   engagementScore = Math.min(25, engagementScore)
 
   const engagementComment = engagementScore >= 18
-    ? 'Excellent engagement — ton audience interagit fortement, c\'est ton meilleur argument de négo'
+    ? 'Engagement excellent — ton meilleur argument de négo'
     : engagementScore >= 10
-      ? 'Engagement correct — c\'est le levier qui justifie tes tarifs auprès des marques'
+      ? 'Engagement correct — le levier qui justifie tes tarifs'
       : (ytConnected || twConnected)
-        ? 'Engagement à valoriser — la qualité d\'audience compte plus que la taille pour négocier'
-        : 'Pas de données d\'engagement disponibles'
+        ? 'Engagement non démontré — il compte plus que la taille pour négocier'
+        : 'Pas de données d\'engagement'
 
   // 6. Sponsor readiness (5 pts)
   let readinessScore = 0
@@ -231,17 +229,17 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
   if (profile.targetBrands) readinessScore += 1
 
   const readinessComment = readinessScore >= 4
-    ? 'Profil opérationnel — les marques peuvent te contacter facilement'
+    ? 'Contact facile — profil opérationnel'
     : readinessScore >= 2
-      ? 'Quelques éléments de contact sont en place'
-      : 'Aucune disponibilité ni lien de contact renseigné'
+      ? 'Prise de contact partiellement en place'
+      : 'Ni disponibilité ni lien de contact renseignés'
 
   const dimensions: Dimension[] = [
     { key: 'profile', label: 'Complétude du profil', score: profileScore, max: 22, comment: profileDimComment },
     { key: 'platform', label: 'Présence plateforme', score: platformScore, max: 15, comment: platformComment },
     { key: 'audience', label: 'Taille d\'audience', score: audienceScore, max: 13, comment: audienceComment },
     { key: 'activity', label: 'Activité & régularité', score: activityScore, max: 20, comment: activityComment },
-    { key: 'engagement', label: 'Engagement & qualité d\'audience', score: engagementScore, max: 25, comment: engagementComment },
+    { key: 'engagement', label: 'Engagement', score: engagementScore, max: 25, comment: engagementComment },
     { key: 'readiness', label: 'Disponibilité sponsor', score: readinessScore, max: 5, comment: readinessComment },
   ]
 
@@ -250,200 +248,195 @@ function calcScoreDetailed(platforms: PlatformData[], profile: ProfileData): {
   return { total, dimensions, ytSubs, twFollowers, totalAudience, profileCompleteness }
 }
 
-// ─── Score level ───────────────────────────────────────────────────────────────
+// ─── Verdict opérationnel ──────────────────────────────────────────────────────
 
-function getScoreLevel(score: number, profile: ProfileData, hasPlatforms: boolean): {
-  label: string
-  color: string
-  interpretation: string
-} {
+type Verdict = { status: string; color: string; verdict: string }
+
+function getVerdict(score: number): Verdict {
   if (score >= 76) return {
-    label: 'Profil très attractif',
+    status: 'Prêt pour le premium',
     color: '#16a34a',
-    interpretation: 'Ton profil est complet et performant. Tu es bien positionné pour recevoir des propositions de partenariats sérieuses — et pour les négocier en position de force.',
+    verdict: 'Tu peux viser des marques premium et des deals récurrents.',
   }
   if (score >= 51) return {
-    label: 'Profil sponsor-ready',
+    status: 'Sponsor-ready',
     color: '#0284c7',
-    interpretation: 'Ton profil est solide et déjà exploitable par les marques. Quelques ajustements ciblés peuvent significativement augmenter ta valeur perçue et le nombre de propositions entrantes.',
+    verdict: 'Prêt à répondre aux demandes entrantes — et à démarcher.',
   }
-  if (score >= 26) {
-    const missingNiche = !(profile.niche ?? '').length
-    const missingPlatform = !hasPlatforms
-    if (missingPlatform) return {
-      label: 'Profil en montée',
-      color: '#d97706',
-      interpretation: 'Ton profil existe mais les marques ont besoin de stats vérifiées pour te prendre au sérieux. Connecter YouTube ou Twitch est la priorité absolue.',
-    }
-    if (missingNiche) return {
-      label: 'Profil en montée',
-      color: '#d97706',
-      interpretation: 'Ton profil est actif mais encore trop générique. Définir ta niche et ta phrase de positionnement te différencie immédiatement auprès des marques.',
-    }
-    return {
-      label: 'Profil en montée',
-      color: '#d97706',
-      interpretation: 'Ton profil est actif et déjà exploitable, mais il manque encore des preuves de performance et quelques éléments de présentation pour attirer davantage de marques.',
-    }
+  if (score >= 26) return {
+    status: 'En construction',
+    color: AMBER,
+    verdict: 'Pas encore prêt pour démarcher à froid. L\'affiliation reste jouable.',
   }
   return {
-    label: 'Profil à structurer',
+    status: 'À structurer',
     color: '#64748b',
-    interpretation: 'Ton profil est encore en construction. Les marques ont besoin de plusieurs signaux de confiance avant de te contacter. Commence par les actions prioritaires ci-dessous.',
+    verdict: 'Les marques n\'ont pas encore assez de signaux pour te prendre au sérieux.',
   }
 }
 
-// ─── Priorities ───────────────────────────────────────────────────────────────
+// Frein n°1 : la dimension où il manque le plus de points — en version chip (2-3 mots)
+const BLOCKER_SHORT: Record<string, string> = {
+  profile: 'Profil incomplet',
+  platform: 'Stats non vérifiées',
+  audience: 'Audience petite',
+  activity: 'Activité non visible',
+  engagement: 'Engagement à prouver',
+  readiness: 'Contact difficile',
+}
+
+function getMainBlocker(dimensions: Dimension[]): { short: string; missing: number } | null {
+  const sorted = [...dimensions].sort((a, b) => (b.max - b.score) - (a.max - a.score))
+  const top = sorted[0]
+  if (!top || top.max - top.score <= 2) return null
+  return { short: BLOCKER_SHORT[top.key] ?? top.label, missing: top.max - top.score }
+}
+
+// ─── Paliers ───────────────────────────────────────────────────────────────────
+
+const TIERS = [
+  { min: 26, label: 'En construction', unlocks: 'l\'affiliation et les premières catégories de marques' },
+  { min: 51, label: 'Sponsor-ready', unlocks: 'les demandes entrantes sérieuses et le démarchage ciblé' },
+  { min: 76, label: 'Premium', unlocks: 'les marques premium et les partenariats récurrents' },
+]
+
+function getNextTier(score: number) {
+  return TIERS.find(t => score < t.min) ?? null
+}
+
+// ─── Étapes du plan (priorités actionnables) ───────────────────────────────────
 
 function buildPriorities(platforms: PlatformData[], profile: ProfileData): Priority[] {
   const yt = platforms.find(p => p.type === 'youtube')
   const tw = platforms.find(p => p.type === 'twitch')
   const priorities: Priority[] = []
 
-  // Tier 1 — impact fort / visible immédiatement
   if (!yt) priorities.push({
-    title: 'Connecter YouTube',
-    description: 'Des stats YouTube vérifiées sont le signal de confiance numéro un pour les marques gaming.',
-    gain: 8,
-    cta: 'Connecter YouTube',
-    href: '/dashboard',
+    title: 'Connecte YouTube',
+    why: 'Le signal de confiance n°1 des marques gaming.',
+    gain: 8, time: '2 min', cta: 'Connecter', href: '/dashboard',
   })
   if (!tw) priorities.push({
-    title: 'Connecter Twitch',
-    description: 'Une présence Twitch authentifiée montre une activité live et renforce ta crédibilité multi-plateforme.',
-    gain: 8,
-    cta: 'Connecter Twitch',
-    href: '/dashboard',
+    title: 'Connecte Twitch',
+    why: 'Prouve une activité live, vérifiée via OAuth.',
+    gain: 8, time: '2 min', cta: 'Connecter', href: '/dashboard',
   })
   if (!(profile.niche ?? '').length) priorities.push({
-    title: 'Définir ta niche',
-    description: 'Les marques cherchent des créateurs dans des niches précises. Sans niche définie, ton profil est invisible dans leurs recherches.',
-    gain: 5,
-    cta: 'Définir ma niche',
-    href: '/dashboard/mediakit',
+    title: 'Définis ta niche',
+    why: 'Sans niche, les marques ne savent pas où te ranger.',
+    gain: 5, time: '1 min', cta: 'Définir', href: '/dashboard/mediakit',
   })
   if (!(profile.positioningPhrase ?? '').length) priorities.push({
-    title: 'Ajouter ta phrase de positionnement',
-    description: 'Une phrase sponsor-friendly bien formulée peut faire la différence dans la première impression d\'une marque.',
-    gain: 4,
-    cta: 'Rédiger ma phrase',
-    href: '/dashboard/mediakit',
+    title: 'Écris ta phrase de positionnement',
+    why: 'C\'est la première phrase qu\'une marque lit sur toi.',
+    gain: 4, time: '5 min', cta: 'Rédiger', href: '/dashboard/mediakit',
   })
   if ((profile.bio ?? '').length < 50) priorities.push({
-    title: 'Compléter ta bio',
-    description: 'Une bio complète montre un créateur professionnel et sérieux — c\'est souvent la première chose qu\'une marque lit.',
-    gain: 5,
-    cta: 'Compléter ma bio',
-    href: '/dashboard/mediakit',
+    title: 'Complète ta bio',
+    why: 'Un profil vide se négocie mal.',
+    gain: 5, time: '5 min', cta: 'Compléter', href: '/dashboard/mediakit',
   })
 
-  // Tier 2 — impact contenu
   const hasContent = (yt?.stats?.recentVideos?.length ?? 0) > 0 || (tw?.stats?.recentStreams?.length ?? 0) > 0
   if (!hasContent && (yt || tw)) priorities.push({
-    title: 'Rendre ton contenu récent visible',
-    description: 'Les marques veulent voir des exemples de ton travail avant de te contacter. Du contenu récent rassure immédiatement.',
-    gain: 6,
-    cta: 'Gérer mon contenu',
-    href: '/dashboard/mediakit',
+    title: 'Rends ton contenu récent visible',
+    why: 'Les marques veulent des preuves d\'activité avant de payer.',
+    gain: 6, time: '10 min', cta: 'Gérer', href: '/dashboard/mediakit',
   })
   if (!(profile.formats ?? []).length) priorities.push({
-    title: 'Choisir tes formats de collaboration',
-    description: 'Indiquer les formats que tu acceptes (intégration, live sponsorisé, ambassadeur…) aide les marques à te faire une proposition adaptée.',
-    gain: 4,
-    cta: 'Choisir mes formats',
-    href: '/dashboard/mediakit',
+    title: 'Choisis tes formats de collab',
+    why: 'Aide une marque à te faire une offre adaptée du premier coup.',
+    gain: 4, time: '1 min', cta: 'Choisir', href: '/dashboard/mediakit',
   })
   if (!(profile.partnerships ?? []).length) priorities.push({
-    title: 'Ajouter des partenariats passés',
-    description: 'Des références de partenariats existants prouvent ton expérience et réduisent le risque perçu pour une marque.',
-    gain: 3,
-    cta: 'Ajouter des références',
-    href: '/dashboard/mediakit',
+    title: 'Ajoute tes partenariats passés',
+    why: 'Des références réduisent le risque perçu par la marque.',
+    gain: 3, time: '5 min', cta: 'Ajouter', href: '/dashboard/mediakit',
   })
-
-  // Tier 3 — logistique
   if (!profile.availableForCollabs) priorities.push({
-    title: 'Activer ta disponibilité',
-    description: 'Indique que tu es ouvert aux collaborations — signal simple qui change la perception immédiate de ton profil.',
-    gain: 2,
-    cta: 'Activer ma disponibilité',
-    href: '/dashboard/mediakit',
+    title: 'Active ta disponibilité',
+    why: 'Signale que tu es ouvert aux deals — effet immédiat.',
+    gain: 2, time: '30 s', cta: 'Activer', href: '/dashboard/mediakit',
   })
   if (!profile.calendlyUrl) priorities.push({
-    title: 'Ajouter un lien Calendly',
-    description: 'Faciliter la prise de contact réduit la friction et augmente le taux de conversion des marques intéressées.',
-    gain: 2,
-    cta: 'Ajouter Calendly',
-    href: '/dashboard/mediakit',
+    title: 'Ajoute un lien Calendly',
+    why: 'Réduit la friction entre « intéressée » et « en call ».',
+    gain: 2, time: '2 min', cta: 'Ajouter', href: '/dashboard/mediakit',
   })
 
   return priorities.slice(0, 3)
 }
 
-// ─── Brand categories ──────────────────────────────────────────────────────────
+// ─── Opportunités sponsor en 3 tiers ───────────────────────────────────────────
+
+const fmtK = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n)
 
 function getBrandCategories(totalAudience: number, score: number): BrandCategory[] {
-  const all: (BrandCategory & { minAudience: number })[] = [
-    { name: 'Affiliation logiciel & outils', description: 'VPN, outils créateur, logiciels — accessible dès les premières centaines d\'abonnés.', accessible: false, minAudience: 0 },
-    { name: 'Energy drink & nutrition', description: 'GFuel, Monster Gaming… Des programmes très actifs sur les créateurs gaming de toute taille.', accessible: false, minAudience: 0 },
-    { name: 'Musique libre de droits', description: 'Epidemic Sound, Artlist — affiliation accessible et utile pour tout créateur qui publie des vidéos.', accessible: false, minAudience: 0 },
-    { name: 'Communautés & plateformes', description: 'Discord, Kick… Programmes partenaires ouverts aux créateurs avec une communauté active.', accessible: false, minAudience: 500 },
-    { name: 'Périphériques entrée de gamme', description: 'SteelSeries, HyperX, Corsair — premiers programmes accessibles avec une audience gaming engagée.', accessible: false, minAudience: 500 },
-    { name: 'Streaming gear', description: 'Elgato, Blue Microphones — matériel de production, souvent proposé en dotation ou partenariat.', accessible: false, minAudience: 2500 },
-    { name: 'Chaises & setup gaming', description: 'DXRacer, Secretlab — partenariats courants chez les streamers avec une audience solide.', accessible: false, minAudience: 2500 },
-    { name: 'Jeux service live & MMORPG', description: 'Collaborations de lancement, dotations de clés, accès early access — courant dans le gaming FR.', accessible: false, minAudience: 2500 },
-    { name: 'Hardware & composants', description: 'MSI, ASUS ROG, Intel — marques premium qui ciblent les créateurs avec une audience technique fidèle.', accessible: false, minAudience: 10000 },
-    { name: 'Télécom & tech grand public', description: 'SFR Gaming, Free, etc. — partenariats institutionnels, audience large et diversifiée attendue.', accessible: false, minAudience: 10000 },
-    { name: 'VPN premium', description: 'NordVPN, ExpressVPN — programmes généreux mais qui ciblent des créateurs avec une base établie.', accessible: false, minAudience: 10000 },
+  const all: { name: string; reason: string; minAudience: number }[] = [
+    { name: 'Affiliation logiciel & outils', reason: 'VPN, outils créateur — ouvert dès les premières centaines d\'abonnés.', minAudience: 0 },
+    { name: 'Energy drink & nutrition', reason: 'Programmes très actifs sur le gaming, toutes tailles.', minAudience: 0 },
+    { name: 'Musique libre de droits', reason: 'Epidemic Sound, Artlist — utile à tout créateur qui publie.', minAudience: 0 },
+    { name: 'Communautés & plateformes', reason: 'Discord, Kick — il faut une communauté active.', minAudience: 500 },
+    { name: 'Périphériques entrée de gamme', reason: 'SteelSeries, HyperX — audience gaming engagée attendue.', minAudience: 500 },
+    { name: 'Streaming gear', reason: 'Elgato, Blue — souvent en dotation ou partenariat.', minAudience: 2500 },
+    { name: 'Chaises & setup gaming', reason: 'Secretlab, DXRacer — courant chez les streamers installés.', minAudience: 2500 },
+    { name: 'Jeux service live & MMORPG', reason: 'Lancements, clés, early access — courant dans le gaming FR.', minAudience: 2500 },
+    { name: 'Hardware & composants', reason: 'MSI, ASUS ROG — audience technique fidèle exigée.', minAudience: 10000 },
+    { name: 'Télécom & tech grand public', reason: 'Partenariats institutionnels — audience large attendue.', minAudience: 10000 },
+    { name: 'VPN premium', reason: 'NordVPN, ExpressVPN — base établie exigée.', minAudience: 10000 },
   ]
 
-  const result = all.map(cat => ({
-    ...cat,
-    accessible: totalAudience >= cat.minAudience && score >= 25,
-  }))
-
-  // Retourner max 3 accessibles + max 3 à débloquer
-  const accessible = result.filter(c => c.accessible).slice(0, 4)
-  const locked = result.filter(c => !c.accessible).slice(0, 3)
-  return [...accessible, ...locked.slice(0, Math.max(0, 6 - accessible.length))]
+  return all.map((cat): BrandCategory => {
+    const audienceOk = totalAudience >= cat.minAudience
+    const scoreOk = score >= 25
+    if (audienceOk && scoreOk) return { name: cat.name, reason: cat.reason, tier: 'now' }
+    if (audienceOk && !scoreOk) return { name: cat.name, reason: cat.reason, tier: 'soon', missing: 'score 25+ requis' }
+    if (totalAudience >= cat.minAudience * 0.4) return { name: cat.name, reason: cat.reason, tier: 'soon', missing: `−${fmtK(cat.minAudience - totalAudience)} abonnés` }
+    return { name: cat.name, reason: cat.reason, tier: 'later', missing: `dès ~${fmtK(cat.minAudience)} abonnés` }
+  })
 }
 
-// ─── Snapshot items ────────────────────────────────────────────────────────────
+// ─── Jauge circulaire du cockpit ───────────────────────────────────────────────
+// Le potentiel est un arc fantôme : on VOIT les points à prendre, on ne les lit pas.
 
-function buildSnapshotItems(platforms: PlatformData[], profile: ProfileData, profileCompleteness: number): SnapshotItem[] {
-  const hasContent = (platforms.find(p => p.type === 'youtube')?.stats?.recentVideos?.length ?? 0) > 0
-    || (platforms.find(p => p.type === 'twitch')?.stats?.recentStreams?.length ?? 0) > 0
-
-  return [
-    {
-      label: 'Complétude du profil',
-      value: `${profileCompleteness}%`,
-      done: profileCompleteness >= 80,
-    },
-    {
-      label: 'Plateformes connectées',
-      value: `${platforms.length} / 2`,
-      done: platforms.length >= 1,
-    },
-    {
-      label: 'Contenu récent visible',
-      value: hasContent ? 'Visible' : 'Non visible',
-      done: hasContent,
-    },
-    {
-      label: 'Disponible pour partenariats',
-      value: profile.availableForCollabs ? 'Activé' : 'Non activé',
-      done: !!profile.availableForCollabs,
-    },
-  ]
+const ScoreDial = ({ score, potential, color, animate }: { score: number; potential: number; color: string; animate: boolean }) => {
+  const R = 64
+  const C = 2 * Math.PI * R
+  const arc = (v: number) => `${(v / 100) * C} ${C}`
+  // Position d'un tick de palier sur le cercle (0 pt = en haut, sens horaire)
+  const tick = (min: number) => {
+    const a = (min / 100) * 2 * Math.PI - Math.PI / 2
+    return {
+      x1: 85 + (R - 9) * Math.cos(a), y1: 85 + (R - 9) * Math.sin(a),
+      x2: 85 + (R + 9) * Math.cos(a), y2: 85 + (R + 9) * Math.sin(a),
+    }
+  }
+  return (
+    <svg width="186" height="186" viewBox="0 0 170 170" role="img" aria-label={`Score ${score} sur 100, potentiel ${potential}`}>
+      <circle cx="85" cy="85" r={R} fill="none" stroke={CARD} strokeWidth="11" />
+      {/* Arc fantôme : le potentiel après le plan */}
+      <circle cx="85" cy="85" r={R} fill="none" stroke={ACCENT} strokeOpacity="0.28" strokeWidth="11" strokeLinecap="round"
+        strokeDasharray={animate ? arc(potential) : `0 ${C}`} transform="rotate(-90 85 85)" className="sponso-arc" />
+      {/* Arc du score actuel */}
+      <circle cx="85" cy="85" r={R} fill="none" stroke={color} strokeWidth="11" strokeLinecap="round"
+        strokeDasharray={animate ? arc(score) : `0 ${C}`} transform="rotate(-90 85 85)" className="sponso-arc" />
+      {/* Ticks des paliers */}
+      {TIERS.map(t => {
+        const p = tick(t.min)
+        return <line key={t.min} {...p} stroke={score >= t.min ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.16)'} strokeWidth="1.5" />
+      })}
+      <text x="85" y="82" textAnchor="middle" fill={TEXT} style={{ fontFamily: NUM, fontSize: '40px', fontWeight: 600, letterSpacing: '-0.04em' }}>{score}</text>
+      <text x="85" y="103" textAnchor="middle" fill={MUTED} style={{ fontFamily: NUM, fontSize: '11px' }}>/100</text>
+    </svg>
+  )
 }
 
 // ─── Pro gate ──────────────────────────────────────────────────────────────────
 
 const ProGate = ({ message }: { message: string }) => (
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', background: `rgba(13,13,15,0.88)`, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '16px 20px', marginTop: '12px' }}>
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', background: 'rgba(13,13,15,0.88)', border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '14px 18px', marginTop: '12px' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-      <Lock size={14} color={MUTED} />
+      <Lock size={13} color={MUTED} />
       <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{message}</p>
     </div>
     <Link
@@ -463,41 +456,63 @@ export default function SponsorsPage() {
   const [scoreResult, setScoreResult] = useState<ReturnType<typeof calcScoreDetailed> | null>(null)
   const [profileData, setProfileData] = useState<ProfileData>({})
   const [platforms, setPlatforms] = useState<PlatformData[]>([])
+  const [barsIn, setBarsIn] = useState(false) // déclenche jauge + barres animées
+  const [showBilan, setShowBilan] = useState(false) // détail chiffré en lecture optionnelle
+  const [openOpp, setOpenOpp] = useState<string | null>(null) // ligne d'opportunité dépliée
 
   useEffect(() => {
     Promise.all([
       fetch('/api/me').then(r => r.ok ? r.json() : null),
       fetch('/api/profile').then(r => r.ok ? r.json() : null),
     ]).then(([meData, profData]) => {
-      const isPro = meData?.isPro ?? false
-      setPro(isPro)
-
+      setPro(meData?.isPro ?? false)
       const plats: PlatformData[] = (meData?.platforms ?? []).map((p: PlatformData) => ({
         type: p.type,
         stats: p.stats as PlatformStats | null,
       }))
       setPlatforms(plats)
-
       const prof: ProfileData = profData?.profile ?? {}
       setProfileData(prof)
-
       setScoreResult(calcScoreDetailed(plats, prof))
+      requestAnimationFrame(() => requestAnimationFrame(() => setBarsIn(true)))
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   const hasPlatforms = platforms.length > 0
-  const level = scoreResult ? getScoreLevel(scoreResult.total, profileData, hasPlatforms) : null
+  const total = scoreResult?.total ?? 0
+  const verdict = scoreResult ? getVerdict(total) : null
   const priorities = scoreResult ? buildPriorities(platforms, profileData) : []
-  const categories = scoreResult ? getBrandCategories(scoreResult.totalAudience, scoreResult.total) : []
-  const snapshotItems = scoreResult ? buildSnapshotItems(platforms, profileData, scoreResult.profileCompleteness) : []
+  const potential = Math.min(100, total + priorities.reduce((acc, p) => acc + p.gain, 0))
+  const blocker = scoreResult ? getMainBlocker(scoreResult.dimensions) : null
+  const nextTier = getNextTier(total)
+  const categories = scoreResult ? getBrandCategories(scoreResult.totalAudience, total) : []
   const dimensions = scoreResult?.dimensions ?? []
-  const strengths = dimensions.filter(d => d.score / d.max >= 0.6)
-  const weaknesses = dimensions.filter(d => d.score / d.max < 0.6)
+  const strengths = [...dimensions].filter(d => d.score / d.max >= 0.6).sort((a, b) => b.score / b.max - a.score / a.max).slice(0, 3)
+  const weaknesses = [...dimensions].filter(d => d.score / d.max < 0.6).sort((a, b) => (b.max - b.score) - (a.max - a.score)).slice(0, 3)
+
+  const catNow = categories.filter(c => c.tier === 'now').slice(0, 4)
+  const catSoon = categories.filter(c => c.tier === 'soon').slice(0, 3)
+  const catLater = categories.filter(c => c.tier === 'later').slice(0, 3)
 
   const fmtNum = (n: number) => n >= 1_000_000
     ? `${(n / 1_000_000).toFixed(1)}M`
     : n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`
     : String(n)
+
+  // Segments cumulés de la barre de plan : chaque étape empile son gain sur le score
+  const planSegments = (() => {
+    let cursor = total
+    return priorities.map((p, i) => {
+      const start = cursor
+      const width = Math.min(100, cursor + p.gain) - cursor
+      cursor += p.gain
+      return { start, width, opacity: 0.95 - i * 0.28 }
+    })
+  })()
+
+  const block: React.CSSProperties = { background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px', marginBottom: '48px' }
+  const chipLabel: React.CSSProperties = { fontFamily: NUM, fontSize: '9px', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '5px' }
+  const chipValue: React.CSSProperties = { fontFamily: SYNE, fontSize: '14px', fontWeight: 700, color: TEXT, lineHeight: 1.3 }
 
   return (
     <div style={{ background: BG, minHeight: '100vh', fontFamily: SYNE }}>
@@ -506,323 +521,332 @@ export default function SponsorsPage() {
 
         {/* Bandeau Pro */}
         {!loading && !pro && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '14px 20px', marginBottom: '28px', color: TEXT }}>
-            <div>
-              <p style={{ fontSize: '13px', fontWeight: 600, fontFamily: SYNE }}>Score visible gratuitement.</p>
-              <p style={{ fontSize: '12px', color: MUTED, marginTop: '2px', fontFamily: SYNE }}>Les recommandations détaillées et le plan d'action complet sont réservés au plan Pro.</p>
-            </div>
-            <Link href="/dashboard/settings" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '6px', background: ACCENT, color: '#000000', fontWeight: 700, fontSize: '13px', textDecoration: 'none', flexShrink: 0, fontFamily: SYNE }}>
-              <Zap size={13} /> Passer au Pro — 19€/mois
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap', background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '12px 18px', marginBottom: '24px', color: TEXT }}>
+            <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>
+              <span style={{ color: TEXT, fontWeight: 600 }}>Verdict et première étape gratuits.</span> Le plan de progression complet est réservé au Pro.
+            </p>
+            <Link href="/dashboard/settings" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', background: ACCENT, color: '#000000', fontWeight: 700, fontSize: '13px', textDecoration: 'none', flexShrink: 0, fontFamily: SYNE }}>
+              <Zap size={13} /> Passer Pro
             </Link>
           </div>
         )}
 
-        {/* Hero */}
-        <div style={{ marginBottom: '32px' }}>
-          <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: 600, color: MUTED, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '4px', padding: '3px 10px', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '12px', fontFamily: SYNE }}>
-            Privé
-          </span>
-          <h1 style={{ fontSize: '28px', fontWeight: 700, color: TEXT, marginBottom: '6px', letterSpacing: '-0.02em', fontFamily: DISPLAY }}>Sponsorabilité</h1>
-          <p style={{ fontSize: '14px', color: MUTED, lineHeight: 1.6, fontFamily: SYNE }}>
-            Une vue privée de ton niveau de préparation pour les partenariats. Non visible par les marques.
+        {/* Header */}
+        <div style={{ marginBottom: '40px' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: TEXT, marginBottom: '8px', letterSpacing: '-0.02em', fontFamily: DISPLAY }}>Sponsorabilité</h1>
+          <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.6, fontFamily: SYNE, display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>
+            <Lock size={11} style={{ flexShrink: 0 }} />
+            Ton coach privé de préparation sponsor. Invisible pour les marques.
           </p>
         </div>
 
         {loading ? (
-          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '60px', textAlign: 'center' }}>
+          <div style={{ ...block, padding: '60px', textAlign: 'center' }}>
             <p style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>Calcul en cours…</p>
           </div>
         ) : !hasPlatforms ? (
-          // État vide — aucune plateforme
-          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '60px', textAlign: 'center' }}>
+          <div style={{ ...block, padding: '60px', textAlign: 'center' }}>
             <p style={{ fontSize: '16px', fontWeight: 600, color: TEXT, marginBottom: '8px', fontFamily: SYNE }}>Connecte au moins une plateforme pour commencer</p>
-            <p style={{ fontSize: '14px', color: MUTED, marginBottom: '24px', lineHeight: 1.6, maxWidth: '420px', margin: '0 auto 24px', fontFamily: SYNE }}>
-              Pour calculer ton score et t'indiquer des pistes d'amélioration, on a besoin de tes statistiques YouTube ou Twitch vérifiées.
+            <p style={{ fontSize: '14px', color: MUTED, lineHeight: 1.6, maxWidth: '420px', margin: '0 auto 24px', fontFamily: SYNE }}>
+              Ton verdict sponsor se calcule à partir de tes statistiques YouTube ou Twitch vérifiées.
             </p>
             <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', borderRadius: '8px', background: ACCENT, color: '#000000', fontWeight: 600, fontSize: '14px', textDecoration: 'none', fontFamily: SYNE }}>
               Connecter mes plateformes
             </Link>
-            {scoreResult && scoreResult.total > 0 && (
+            {scoreResult && total > 0 && (
               <p style={{ fontSize: '12px', color: MUTED, marginTop: '20px', fontFamily: SYNE }}>
-                Score partiel basé sur ton profil éditorial : {scoreResult.total}/100
+                Score partiel basé sur ton profil éditorial : {total}/100
               </p>
             )}
           </div>
         ) : (
           <>
-            {/* ── BLOC SCORE PRINCIPAL ─────────────────────────────────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '20px', marginBottom: '20px', alignItems: 'stretch' }}>
+            {/* ══ COCKPIT ═══════════════════════════════════════════════════
+                5 secondes : jauge (score + potentiel + paliers), verdict,
+                3 chips Frein / Potentiel / Cap. Zéro paragraphe. */}
+            <div style={{ ...block, padding: '30px 32px' }}>
+              <div className="sponso-cockpit">
+                <ScoreDial score={total} potential={potential} color={verdict?.color ?? ACCENT} animate={barsIn} />
 
-              {/* Gauche — score */}
-              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '32px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '60px', fontWeight: 600, color: TEXT, lineHeight: 1, letterSpacing: '-0.04em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>
-                    {scoreResult?.total ?? 0}
-                  </div>
-                  <div style={{ fontSize: '14px', color: MUTED, marginTop: '2px', fontFamily: SYNE }}>/100</div>
-                </div>
-
-                {level && (
-                  <span style={{ display: 'inline-block', padding: '5px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: 700, color: level.color, background: `${level.color}20`, border: `1px solid ${level.color}40`, letterSpacing: '0.01em', fontFamily: SYNE }}>
-                    {level.label}
-                  </span>
-                )}
-
-                {/* Encart "Ce score est privé" */}
-                <div style={{ width: '100%', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '6px', padding: '12px 14px' }}>
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: MUTED, marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
-                    <Lock size={10} /> Ce score est privé
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
+                  {verdict && (
+                    <span style={{ alignSelf: 'flex-start', padding: '4px 12px', borderRadius: '5px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: verdict.color, background: `${verdict.color}1c`, border: `1px solid ${verdict.color}40`, fontFamily: SYNE }}>
+                      {verdict.status}
+                    </span>
+                  )}
+                  <p style={{ fontSize: 'clamp(19px, 2.4vw, 24px)', fontWeight: 700, color: TEXT, lineHeight: 1.35, letterSpacing: '-0.01em', fontFamily: DISPLAY, maxWidth: '560px' }}>
+                    {verdict?.verdict}
                   </p>
-                  <p style={{ fontSize: '11px', color: MUTED, lineHeight: 1.6, fontFamily: SYNE }}>
-                    Il n'est pas visible par les marques.<br />
-                    Il sert uniquement à t'aider à améliorer ton profil.
-                  </p>
-                </div>
-              </div>
 
-              {/* Droite — interprétation + mini-stats */}
-              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: MUTED, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px', fontFamily: SYNE }}>Interprétation</p>
-                  <p style={{ fontSize: '15px', color: TEXT, lineHeight: 1.75, maxWidth: '560px', fontFamily: SYNE }}>
-                    {level?.interpretation}
-                  </p>
-                </div>
+                  {/* Les 3 chips : frein, potentiel, cap */}
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    {blocker && (
+                      <div style={{ background: 'rgba(217,119,6,0.07)', border: '1px solid rgba(217,119,6,0.3)', borderRadius: '8px', padding: '10px 14px', minWidth: '130px' }}>
+                        <p style={{ ...chipLabel, color: AMBER }}>Frein n°1</p>
+                        <p style={chipValue}>{blocker.short}</p>
+                      </div>
+                    )}
+                    {potential > total && (
+                      <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.28)', borderRadius: '8px', padding: '10px 14px', minWidth: '130px' }}>
+                        <p style={{ ...chipLabel, color: ACCENT }}>Potentiel proche</p>
+                        <p style={chipValue}>
+                          <span style={{ fontFamily: NUM }}>{potential}</span>
+                          <span style={{ color: ACCENT, fontFamily: NUM, fontSize: '12px', marginLeft: '7px' }}>+{potential - total} pts</span>
+                        </p>
+                      </div>
+                    )}
+                    {nextTier && (
+                      <div style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '10px 14px', minWidth: '130px' }}>
+                        <p style={{ ...chipLabel, color: MUTED }}>Cap</p>
+                        <p style={chipValue}>
+                          {nextTier.label}
+                          <span style={{ color: MUTED, fontFamily: NUM, fontSize: '12px', marginLeft: '7px' }}>à {nextTier.min - total} pts</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Mini-stats */}
-                <div style={{ display: 'flex', gap: '24px', marginTop: '28px', paddingTop: '20px', borderTop: `1px solid ${BORDER}` }}>
-                  <div>
-                    <p style={{ fontSize: '11px', color: MUTED, marginBottom: '3px', fontWeight: 500, fontFamily: SYNE }}>Plateformes</p>
-                    <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>{platforms.length} / 2</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '11px', color: MUTED, marginBottom: '3px', fontWeight: 500, fontFamily: SYNE }}>Abonnés / followers</p>
-                    <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>
-                      {scoreResult && scoreResult.totalAudience > 0 ? fmtNum(scoreResult.totalAudience) : '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '11px', color: MUTED, marginBottom: '3px', fontWeight: 500, fontFamily: SYNE }}>Profil complété</p>
-                    <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>{scoreResult?.profileCompleteness ?? 0}%</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '11px', color: MUTED, marginBottom: '3px', fontWeight: 500, fontFamily: SYNE }}>Données</p>
-                    <p style={{ fontSize: '13px', fontWeight: 600, color: ACCENT, fontFamily: SYNE }}>Actuelles</p>
-                  </div>
+                  {/* Preuve de personnalisation : la feature lit TES données */}
+                  <p style={{ fontFamily: NUM, fontSize: '10px', color: '#555', letterSpacing: '0.04em' }}>
+                    calculé depuis tes stats vérifiées · {scoreResult && scoreResult.totalAudience > 0 ? fmtNum(scoreResult.totalAudience) : '0'} abonnés · {platforms.length}/2 plateformes · profil {scoreResult?.profileCompleteness ?? 0} %
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* ── BLOC POURQUOI CE SCORE ──────────────────────────────────── */}
-            {pro ? (
-              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
-                <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Pourquoi ce score</p>
-                <p style={{ fontSize: '13px', color: MUTED, marginBottom: '24px', fontFamily: SYNE }}>Ce qui aide et ce qui peut encore progresser.</p>
+            {/* ══ MOTEUR DE PROGRESSION ═════════════════════════════════════
+                La barre montre le plan FRANCHIR le palier. Les étapes sont
+                un chemin numéroté qui se termine sur le niveau suivant. */}
+            <div style={block}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap', marginBottom: '18px' }}>
+                <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: DISPLAY, letterSpacing: '-0.01em' }}>
+                  {nextTier ? <>Ton plan vers «&nbsp;{nextTier.label}&nbsp;»</> : 'Ton plan d\'entretien'}
+                </p>
+                {priorities.length > 0 && (
+                  <p style={{ fontFamily: NUM, fontSize: '11px', color: MUTED }}>
+                    {total} <span style={{ color: ACCENT }}>→ {potential}</span> · ~{priorities.length} étape{priorities.length > 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-                  {/* Points forts */}
-                  <div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '14px', fontFamily: SYNE }}>Points forts</p>
-                    {strengths.length === 0 ? (
-                      <p style={{ fontSize: '13px', color: MUTED, fontStyle: 'italic', fontFamily: SYNE }}>Complète ton profil pour faire apparaître tes points forts.</p>
-                    ) : strengths.map(d => (
-                      <div key={d.key} style={{ display: 'flex', gap: '10px', marginBottom: '14px', alignItems: 'flex-start' }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a', marginTop: '6px', flexShrink: 0 }} />
-                        <div>
-                          <p style={{ fontSize: '13px', fontWeight: 600, color: TEXT, marginBottom: '2px', fontFamily: SYNE }}>{d.label}</p>
-                          <p style={{ fontSize: '12px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{d.comment}</p>
-                        </div>
-                      </div>
+              {/* Barre cumulative : score + gains empilés + tick du palier */}
+              {priorities.length > 0 && (
+                <div style={{ marginBottom: '26px' }}>
+                  <div style={{ position: 'relative', height: '8px', background: CARD, borderRadius: '9999px' }}>
+                    <div className="sponso-bar" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: barsIn ? `${total}%` : '0%', background: 'rgba(255,255,255,0.28)', borderRadius: '9999px' }} />
+                    {planSegments.map((s, i) => (
+                      <div key={i} className="sponso-bar" style={{ position: 'absolute', top: 0, bottom: 0, left: `${s.start}%`, width: barsIn ? `${s.width}%` : '0%', background: ACCENT, opacity: s.opacity }} />
                     ))}
+                    {nextTier && (
+                      <div aria-hidden style={{ position: 'absolute', left: `${nextTier.min}%`, top: '-4px', width: '1.5px', height: '16px', background: 'rgba(255,255,255,0.6)' }} />
+                    )}
                   </div>
-
-                  {/* Axes d'amélioration */}
-                  <div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#d97706', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '14px', fontFamily: SYNE }}>Axes d'amélioration</p>
-                    {weaknesses.length === 0 ? (
-                      <p style={{ fontSize: '13px', color: MUTED, fontStyle: 'italic', fontFamily: SYNE }}>Aucun frein majeur identifié.</p>
-                    ) : weaknesses.map(d => {
-                      const pct = d.score / d.max
-                      const dotColor = pct >= 0.3 ? '#d97706' : MUTED
-                      return (
-                        <div key={d.key} style={{ display: 'flex', gap: '10px', marginBottom: '14px', alignItems: 'flex-start' }}>
-                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, marginTop: '6px', flexShrink: 0 }} />
-                          <div>
-                            <p style={{ fontSize: '13px', fontWeight: 600, color: TEXT, marginBottom: '2px', fontFamily: SYNE }}>
-                              {d.label}
-                              <span style={{ fontSize: '11px', fontWeight: 500, color: MUTED, marginLeft: '8px', fontFamily: SYNE }}>{d.score}/{d.max} pts</span>
-                            </p>
-                            <p style={{ fontSize: '12px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{d.comment}</p>
-                          </div>
-                        </div>
-                      )
-                    })}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '7px', fontFamily: NUM, fontSize: '10px', color: MUTED }}>
+                    <span>aujourd&apos;hui · {total}</span>
+                    {nextTier && <span style={{ color: potential >= nextTier.min ? ACCENT : MUTED }}>palier {nextTier.min}{potential >= nextTier.min ? ' ✓ franchi avec ce plan' : ''}</span>}
+                    <span style={{ color: ACCENT }}>{potential} avec ton plan</span>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
-                <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Pourquoi ce score</p>
-                <p style={{ fontSize: '13px', color: MUTED, marginBottom: '16px', fontFamily: SYNE }}>Détail des 6 dimensions qui composent ton score.</p>
-                <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.4 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} style={{ height: '48px', background: CARD, borderRadius: '6px' }} />
-                    ))}
-                  </div>
-                </div>
-                <ProGate message="Le détail des points forts et axes d'amélioration est réservé au plan Pro." />
-              </div>
-            )}
-
-            {/* ── BLOC TES 3 PRIORITÉS ────────────────────────────────────── */}
-            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
-              <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Tes priorités</p>
-              <p style={{ fontSize: '13px', color: MUTED, marginBottom: '24px', fontFamily: SYNE }}>Les actions les plus impactantes pour progresser, dans l'ordre.</p>
+              )}
 
               {priorities.length === 0 ? (
-                <p style={{ fontSize: '14px', color: MUTED, fontStyle: 'italic', fontFamily: SYNE }}>Ton profil est déjà bien optimisé. Continue à publier régulièrement.</p>
+                <p style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>
+                  Rien à corriger — ton profil est optimisé. Le score progresse maintenant avec ton audience et ton engagement.
+                </p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {/* Priorité 1 — toujours visible */}
-                  {priorities[0] && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '18px 20px', borderLeft: `3px solid ${ACCENT}` }}>
-                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: ACCENT, color: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0, fontFamily: SYNE }}>1</div>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT, marginBottom: '3px', fontFamily: SYNE }}>{priorities[0].title}</p>
-                        <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{priorities[0].description}</p>
-                      </div>
-                      <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                        <p style={{ fontSize: '12px', color: ACCENT, fontWeight: 700, marginBottom: '8px', fontFamily: SYNE }}>+{priorities[0].gain} pts</p>
-                        <Link href={priorities[0].href} style={{ display: 'inline-block', padding: '7px 14px', borderRadius: '6px', background: ACCENT, color: '#000000', fontWeight: 600, fontSize: '12px', textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: SYNE }}>
-                          {priorities[0].cta}
-                        </Link>
-                      </div>
-                    </div>
-                  )}
+                // Le chemin : nœuds connectés, étape 1 dominante, arrivée = palier
+                <div style={{ position: 'relative' }}>
+                  <div aria-hidden style={{ position: 'absolute', left: '17px', top: '24px', bottom: '24px', width: '1.5px', background: `linear-gradient(180deg, ${ACCENT}66, ${BORDER})` }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-                  {/* Priorités 2 & 3 — Pro uniquement */}
-                  {pro ? (
-                    priorities.slice(1).map((p, i) => (
-                      <div key={p.title} style={{ display: 'flex', alignItems: 'center', gap: '20px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '18px 20px' }}>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: BORDER, color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0, fontFamily: SYNE }}>{i + 2}</div>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT, marginBottom: '3px', fontFamily: SYNE }}>{p.title}</p>
-                          <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{p.description}</p>
-                        </div>
-                        <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                          <p style={{ fontSize: '12px', color: ACCENT, fontWeight: 700, marginBottom: '8px', fontFamily: SYNE }}>+{p.gain} pts</p>
-                          <Link href={p.href} style={{ display: 'inline-block', padding: '7px 14px', borderRadius: '6px', background: BORDER, color: TEXT, fontWeight: 600, fontSize: '12px', textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: SYNE }}>
-                            {p.cta}
-                          </Link>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ filter: 'blur(3px)', pointerEvents: 'none', userSelect: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {[2, 3].map(n => (
-                          <div key={n} style={{ display: 'flex', alignItems: 'center', gap: '20px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '18px 20px' }}>
-                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: BORDER, flexShrink: 0 }} />
-                            <div style={{ flex: 1, height: '36px', background: BORDER, borderRadius: '4px' }} />
-                            <div style={{ width: '80px', height: '32px', background: BORDER, borderRadius: '6px', flexShrink: 0 }} />
+                    {/* Étape 1 — dominante, toujours visible */}
+                    {priorities[0] && (
+                      <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: ACCENT, color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 700, flexShrink: 0, fontFamily: NUM, position: 'relative', zIndex: 1, boxShadow: '0 0 0 4px rgba(34,197,94,0.15)' }}>1</div>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '10px', padding: '24px' }}>
+                          <div style={{ flex: 1, minWidth: '180px' }}>
+                            <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, marginBottom: '3px', fontFamily: DISPLAY, letterSpacing: '-0.01em' }}>{priorities[0].title}</p>
+                            <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{priorities[0].why}</p>
                           </div>
-                        ))}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+                            <div style={{ textAlign: 'right', fontFamily: NUM }}>
+                              <p style={{ fontSize: '14px', color: ACCENT, fontWeight: 700 }}>+{priorities[0].gain} pts</p>
+                              <p style={{ fontSize: '10px', color: MUTED, marginTop: '2px' }}>{priorities[0].time}</p>
+                            </div>
+                            <Link href={priorities[0].href} className="cta-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', borderRadius: '8px', background: ACCENT, color: '#000', fontWeight: 700, fontSize: '13px', textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: SYNE }}>
+                              {priorities[0].cta} <span className="cta-arrow">→</span>
+                            </Link>
+                          </div>
+                        </div>
                       </div>
-                      <ProGate message="Les priorités 2 et 3 sont disponibles avec le plan Pro." />
-                    </div>
-                  )}
+                    )}
+
+                    {/* Étapes 2-3 — Pro */}
+                    {pro ? priorities.slice(1).map((p, i) => (
+                      <div key={p.title} style={{ display: 'flex', gap: '18px', alignItems: 'flex-start' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: SURFACE, border: `1.5px solid ${BORDER}`, color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700, flexShrink: 0, fontFamily: NUM, position: 'relative', zIndex: 1 }}>{i + 2}</div>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '24px' }}>
+                          <div style={{ flex: 1, minWidth: '180px' }}>
+                            <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>{p.title}</p>
+                            <p style={{ fontSize: '12px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE, marginTop: '2px' }}>{p.why}</p>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+                            <p style={{ fontFamily: NUM, fontSize: '12px', color: ACCENT, fontWeight: 700 }}>+{p.gain} <span style={{ color: MUTED, fontWeight: 400 }}>· {p.time}</span></p>
+                            <Link href={p.href} style={{ padding: '7px 14px', borderRadius: '7px', background: 'rgba(255,255,255,0.06)', border: `1px solid ${BORDER}`, color: TEXT, fontWeight: 600, fontSize: '12px', textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: SYNE }}>
+                              {p.cta}
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    )) : priorities.length > 1 && (
+                      <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: SURFACE, border: `1.5px solid ${BORDER}`, color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative', zIndex: 1 }}><Lock size={13} /></div>
+                        <div style={{ flex: 1, position: 'relative' }}>
+                          <div style={{ filter: 'blur(3px)', pointerEvents: 'none', userSelect: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {priorities.slice(1).map((_, n) => (
+                              <div key={n} style={{ height: '52px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px' }} />
+                            ))}
+                          </div>
+                          <ProGate message="Les étapes suivantes de ton plan sont réservées au Pro." />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Arrivée : le palier que le plan permet d'atteindre */}
+                    {nextTier && (
+                      <div style={{ display: 'flex', gap: '18px', alignItems: 'center' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: SURFACE, border: `1.5px dashed ${potential >= nextTier.min ? ACCENT : BORDER}`, color: potential >= nextTier.min ? ACCENT : MUTED, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: NUM, fontSize: '11px', position: 'relative', zIndex: 1 }}>{nextTier.min}</div>
+                        <p style={{ fontSize: '13px', fontFamily: SYNE, color: potential >= nextTier.min ? TEXT : MUTED }}>
+                          <span style={{ fontWeight: 700 }}>Palier «&nbsp;{nextTier.label}&nbsp;»</span>
+                          <span style={{ color: MUTED }}> — débloque {nextTier.unlocks}.</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* ── CATÉGORIES DE MARQUES ───────────────────────────────────── */}
+            {/* ══ PIPELINE D'OPPORTUNITÉS ═══════════════════════════════════
+                Compteurs en lecture immédiate, raisons au clic. */}
             {pro ? (
-              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
-                <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Catégories que ton profil peut viser</p>
-                <p style={{ fontSize: '13px', color: MUTED, marginBottom: '24px', lineHeight: 1.6, fontFamily: SYNE }}>
-                  Une direction indicative — pas une garantie. Les partenariats dépendent aussi de ton contenu, ta régularité et ta niche.
-                </p>
-
-                {scoreResult && scoreResult.totalAudience < 500 && scoreResult.total < 30 ? (
-                  <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '20px 24px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '14px', fontWeight: 600, color: TEXT, marginBottom: '6px', fontFamily: SYNE }}>Les premières catégories arrivent vite</p>
-                    <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.6, maxWidth: '440px', margin: '0 auto', fontFamily: SYNE }}>
-                      Les premières opportunités arrivent plus vite qu'on ne le croit. Complète ton profil et les catégories accessibles apparaîtront ici.
-                    </p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
-                    {categories.map(cat => (
-                      <div key={cat.name} style={{
-                        border: `1px solid ${cat.accessible ? ACCENT : BORDER}`,
-                        borderRadius: '8px',
-                        padding: '16px 18px',
-                        background: cat.accessible ? 'rgba(34,197,94,0.06)' : CARD,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
-                          <p style={{ fontSize: '13px', fontWeight: 700, color: TEXT, lineHeight: 1.3, fontFamily: SYNE }}>{cat.name}</p>
-                          <span style={{
-                            fontSize: '10px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0, padding: '3px 8px', borderRadius: '4px', fontFamily: SYNE,
-                            color: cat.accessible ? ACCENT : MUTED,
-                            background: cat.accessible ? 'rgba(34,197,94,0.12)' : `rgba(255,255,255,0.05)`,
-                            border: `1px solid ${cat.accessible ? 'rgba(34,197,94,0.3)' : BORDER}`,
-                          }}>
-                            {cat.accessible ? 'À viser maintenant' : 'Accessible prochainement'}
-                          </span>
-                        </div>
-                        <p style={{ fontSize: '12px', color: MUTED, lineHeight: 1.55, fontFamily: SYNE }}>{cat.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
-                <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Catégories que ton profil peut viser</p>
-                <p style={{ fontSize: '13px', color: MUTED, marginBottom: '16px', fontFamily: SYNE }}>Catégories de marques compatibles avec ton profil gaming.</p>
-                <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.4 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                    {[1, 2, 3].map(i => <div key={i} style={{ height: '80px', background: CARD, borderRadius: '8px' }} />)}
+              <div style={block}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                  <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: DISPLAY, letterSpacing: '-0.01em' }}>Tes opportunités sponsor</p>
+                  <div style={{ display: 'flex', gap: '16px', fontFamily: NUM, fontSize: '11px' }}>
+                    <span style={{ color: ACCENT }}>{catNow.length} maintenant</span>
+                    <span style={{ color: AMBER }}>{catSoon.length} bientôt</span>
+                    <span style={{ color: '#555' }}>{catLater.length} plus tard</span>
                   </div>
                 </div>
-                <ProGate message="Les catégories de marques compatibles sont disponibles avec le plan Pro." />
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {[...catNow.map(c => ({ ...c })), ...catSoon, ...catLater].map(cat => {
+                    const open = openOpp === cat.name
+                    const dotColor = cat.tier === 'now' ? ACCENT : cat.tier === 'soon' ? AMBER : '#444'
+                    return (
+                      <div key={cat.name} style={{ border: `1px solid ${open ? (cat.tier === 'now' ? 'rgba(34,197,94,0.35)' : BORDER) : BORDER}`, borderRadius: '8px', background: cat.tier === 'now' ? 'rgba(34,197,94,0.04)' : cat.tier === 'later' ? 'transparent' : CARD, opacity: cat.tier === 'later' ? 0.6 : 1, transition: 'border-color 150ms ease' }}>
+                        <button
+                          onClick={() => setOpenOpp(open ? null : cat.name)}
+                          aria-expanded={open}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '16px 18px', textAlign: 'left' }}
+                        >
+                          <span aria-hidden style={{ width: '7px', height: '7px', borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                          <span style={{ flex: 1, fontSize: '13px', fontWeight: 600, color: cat.tier === 'later' ? MUTED : TEXT, fontFamily: SYNE }}>{cat.name}</span>
+                          {cat.missing && (
+                            <span style={{ fontFamily: NUM, fontSize: '10px', color: cat.tier === 'soon' ? AMBER : '#555', flexShrink: 0 }}>{cat.missing}</span>
+                          )}
+                          {cat.tier === 'now' && (
+                            <span style={{ fontFamily: NUM, fontSize: '10px', color: ACCENT, letterSpacing: '0.08em', textTransform: 'uppercase', flexShrink: 0 }}>à viser</span>
+                          )}
+                          <span aria-hidden style={{ fontFamily: NUM, fontSize: '14px', color: open ? ACCENT : '#555', transition: 'transform 200ms ease', transform: open ? 'rotate(45deg)' : 'none', flexShrink: 0, lineHeight: 1 }}>+</span>
+                        </button>
+                        {open && (
+                          <p style={{ fontSize: '12px', color: MUTED, lineHeight: 1.6, fontFamily: SYNE, padding: '0 18px 16px 35px' }}>{cat.reason}</p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div style={block}>
+                <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: DISPLAY, letterSpacing: '-0.01em', marginBottom: '8px' }}>Tes opportunités sponsor</p>
+                <p style={{ fontSize: '12px', color: MUTED, marginBottom: '16px', fontFamily: SYNE }}>Accessible maintenant, bientôt, ou trop tôt — selon ton profil.</p>
+                <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.4 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {[1, 2, 3, 4].map(i => <div key={i} style={{ height: '42px', background: CARD, borderRadius: '8px' }} />)}
+                  </div>
+                </div>
+                <ProGate message="Le pipeline d'opportunités détaillé est disponible avec le plan Pro." />
               </div>
             )}
 
-            {/* ── TON PROFIL AUJOURD'HUI ──────────────────────────────────── */}
-            {pro && (
-              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 32px', marginBottom: '20px' }}>
-                <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, marginBottom: '4px', fontFamily: SYNE }}>Ton profil aujourd'hui</p>
-                <p style={{ fontSize: '13px', color: MUTED, marginBottom: '24px', fontFamily: SYNE }}>Un instantané de l'état actuel de ton profil.</p>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '20px' }}>
-                  {snapshotItems.map(item => (
-                    <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: `1px solid ${BORDER}`, borderRadius: '8px', padding: '14px 18px', background: CARD }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: item.done ? ACCENT : BORDER, flexShrink: 0 }} />
-                        <p style={{ fontSize: '13px', color: MUTED, fontWeight: 500, fontFamily: SYNE }}>{item.label}</p>
+            {/* ══ DÉTAIL DU SCORE (lecture optionnelle) ═════════════════════ */}
+            {pro ? (
+              <div style={block}>
+                <button
+                  onClick={() => setShowBilan(v => !v)}
+                  aria-expanded={showBilan}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+                >
+                  <div>
+                    <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: DISPLAY, letterSpacing: '-0.01em' }}>Le détail de ton score</p>
+                    <p style={{ fontSize: '12px', color: MUTED, marginTop: '8px', fontFamily: SYNE }}>
+                      {showBilan ? 'Tes appuis, tes manques — en points.' : 'Optionnel — pour comprendre la mécanique du score.'}
+                    </p>
+                  </div>
+                  <span aria-hidden style={{ fontFamily: NUM, fontSize: '18px', color: showBilan ? ACCENT : MUTED, transition: 'transform 240ms ease, color 240ms ease', transform: showBilan ? 'rotate(45deg)' : 'none', lineHeight: 1, flexShrink: 0 }}>+</span>
+                </button>
+                {showBilan && (
+                <div className="sponso-2col" style={{ marginTop: '22px' }}>
+                  <div>
+                    <p style={{ fontFamily: NUM, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: ACCENT, marginBottom: '14px' }}>Ce qui joue pour toi</p>
+                    {strengths.length === 0 ? (
+                      <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>Pas encore d&apos;appui fort — ton plan est là pour ça.</p>
+                    ) : strengths.map(d => (
+                      <div key={d.key} style={{ marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                          <p style={{ fontSize: '13px', fontWeight: 600, color: TEXT, fontFamily: SYNE }}>{d.label}</p>
+                          <p style={{ fontFamily: NUM, fontSize: '11px', color: ACCENT }}>{d.score}/{d.max}</p>
+                        </div>
+                        <div style={{ height: '4px', background: CARD, borderRadius: '9999px', marginBottom: '6px' }}>
+                          <div className="sponso-bar" style={{ height: '100%', width: barsIn ? `${(d.score / d.max) * 100}%` : '0%', background: ACCENT, borderRadius: '9999px' }} />
+                        </div>
+                        <p style={{ fontSize: '12px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{d.comment}</p>
                       </div>
-                      <p style={{ fontSize: '13px', fontWeight: 700, color: item.done ? TEXT : MUTED, fontFamily: SYNE }}>{item.value}</p>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  <div>
+                    <p style={{ fontFamily: NUM, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: AMBER, marginBottom: '14px' }}>Ce qui te freine</p>
+                    {weaknesses.length === 0 ? (
+                      <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>Aucun frein majeur.</p>
+                    ) : weaknesses.map(d => (
+                      <div key={d.key} style={{ marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                          <p style={{ fontSize: '13px', fontWeight: 600, color: TEXT, fontFamily: SYNE }}>{d.label}</p>
+                          <p style={{ fontFamily: NUM, fontSize: '11px', color: AMBER }}>{d.score}/{d.max}</p>
+                        </div>
+                        <div style={{ height: '4px', background: CARD, borderRadius: '9999px', marginBottom: '6px' }}>
+                          <div className="sponso-bar" style={{ height: '100%', width: barsIn ? `${Math.max(3, (d.score / d.max) * 100)}%` : '0%', background: AMBER, borderRadius: '9999px' }} />
+                        </div>
+                        <p style={{ fontSize: '12px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>{d.comment}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-
-                {/* Message de clôture dynamique */}
-                <div style={{ background: CARD, borderRadius: '6px', padding: '14px 18px', borderLeft: `3px solid ${BORDER}` }}>
-                  <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.6, fontFamily: SYNE }}>
-                    {(scoreResult?.total ?? 0) >= 76
-                      ? 'Ton profil est en excellente forme. Continue à publier régulièrement et à mettre à jour tes partenariats.'
-                      : (scoreResult?.total ?? 0) >= 51
-                        ? 'Tu es sur la bonne voie. Quelques actions ciblées suffisent à passer dans la catégorie supérieure.'
-                        : (scoreResult?.total ?? 0) >= 26
-                          ? 'Chaque amélioration compte. Concentre-toi sur les priorités ci-dessus — les résultats arrivent vite.'
-                          : 'Tout commence par les bases. Un profil structuré et une plateforme connectée font toute la différence.'}
-                  </p>
+                )}
+              </div>
+            ) : (
+              <div style={block}>
+                <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: DISPLAY, letterSpacing: '-0.01em', marginBottom: '8px' }}>Le détail de ton score</p>
+                <p style={{ fontSize: '12px', color: MUTED, marginBottom: '16px', fontFamily: SYNE }}>Les 6 dimensions qui composent ton score.</p>
+                <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.4 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {[1, 2, 3, 4].map(i => <div key={i} style={{ height: '48px', background: CARD, borderRadius: '6px' }} />)}
+                  </div>
                 </div>
+                <ProGate message="Le détail des forces et des freins est réservé au plan Pro." />
               </div>
             )}
           </>

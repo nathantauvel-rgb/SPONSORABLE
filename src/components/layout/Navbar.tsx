@@ -70,7 +70,7 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
                 border: 'none',
                 cursor: 'pointer',
                 color: linkColor,
-                fontFamily: '"Syne", system-ui, sans-serif',
+                fontFamily: 'var(--font-syne), system-ui, sans-serif',
                 fontSize: '14px',
                 fontWeight: 500,
                 transition: 'color 150ms ease',
@@ -90,7 +90,7 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
             href="/login"
             style={{
               padding: isMobile ? '8px 10px' : '10px 16px',
-              fontFamily: '"Syne", system-ui, sans-serif',
+              fontFamily: 'var(--font-syne), system-ui, sans-serif',
               fontSize: isMobile ? '13px' : '14px',
               fontWeight: 500,
               borderRadius: '8px',
@@ -108,7 +108,7 @@ const Navbar = ({ dark = false }: { dark?: boolean }) => {
             href="/login?register=1"
             style={{
               padding: isMobile ? '8px 12px' : '10px 20px',
-              fontFamily: '"Syne", system-ui, sans-serif',
+              fontFamily: 'var(--font-syne), system-ui, sans-serif',
               fontSize: isMobile ? '13px' : '14px',
               fontWeight: 700,
               borderRadius: '8px',

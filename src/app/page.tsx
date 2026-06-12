@@ -17,12 +17,11 @@ const TEXT    = '#ffffff'
 const MUTED   = '#888888' /* #555555 d'origine → fail WCAG AA (2.7:1). #888 = 4.8:1 sur BG et SURFACE ✓ */
 const BORDER  = '#222222'
 const VIOLET  = '#7c5cff'
-const CORAL   = '#fb7185'
 const GOLD    = '#f5b544'
 const MONO    = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
-const SYNE    = '"Syne", var(--font-syne), system-ui, sans-serif'
+const SYNE    = 'var(--font-syne), system-ui, sans-serif'
 const SANS    = '"Space Grotesk", var(--font-sans), system-ui, sans-serif'
-const DISPLAY = '"Cabinet Grotesk", var(--font-display), system-ui, sans-serif'
+const DISPLAY = 'var(--font-display), system-ui, sans-serif'
 const NUM     = '"Martian Mono", var(--font-num), ui-monospace, monospace'
 
 /* ── Surfaces premium pricing (dégradé + profondeur) ──────── */
@@ -327,7 +326,7 @@ export default function LandingPage() {
               <div style={{ marginBottom: '22px', fontFamily: MONO, fontSize: '12px', letterSpacing: '0.16em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ color: ACCENT, fontWeight: 600 }}>Deviens Sponsorable</span>
                 <span style={{ width: '20px', height: '1px', background: 'rgba(255,255,255,0.2)' }} />
-                <span style={{ color: 'rgba(255,255,255,0.35)' }}>bêta privée · gaming FR</span>
+                <span style={{ color: 'rgba(255,255,255,0.56)' }}>bêta privée · gaming FR</span>
               </div>
             </Reveal>
 
@@ -377,7 +376,7 @@ export default function LandingPage() {
 
             {/* Micro-réassurance : occupe le vide sous le form, là où l'œil termine */}
             <Reveal delay={450}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', marginTop: '22px', fontFamily: MONO, fontSize: '11px', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.38)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', marginTop: '22px', fontFamily: MONO, fontSize: '11px', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.56)' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: ACCENT, animation: 'livePulse 2.4s ease-out infinite' }} />
                   gratuit
@@ -418,7 +417,7 @@ export default function LandingPage() {
 
       {/* ═══ 02 · PROBLÈME ═══════════════════════════════════ */}
       <section style={{ position: 'relative', background: BG, padding: '96px 24px', overflow: 'hidden', borderTop: `1px solid ${BORDER}` }}>
-        <Halo color={CORAL} size="500px" opacity={0.07} anim="haloDriftAlt" dur="26s" top="40px" right="-140px" />
+        <Halo color="#ffffff" size="500px" opacity={0.035} anim="haloDriftAlt" dur="26s" top="40px" right="-140px" />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '1100px', margin: '0 auto' }}>
           <Reveal>
             <h2 style={{ fontFamily: DISPLAY, fontSize: 'clamp(30px, 4vw, 46px)', fontWeight: 700, letterSpacing: '-0.02em', color: TEXT, lineHeight: 1.12, marginBottom: '28px', maxWidth: '720px', textWrap: 'balance' } as React.CSSProperties}>
@@ -436,13 +435,13 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
             {leaks.map((l, i) => (
               <Reveal key={i} delay={i * 80}>
-                {/* borderLeft > 1px = ban absolu Impeccable §skill-ban-side-stripe-borders → remplacé par bg tint + border uniforme */}
+                {/* Surface neutre sombre, comme le reste du site — la bordure s'éclaircit au survol */}
                 <div
-                  style={{ background: 'rgba(251,113,133,0.06)', border: `1px solid rgba(251,113,133,0.22)`, borderRadius: '10px', padding: '28px 26px', height: '100%', transition: 'border-color 200ms ease, transform 200ms ease' }}
-                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(251,113,133,0.5)'; el.style.transform = 'translateY(-3px)' }}
-                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(251,113,133,0.22)'; el.style.transform = 'translateY(0)' }}
+                  style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '28px 26px', height: '100%', transition: 'border-color 200ms ease, transform 200ms ease' }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(255,255,255,0.18)'; el.style.transform = 'translateY(-3px)' }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = BORDER; el.style.transform = 'translateY(0)' }}
                 >
-                  <div style={{ fontFamily: MONO, fontSize: '13px', color: CORAL, marginBottom: '14px' }}>{String(i + 1).padStart(2, '0')}</div>
+                  <div style={{ fontFamily: MONO, fontSize: '13px', color: MUTED, marginBottom: '14px' }}>{String(i + 1).padStart(2, '0')}</div>
                   <h3 style={{ fontFamily: SYNE, fontSize: '17px', fontWeight: 600, color: TEXT, marginBottom: '10px' }}>{l.t}</h3>
                   <p style={{ fontFamily: SYNE, fontSize: '14px', color: MUTED, lineHeight: 1.7 }}>{l.d}</p>
                 </div>
@@ -453,10 +452,10 @@ export default function LandingPage() {
           {/* Punch final : moment typographique, pas un simple paragraphe */}
           <Reveal delay={120}>
             <div style={{ display: 'flex', gap: '24px', alignItems: 'stretch', marginTop: '64px', maxWidth: '720px' }}>
-              <div aria-hidden style={{ width: '2px', flexShrink: 0, background: `linear-gradient(180deg, ${CORAL}, transparent)`, borderRadius: '2px' }} />
+              <div aria-hidden style={{ width: '2px', flexShrink: 0, background: 'linear-gradient(180deg, rgba(255,255,255,0.28), transparent)', borderRadius: '2px' }} />
               <p style={{ fontFamily: DISPLAY, fontSize: 'clamp(22px, 2.8vw, 30px)', color: TEXT, fontWeight: 700, lineHeight: 1.35, letterSpacing: '-0.01em', textWrap: 'balance' } as React.CSSProperties}>
-                Tu fais un contenu de pro.{' '}
-                <span style={{ color: CORAL }}>Au moment où tu parles d&apos;argent, tu te présentes comme un amateur.</span>
+                Tu fais un contenu de pro. Au moment où tu parles d&apos;argent, tu te présentes{' '}
+                <span style={{ color: ACCENT }}>comme un amateur.</span>
               </p>
             </div>
           </Reveal>
@@ -901,7 +900,7 @@ export default function LandingPage() {
             >
               Créer mon lien gratuitement <span className="cta-arrow">→</span>
             </button>
-            <p style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.32)', marginTop: '18px', letterSpacing: '0.03em' }}>
+            <p style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.56)', marginTop: '18px', letterSpacing: '0.03em' }}>
               Sans carte bancaire · Annulable à tout moment
             </p>
           </Reveal>

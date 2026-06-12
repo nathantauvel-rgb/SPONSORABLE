@@ -13,8 +13,8 @@ const ACCENT  = '#22c55e'
 const TEXT    = '#ffffff'
 const MUTED   = '#888888'
 const BORDER  = '#222222'
-const SYNE    = '"Syne", var(--font-syne), system-ui, sans-serif'
-const DISPLAY = '"Cabinet Grotesk", var(--font-display), system-ui, sans-serif'
+const SYNE    = 'var(--font-syne), system-ui, sans-serif'
+const DISPLAY = 'var(--font-display), system-ui, sans-serif'
 const NUM     = '"Martian Mono", var(--font-num), ui-monospace, monospace'
 
 const COUNTRY_NAMES: Record<string, string> = {

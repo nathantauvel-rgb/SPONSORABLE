@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
+import { computeEngagementRate, fetchSubscriberBaseline30d, fetchVideoActivity } from '@/lib/youtubeStats'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -62,43 +63,12 @@ export async function GET(req: NextRequest) {
         const ch = data.items?.[0]
         if (!ch) { results[platform.id] = 'no_stats'; return }
 
-        // Fetch recent videos
-        type CronVideoItem = { id: string; title: string; publishedAt: string; thumbnail: string | null; viewCount: string; likeCount: string; commentCount: string }
-        let recentVideos: CronVideoItem[] = []
-        try {
-          const uploadsId = ch.contentDetails?.relatedPlaylists?.uploads ?? ''
-          if (uploadsId) {
-            const plRes = await fetch(
-              `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${uploadsId}&maxResults=5`,
-              { headers }
-            )
-            const plData = plRes.ok ? await plRes.json() : null
-            if (plData?.items?.length) {
-              const ids = plData.items.map((i: { contentDetails: { videoId: string } }) => i.contentDetails.videoId).join(',')
-              const vRes = await fetch(
-                `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${ids}`,
-                { headers }
-              )
-              const vData = vRes.ok ? await vRes.json() : null
-              if (vData?.items?.length) {
-                recentVideos = vData.items.map((v: { id: string; snippet: { title: string; publishedAt: string; thumbnails?: { medium?: { url: string } } }; statistics: { viewCount?: string; likeCount?: string; commentCount?: string } }) => ({
-                  id: v.id, title: v.snippet.title, publishedAt: v.snippet.publishedAt,
-                  thumbnail: v.snippet.thumbnails?.medium?.url ?? null,
-                  viewCount: v.statistics.viewCount ?? '0', likeCount: v.statistics.likeCount ?? '0',
-                  commentCount: v.statistics.commentCount ?? '0',
-                }))
-              }
-            }
-          }
-        } catch { /* non-blocking */ }
-
-        // Compute engagement rate from recent videos
-        const engagementRate = (() => {
-          const valid = recentVideos.filter(v => Number(v.viewCount) > 0)
-          if (!valid.length) return null
-          const rates = valid.map(v => (Number(v.likeCount) + Number(v.commentCount)) / Number(v.viewCount) * 100)
-          return Math.round(rates.reduce((a, b) => a + b, 0) / rates.length * 100) / 100
-        })()
+        // Activité vidéo (10 dernières + cadence 90 j) via le helper partagé
+        const currentSubs = parseInt(String(ch.statistics.subscriberCount ?? '0')) || 0
+        const uploadsId = ch.contentDetails?.relatedPlaylists?.uploads ?? ''
+        const { recentVideos, videosLast90Days } = await fetchVideoActivity(account.access_token, uploadsId)
+        const engagementRate = computeEngagementRate(recentVideos)
+        const subscribers30dAgo = await fetchSubscriberBaseline30d(account.access_token, currentSubs)
 
         // Fetch YouTube Analytics
         let analytics: Record<string, unknown> = {}
@@ -141,12 +111,15 @@ export async function GET(req: NextRequest) {
           channelId: ch.id,
           title: ch.snippet.title,
           thumbnail: ch.snippet.thumbnails?.default?.url ?? null,
+          channelPublishedAt: ch.snippet.publishedAt ?? null,
           subscriberCount: ch.statistics.subscriberCount ?? '0',
           viewCount: ch.statistics.viewCount ?? '0',
           videoCount: ch.statistics.videoCount ?? '0',
           avgViewsPerVideo: videoCount > 0 ? Math.round(totalViews / videoCount) : null,
           engagementRate,
           recentVideos,
+          videosLast90Days,
+          subscribers30dAgo,
           analytics,
           lastFetched: new Date().toISOString(),
         }

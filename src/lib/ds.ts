@@ -14,11 +14,11 @@ export const VIOLET  = '#7c5cff'
 export const CORAL   = '#fb7185'
 export const GOLD    = '#f5b544'
 
-export const SYNE    = '"Syne", var(--font-syne), system-ui, sans-serif'
+export const SYNE    = 'var(--font-syne), system-ui, sans-serif'
 export const MONO    = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
 
 /** Titres display — Cabinet Grotesk (auto-hébergé) */
-export const DISPLAY = '"Cabinet Grotesk", var(--font-display), system-ui, sans-serif'
+export const DISPLAY = 'var(--font-display), system-ui, sans-serif'
 
 /** Chiffres métriques — Martian Mono (substitut libre de Berkeley Mono).
     Inclut tabular-nums : à appliquer avec `fontVariantNumeric: 'tabular-nums'`. */

@@ -1,6 +1,7 @@
 import { auth } from '@/auth'
 export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
+import { computeEngagementRate, fetchSubscriberBaseline30d, fetchVideoActivity, type YtVideo } from '@/lib/youtubeStats'
 import { NextResponse } from 'next/server'
 
 async function refreshGoogleToken(account: { id: string; refresh_token: string | null }) {
@@ -25,57 +26,6 @@ async function refreshGoogleToken(account: { id: string; refresh_token: string |
     },
   })
   return tokens.access_token as string
-}
-
-type VideoItem = {
-  id: string
-  title: string
-  publishedAt: string
-  thumbnail: string | null
-  viewCount: string
-  likeCount: string
-  commentCount: string
-}
-
-function computeEngagementRate(videos: VideoItem[]): number | null {
-  const valid = videos.filter(v => Number(v.viewCount) > 0)
-  if (!valid.length) return null
-  const rates = valid.map(v =>
-    (Number(v.likeCount) + Number(v.commentCount)) / Number(v.viewCount) * 100
-  )
-  const avg = rates.reduce((a, b) => a + b, 0) / rates.length
-  return Math.round(avg * 100) / 100
-}
-
-async function fetchRecentVideos(token: string, uploadsPlaylistId: string): Promise<VideoItem[]> {
-  try {
-    const playlistRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${uploadsPlaylistId}&maxResults=5`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-    const playlistData = await playlistRes.json()
-    if (!playlistData.items?.length) return []
-
-    const videoIds = playlistData.items.map((i: { contentDetails: { videoId: string } }) => i.contentDetails.videoId).join(',')
-    const videosRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-    const videosData = await videosRes.json()
-    if (!videosData.items?.length) return []
-
-    return videosData.items.map((v: { id: string; snippet: { title: string; publishedAt: string; thumbnails?: { medium?: { url: string } } }; statistics: { viewCount?: string; likeCount?: string; commentCount?: string } }) => ({
-      id: v.id,
-      title: v.snippet.title,
-      publishedAt: v.snippet.publishedAt,
-      thumbnail: v.snippet.thumbnails?.medium?.url ?? null,
-      viewCount: v.statistics.viewCount ?? '0',
-      likeCount: v.statistics.likeCount ?? '0',
-      commentCount: v.statistics.commentCount ?? '0',
-    }))
-  } catch {
-    return []
-  }
 }
 
 async function fetchYouTubeAnalytics(token: string) {
@@ -184,11 +134,13 @@ export async function GET() {
         if (!retryData.error && retryData.items?.length) {
           token = refreshed
           const ch = retryData.items[0]
-          const [videos, analytics] = await Promise.all([
-            fetchRecentVideos(token, ch.contentDetails?.relatedPlaylists?.uploads ?? ''),
+          const currentSubs = parseInt(String(ch.statistics?.subscriberCount ?? '0')) || 0
+          const [activity, analytics, subscribers30dAgo] = await Promise.all([
+            fetchVideoActivity(token, ch.contentDetails?.relatedPlaylists?.uploads ?? ''),
             fetchYouTubeAnalytics(token),
+            fetchSubscriberBaseline30d(token, currentSubs),
           ])
-          const result = formatChannel(ch, videos, analytics)
+          const result = formatChannel(ch, activity.recentVideos, analytics, activity.videosLast90Days, subscribers30dAgo)
           await prisma.platform.upsert({
             where: { userId_type: { userId: session.user.id, type: 'youtube' } },
             update: { stats: JSON.parse(JSON.stringify(result)), lastFetched: new Date() },
@@ -218,13 +170,15 @@ export async function GET() {
 
   const ch = data.items[0]
   const uploadsPlaylistId = ch.contentDetails?.relatedPlaylists?.uploads ?? ''
+  const currentSubs = parseInt(String(ch.statistics?.subscriberCount ?? '0')) || 0
 
-  const [videos, analytics] = await Promise.all([
-    fetchRecentVideos(token, uploadsPlaylistId),
+  const [activity, analytics, subscribers30dAgo] = await Promise.all([
+    fetchVideoActivity(token, uploadsPlaylistId),
     fetchYouTubeAnalytics(token),
+    fetchSubscriberBaseline30d(token, currentSubs),
   ])
 
-  const result = formatChannel(ch, videos, analytics)
+  const result = formatChannel(ch, activity.recentVideos, analytics, activity.videosLast90Days, subscribers30dAgo)
 
   const ytAvatar = ch.snippet.thumbnails?.default?.url as string | undefined
 
@@ -256,9 +210,11 @@ export async function GET() {
 }
 
 function formatChannel(
-  ch: { id: string; snippet: { title: string; thumbnails?: { default?: { url: string } } }; statistics: { subscriberCount?: string; viewCount?: string; videoCount?: string } },
-  videos: VideoItem[],
+  ch: { id: string; snippet: { title: string; publishedAt?: string; thumbnails?: { default?: { url: string } } }; statistics: { subscriberCount?: string; viewCount?: string; videoCount?: string } },
+  videos: YtVideo[],
   analytics: object,
+  videosLast90Days: number,
+  subscribers30dAgo: number | null,
 ) {
   const videoCount = Number(ch.statistics.videoCount ?? '0')
   const totalViews = Number(ch.statistics.viewCount ?? '0')
@@ -269,12 +225,15 @@ function formatChannel(
     channelId: ch.id,
     title: ch.snippet.title,
     thumbnail: ch.snippet.thumbnails?.default?.url ?? null,
+    channelPublishedAt: ch.snippet.publishedAt ?? null,
     subscriberCount: ch.statistics.subscriberCount ?? '0',
     viewCount: ch.statistics.viewCount ?? '0',
     videoCount: ch.statistics.videoCount ?? '0',
     avgViewsPerVideo,
     engagementRate,
     recentVideos: videos,
+    videosLast90Days,
+    subscribers30dAgo,
     analytics,
     lastFetched: new Date().toISOString(),
   }

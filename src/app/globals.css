@@ -82,6 +82,11 @@
     color: #0f172a;
   }
   html {
+    /* Alias de compat : les anciens noms de variables pointent vers les nouvelles
+       polices, donc tout le code existant bascule sans édition.
+       --font-syne (corps/UI) → Inter ; --font-display (titres) → Space Grotesk. */
+    --font-syne: var(--font-body);
+    --font-display: var(--font-sans);
     font-family: var(--font-body, system-ui), sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -181,7 +186,7 @@
     padding: 10px 20px;
     font-weight: 700;
     font-size: 14px;
-    font-family: "Syne", var(--font-syne), system-ui, sans-serif;
+    font-family: var(--font-syne), system-ui, sans-serif;
     box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
     transition: all 150ms ease;
     display: inline-flex;
@@ -212,7 +217,7 @@
     padding: 10px 20px;
     font-weight: 600;
     font-size: 14px;
-    font-family: "Syne", var(--font-syne), system-ui, sans-serif;
+    font-family: var(--font-syne), system-ui, sans-serif;
     border: 1px solid #222222;
     transition: all 150ms ease;
     display: inline-flex;
@@ -235,7 +240,7 @@
     padding: 10px 20px;
     font-weight: 600;
     font-size: 14px;
-    font-family: "Syne", var(--font-syne), system-ui, sans-serif;
+    font-family: var(--font-syne), system-ui, sans-serif;
     transition: all 150ms ease;
     display: inline-flex;
     align-items: center;
@@ -472,6 +477,50 @@
 }
 .diff-cell:hover::before {
   width: 48px;
+}
+
+/* ── Sponsorabilité : grilles responsives du dashboard ── */
+.sponso-hero {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+.sponso-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+@media (max-width: 900px) {
+  .sponso-hero,
+  .sponso-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Remplissage animé des barres de score (largeur posée en inline style) */
+.sponso-bar {
+  transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Jauge circulaire du cockpit : l'arc se trace au chargement */
+.sponso-arc {
+  transition: stroke-dasharray 1100ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Cockpit : jauge + verdict côte à côte, empilés sur mobile */
+.sponso-cockpit {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 36px;
+  align-items: center;
+}
+@media (max-width: 760px) {
+  .sponso-cockpit {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: left;
+  }
 }
 
 /* ── Garde-fou accessibilité : coupe tout le mouvement ── */
