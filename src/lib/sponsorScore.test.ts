@@ -137,9 +137,18 @@ test('readout plateforme : métrique reine + cible + progression', () => {
   const yt = r.platforms.find(p => p.kind === 'youtube')!
   assert.equal(yt.metricLabel, 'Taux d\'engagement')
   assert.equal(yt.metricValue, 6)
-  assert.equal(yt.metricTarget, 6)
+  // Cible relative à la taille : pour une chaîne de 90k, le « bon » seuil est 4 %.
+  assert.equal(yt.metricTarget, 4)
   assert.ok(yt.metricProgress > 0 && yt.metricProgress <= 1)
   assert.equal(yt.audienceCount, 90000)
+})
+
+test('engagement relatif à l\'échelle : même taux jugé plus sévèrement pour les petits', () => {
+  const eng = (subs: number) => computeUniversalScore(inputs({ platforms: [{ kind: 'youtube', stats: { subscriberCount: subs, engagementRate: 5 } }] }))
+    .dimensions.find(d => d.key === 'engagement')!.score!
+  const small = eng(5000)
+  const big = eng(300000)
+  assert.ok(big > small, `à 5 % d'engagement, un gros doit être mieux noté qu'un petit (${big} vs ${small})`)
 })
 
 test('engagement = meilleure plateforme (un créateur fort sur une source n\'est pas tiré vers le bas)', () => {
@@ -149,6 +158,64 @@ test('engagement = meilleure plateforme (un créateur fort sur une source n\'est
   ] }))
   const eng = r.dimensions.find(d => d.key === 'engagement')!
   assert.equal(eng.status, 'strong')
+})
+
+// ─── Plafonds de crédibilité ────────────────────────────────────────────────
+
+test('plafond : sans aucune plateforme, score capé bas et Grade 1', () => {
+  const r = computeUniversalScore(inputs({ platforms: [] })) // profil complet mais aucune plateforme
+  assert.ok(r.globalScore <= 35, `attendu ≤35 (profil ne suffit pas), reçu ${r.globalScore}`)
+  assert.equal(r.grade.level, 1)
+  assert.match(r.advice, /Connecte/)
+})
+
+test('plafond : grosse audience mais engagement non prouvé → sous le Grade 3', () => {
+  const r = computeUniversalScore(inputs({ platforms: [{ kind: 'youtube', stats: { subscriberCount: 90000 } }] }))
+  assert.equal(r.dimensions.find(d => d.key === 'engagement')!.status, 'unavailable')
+  assert.ok(r.globalScore <= 69, `attendu ≤69 sans engagement prouvé, reçu ${r.globalScore}`)
+  assert.ok(r.grade.level <= 2, `attendu Grade ≤2, reçu ${r.grade.level}`)
+})
+
+test('plafond : un créateur avec engagement prouvé peut dépasser ces plafonds', () => {
+  const r = computeUniversalScore(inputs({ platforms: [strongYouTube, strongTwitch] }))
+  assert.ok(r.globalScore > 69, `un profil complet et prouvé doit pouvoir dépasser 69, reçu ${r.globalScore}`)
+})
+
+// ─── Rétention, abonnés payants, cadence (signaux enrichis) ─────────────────
+
+test('rétention : une bonne rétention renforce l\'engagement YouTube', () => {
+  const stats = { subscriberCount: 50000, engagementRate: 3, recentVideosCount: 4 }
+  const without = computeUniversalScore(inputs({ platforms: [{ kind: 'youtube', stats }] }))
+  const withRet = computeUniversalScore(inputs({ platforms: [{ kind: 'youtube', stats: { ...stats, avgViewPercentage: 55 } }] }))
+  const e0 = without.dimensions.find(d => d.key === 'engagement')!.score!
+  const e1 = withRet.dimensions.find(d => d.key === 'engagement')!.score!
+  assert.ok(e1 > e0, `la rétention devrait monter l'engagement (${e1} vs ${e0})`)
+})
+
+test('rétention : une rétention faible peut baisser l\'engagement (vrai critère universel)', () => {
+  const stats = { subscriberCount: 50000, engagementRate: 3, recentVideosCount: 4 }
+  const without = computeUniversalScore(inputs({ platforms: [{ kind: 'youtube', stats }] }))
+  const withLow = computeUniversalScore(inputs({ platforms: [{ kind: 'youtube', stats: { ...stats, avgViewPercentage: 20 } }] }))
+  const e0 = without.dimensions.find(d => d.key === 'engagement')!.score!
+  const e1 = withLow.dimensions.find(d => d.key === 'engagement')!.score!
+  assert.ok(e1 < e0, `une rétention faible devrait baisser l'engagement (${e1} vs ${e0})`)
+})
+
+test('abonnés payants Twitch : bonus à l\'engagement, jamais pénalisant', () => {
+  const stats = { followerCount: 40000, avgVodViews: 400, recentStreamsCount: 4 }
+  const without = computeUniversalScore(inputs({ platforms: [{ kind: 'twitch', stats }] }))
+  const withSubs = computeUniversalScore(inputs({ platforms: [{ kind: 'twitch', stats: { ...stats, subscriptionCount: 800 } }] }))
+  const e0 = without.dimensions.find(d => d.key === 'engagement')!.score!
+  const e1 = withSubs.dimensions.find(d => d.key === 'engagement')!.score!
+  assert.ok(e1 >= e0, `les subs ne doivent jamais baisser l'engagement (${e1} vs ${e0})`)
+  assert.ok(e1 > e0, 'des abonnés payants significatifs devraient lifter l\'engagement')
+})
+
+test('cadence exacte sur 90 j : pilote l\'activité YouTube', () => {
+  // 26 vidéos / 90 j ≈ 2/semaine → activité élevée
+  const r = computeUniversalScore(inputs({ platforms: [{ kind: 'youtube', stats: { subscriberCount: 50000, engagementRate: 5, videosLast90Days: 26 } }] }))
+  const act = r.dimensions.find(d => d.key === 'activite')!
+  assert.ok((act.score ?? 0) >= 80, `cadence forte attendue, reçu ${act.score}`)
 })
 
 // ─── Adaptateur API ─────────────────────────────────────────────────────────

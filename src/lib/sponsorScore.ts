@@ -107,6 +107,12 @@ export interface RawPlatformStats {
   recentVideosCount?: number
   recentStreamsCount?: number
   clipsCount?: number
+  /** Rétention YouTube : % moyen de la vidéo réellement visionné (YouTube Analytics). */
+  avgViewPercentage?: number | null
+  /** Cadence exacte : vidéos publiées sur 90 j (comptage précis côté collecte). */
+  videosLast90Days?: number | null
+  /** Abonnés payants Twitch (affiliés/partners) — preuve de communauté monétisée. */
+  subscriptionCount?: number | null
 }
 
 export interface PlatformInput {
@@ -144,6 +150,16 @@ const PLATFORM_DIMENSIONS: DimensionKey[] = ['activite', 'audience', 'engagement
 /** Seuils de grade sur le score global (non affichés au créateur). */
 const GRADE2_MIN = 40
 const GRADE3_MIN = 70
+
+/**
+ * Plafonds de crédibilité — le score ne peut pas dépasser ce qu'on a réellement prouvé.
+ * - Sans AUCUNE plateforme : profil + conversion ne suffisent pas. On plafonne bas
+ *   (le créateur reste « Grade 1 » tant qu'il n'a pas connecté de plateforme).
+ * - Sans preuve d'ENGAGEMENT (la dimension reine) : on ne peut pas couronner « Négocier
+ *   haut ». On plafonne sous le Grade 3.
+ */
+const NO_PLATFORM_CAP = 35
+const NO_ENGAGEMENT_CAP = 69
 
 const GRADES: { level: number; min: number; name: string; verdict: string }[] = [
   { level: 1, min: 0,         name: 'Les bases',          verdict: 'Construis tes fondations avant de démarcher des marques.' },
@@ -197,26 +213,62 @@ interface PlatformContribution {
   readout: Omit<PlatformReadout, 'kind' | 'audienceCount'>
 }
 
-const ANCHOR_ACTIVITY: [number, number][] = [[0, 0], [1, 40], [3, 70], [6, 100]] // contenus récents
-const ANCHOR_YT_ENGAGEMENT: [number, number][] = [[0, 0], [2, 40], [5, 75], [8, 100]] // % engagement
+const ANCHOR_ACTIVITY: [number, number][] = [[0, 0], [1, 40], [3, 70], [6, 100]] // contenus récents (repli)
+const ANCHOR_CADENCE: [number, number][] = [[0, 0], [0.5, 30], [1, 55], [2, 85], [3, 100]] // vidéos / semaine (cadence exacte 90 j)
 const ANCHOR_YT_REACH: [number, number][] = [[0, 0], [5, 40], [10, 75], [20, 100]] // % vues/abonnés (fallback)
-const ANCHOR_TW_RATIO: [number, number][] = [[0, 0], [0.5, 40], [2, 75], [5, 100]] // % spectateurs/followers
+const ANCHOR_RETENTION: [number, number][] = [[0, 0], [30, 45], [40, 70], [55, 100]] // % rétention (avgViewPercentage)
+const ANCHOR_TW_SUBS: [number, number][] = [[0, 0], [0.5, 50], [1.5, 80], [3, 100]] // % abonnés payants/followers
+
+/**
+ * Engagement YouTube RELATIF À LA TAILLE, ancré sur les taux d'engagement MOYENS
+ * réels par palier (likes+commentaires/vues, benchmarks 2024-2025) :
+ *   nano 5,2 % · micro 3,7 % · mid 2,8 % · macro 2,1 % · mega 1,4 %.
+ * La moyenne du palier ≈ 50 (« dans la norme de ta taille »), le bon ≈ 75,
+ * l'excellent ≈ 100. `good` = seuil affichable comme cible (= point à 75).
+ */
+function ytEngagementProfile(subs: number | null): { anchor: [number, number][]; good: number } {
+  if (subs == null)    return { anchor: [[0, 0], [3.7, 50], [5, 75], [7, 100]],   good: 5 } // défaut ≈ micro
+  if (subs < 10000)    return { anchor: [[0, 0], [5, 50], [7, 75], [10, 100]],    good: 7 } // nano
+  if (subs < 50000)    return { anchor: [[0, 0], [3.7, 50], [5, 75], [7, 100]],   good: 5 } // micro
+  if (subs < 100000)   return { anchor: [[0, 0], [2.8, 50], [4, 75], [5.5, 100]], good: 4 } // mid
+  if (subs < 500000)   return { anchor: [[0, 0], [2.1, 50], [3, 75], [4.2, 100]], good: 3 } // macro
+  return { anchor: [[0, 0], [1.4, 50], [2, 75], [2.8, 100]], good: 2 }                       // mega
+}
+
+/**
+ * Ratio spectateurs/followers Twitch. Effet de taille plus faible que sur YouTube :
+ * on relâche seulement la barre pour les très gros canaux (followers qui s'accumulent),
+ * sans durcir pour les petits (qui peinent déjà à rassembler des viewers en live).
+ */
+function twRatioProfile(followers: number | null): { anchor: [number, number][]; good: number } {
+  if (followers != null && followers >= 100000) return { anchor: [[0, 0], [0.4, 40], [1.5, 75], [4, 100]], good: 1.5 }
+  return { anchor: [[0, 0], [0.5, 40], [2, 75], [5, 100]], good: 2 }
+}
 
 function youtubeProvider(s: RawPlatformStats): PlatformContribution {
   const subs = s.subscriberCount && s.subscriberCount > 0 ? s.subscriberCount : null
 
-  // Activité : nombre de vidéos récentes (régularité). undefined → non mesurable.
-  const activite = s.recentVideosCount == null ? null : clamp(interpolate(s.recentVideosCount, ANCHOR_ACTIVITY))
+  // Activité : cadence exacte sur 90 j si dispo (vidéos/semaine), sinon repli sur
+  // le comptage des vidéos récentes. undefined dans les deux cas → non mesurable.
+  let activite: number | null = null
+  if (s.videosLast90Days != null) {
+    const perWeek = (s.videosLast90Days / 90) * 7
+    activite = clamp(interpolate(perWeek, ANCHOR_CADENCE))
+  } else if (s.recentVideosCount != null) {
+    activite = clamp(interpolate(s.recentVideosCount, ANCHOR_ACTIVITY))
+  }
 
   // Engagement : taux d'engagement réel si dispo, sinon portée vues/abonnés en repli.
+  // Le barème d'engagement est RELATIF À LA TAILLE de la chaîne (équité d'échelle).
+  const ytEng = ytEngagementProfile(subs)
   let engagement: number | null = null
   let metricLabel = 'Taux d\'engagement'
   let metricValue: number | null = null
-  let metricTarget = 6
+  let metricTarget = ytEng.good
   if (s.engagementRate != null && s.engagementRate >= 0) {
-    engagement = clamp(interpolate(s.engagementRate, ANCHOR_YT_ENGAGEMENT))
+    engagement = clamp(interpolate(s.engagementRate, ytEng.anchor))
     metricValue = s.engagementRate
-    metricTarget = 6
+    metricTarget = ytEng.good
   } else if (s.avgViewsPerVideo != null && subs) {
     const reach = (s.avgViewsPerVideo / subs) * 100
     engagement = clamp(interpolate(reach, ANCHOR_YT_REACH))
@@ -229,6 +281,13 @@ function youtubeProvider(s: RawPlatformStats): PlatformContribution {
     metricLabel = 'Portée (vues / abonnés)'
     metricValue = reach
     metricTarget = 12
+  }
+
+  // Rétention : signal universel de qualité d'audience. Elle se fond dans
+  // l'engagement (peut le tirer vers le haut OU le bas — c'est un vrai critère).
+  if (s.avgViewPercentage != null && s.avgViewPercentage >= 0) {
+    const retentionScore = clamp(interpolate(s.avgViewPercentage, ANCHOR_RETENTION))
+    engagement = engagement == null ? retentionScore : clamp(0.65 * engagement + 0.35 * retentionScore)
   }
 
   const progress = metricValue == null ? 0 : clamp(metricValue / metricTarget, 0, 1)
@@ -260,14 +319,25 @@ function twitchProvider(s: RawPlatformStats): PlatformContribution {
     activite = 40
   }
 
-  // Engagement : ratio spectateurs moyens / followers (concurrence live réelle).
+  // Engagement : ratio spectateurs moyens / followers (concurrence live réelle),
+  // barème relâché pour les très gros canaux.
+  const twProfile = twRatioProfile(followers)
   let engagement: number | null = null
   let metricValue: number | null = null
-  const metricTarget = 2
+  const metricTarget = twProfile.good
   if (s.avgVodViews != null && followers) {
     const ratio = (s.avgVodViews / followers) * 100
-    engagement = clamp(interpolate(ratio, ANCHOR_TW_RATIO))
+    engagement = clamp(interpolate(ratio, twProfile.anchor))
     metricValue = ratio
+  }
+
+  // Abonnés payants : preuve d'une communauté qui paie déjà. Affilié-dépendant, donc
+  // traité en BONUS — il ne peut que tirer l'engagement vers le haut, jamais le baisser
+  // (un petit créateur sans subs n'est pas pénalisé).
+  if (s.subscriptionCount != null && s.subscriptionCount > 0 && followers) {
+    const subRatio = (s.subscriptionCount / followers) * 100
+    const subScore = clamp(interpolate(subRatio, ANCHOR_TW_SUBS))
+    engagement = engagement == null ? subScore : Math.max(engagement, clamp(0.6 * engagement + 0.4 * subScore))
   }
 
   const progress = metricValue == null ? 0 : clamp(metricValue / metricTarget, 0, 1)
@@ -352,6 +422,12 @@ function buildAdvice(dims: DimensionResult[]): string {
   const evaluated = dims.filter(d => d.score != null) as (DimensionResult & { score: number })[]
   if (!evaluated.length) return 'Connecte une plateforme ou complète ton profil pour lancer ton diagnostic.'
 
+  // Sans aucune plateforme, le profil ne suffit pas : la priorité absolue est d'en connecter une.
+  const noPlatform = dims.filter(d => PLATFORM_DIMENSIONS.includes(d.key)).every(d => d.status === 'unavailable')
+  if (noPlatform) {
+    return 'Connecte YouTube ou Twitch : sans stats vérifiées, les marques ne peuvent pas juger ta sponsorabilité — c\'est ce qui débloque ton vrai score.'
+  }
+
   const engagement = dims.find(d => d.key === 'engagement')
   if (engagement && engagement.status !== 'unavailable' && (engagement.score ?? 0) < STATUS_STRONG) {
     return 'Fais monter ton engagement — un public réactif vaut mieux qu\'une grosse audience, c\'est ce qui justifie tes tarifs.'
@@ -407,10 +483,23 @@ export function computeUniversalScore(inputs: UniversalScoreInputs): UniversalSp
     return BASE_WEIGHTS[k] / availableWeightSum
   }
 
-  // 3. Score global pondéré (sur les dimensions évaluées uniquement)
-  const globalScore = clamp(round(
+  // Plateformes réellement exploitables (au moins un signal mesuré)
+  const usablePlatforms = contributions.filter(
+    c => c.audienceCount != null || c.activite != null || c.engagement != null,
+  )
+  const hasPlatform = usablePlatforms.length > 0
+  const engagementProven = rawScores.engagement != null
+
+  // 3. Score global pondéré (sur les dimensions évaluées uniquement), puis plafonné
+  // par le niveau de preuve : on ne crédite pas ce qui n'est pas démontré.
+  let globalScore = clamp(round(
     evaluated.reduce((sum, k) => sum + (rawScores[k] as number) * effectiveWeight(k), 0),
   ))
+  if (!hasPlatform) {
+    globalScore = Math.min(globalScore, NO_PLATFORM_CAP)
+  } else if (!engagementProven) {
+    globalScore = Math.min(globalScore, NO_ENGAGEMENT_CAP)
+  }
 
   // 4. Détail des dimensions
   const dimensions: DimensionResult[] = keys.map(k => {
@@ -433,9 +522,6 @@ export function computeUniversalScore(inputs: UniversalScoreInputs): UniversalSp
   const grade: GradeInfo = { level: g.level, total: GRADES.length, name: g.name, verdict: g.verdict }
 
   // 6. Confiance : combien de sources réelles alimentent le diagnostic
-  const usablePlatforms = contributions.filter(
-    c => c.audienceCount != null || c.activite != null || c.engagement != null,
-  )
   const confidence = buildConfidence(usablePlatforms.length)
 
   // 7. Sources affichables : plateformes connectées (le profil n'est listé que
@@ -512,6 +598,8 @@ export function buildScoreInputs(apiPlatforms: ApiPlatform[], profile: ApiProfil
   for (const p of apiPlatforms) {
     const s = p.stats ?? {}
     if (p.type === 'youtube') {
+      // La rétention vit dans l'objet imbriqué `analytics`.
+      const analytics = (s.analytics && typeof s.analytics === 'object') ? s.analytics as Record<string, unknown> : {}
       platforms.push({
         kind: 'youtube',
         stats: {
@@ -521,6 +609,8 @@ export function buildScoreInputs(apiPlatforms: ApiPlatform[], profile: ApiProfil
           viewCount: toNum(s.viewCount),
           videoCount: toNum(s.videoCount),
           recentVideosCount: lenOf(s.recentVideos),
+          videosLast90Days: toNum(s.videosLast90Days),
+          avgViewPercentage: toNum(analytics.avgViewPercentage),
         },
       })
     } else if (p.type === 'twitch') {
@@ -531,6 +621,7 @@ export function buildScoreInputs(apiPlatforms: ApiPlatform[], profile: ApiProfil
           avgVodViews: toNum(s.avgVodViews),
           recentStreamsCount: lenOf(s.recentStreams),
           clipsCount: lenOf(s.topClips),
+          subscriptionCount: toNum(s.subscriptionCount),
         },
       })
     }
