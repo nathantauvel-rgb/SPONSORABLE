@@ -94,18 +94,18 @@ function DashboardContent() {
   const [twitchDisconnecting, setTwitchDisconnecting] = useState(false)
   const [publicPseudo, setPublicPseudo] = useState('')
 
-  const fetchYouTube = async () => {
-    setYtLoading(true)
-    setYtError('')
-    setYtNeedsReauth(false)
+  // silent : auto-réparation au chargement — ne montre ni spinner ni erreur réseau,
+  // mais conserve l'état actionnable (données, besoin de reconnexion de scopes).
+  const fetchYouTube = async (silent = false) => {
+    if (!silent) { setYtLoading(true); setYtError(''); setYtNeedsReauth(false) }
     try {
-      const res = await fetch('/api/youtube/channel')
+      const res = await fetch('/api/youtube/channel', { cache: 'no-store' })
       const data = await res.json()
       if (!res.ok) {
         if (data.error === 'INSUFFICIENT_SCOPES') {
           setYtNeedsReauth(true)
           setYtError('Permissions YouTube manquantes — reconnexion requise.')
-        } else {
+        } else if (!silent && res.status !== 404) {
           setYtError(data.error ?? 'Erreur inconnue')
         }
       } else {
@@ -115,9 +115,9 @@ function DashboardContent() {
         await updateSession()
       }
     } catch {
-      setYtError('Erreur réseau')
+      if (!silent) setYtError('Erreur réseau')
     } finally {
-      setYtLoading(false)
+      if (!silent) setYtLoading(false)
     }
   }
 
@@ -131,14 +131,13 @@ function DashboardContent() {
     signIn('google', { callbackUrl: '/dashboard?connected=youtube' }, YOUTUBE_AUTH_PARAMS)
   }
 
-  const fetchTwitch = async () => {
-    setTwitchLoading(true)
-    setTwitchError('')
+  const fetchTwitch = async (silent = false) => {
+    if (!silent) { setTwitchLoading(true); setTwitchError('') }
     try {
-      const res = await fetch('/api/twitch/channel')
+      const res = await fetch('/api/twitch/channel', { cache: 'no-store' })
       const data = await res.json()
       if (!res.ok) {
-        if (res.status !== 404) setTwitchError(data.error ?? 'Erreur inconnue')
+        if (!silent && res.status !== 404) setTwitchError(data.error ?? 'Erreur inconnue')
       } else {
         setTwitchData(data)
         localStorage.setItem('sponsorable_twitch_data', JSON.stringify(data))
@@ -146,9 +145,9 @@ function DashboardContent() {
         await updateSession()
       }
     } catch {
-      setTwitchError('Erreur réseau')
+      if (!silent) setTwitchError('Erreur réseau')
     } finally {
-      setTwitchLoading(false)
+      if (!silent) setTwitchLoading(false)
     }
   }
 
@@ -185,24 +184,32 @@ function DashboardContent() {
       .then(data => { if (data?.profile?.slug) setPublicPseudo(data.profile.slug) })
       .catch(() => {})
 
-    // Check which platforms are explicitly connected (Platform record exists)
-    fetch('/api/platforms/youtube')
+    // Check which platforms are explicitly connected (Platform record exists).
+    // Si la Platform manque mais qu'un compte OAuth est lié, on la recrée
+    // silencieusement via la route channel (auto-réparation après un retour OAuth
+    // qui n'aurait pas créé la Platform).
+    fetch('/api/platforms/youtube', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.platform?.stats) {
           setYtData(data.platform.stats as YTData)
           localStorage.setItem('sponsorable_yt_data', JSON.stringify(data.platform.stats))
+        } else {
+          fetchYouTube(true)
         }
       }).catch(() => {})
 
-    fetch('/api/platforms/twitch')
+    fetch('/api/platforms/twitch', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.platform?.stats) {
           setTwitchData(data.platform.stats as TwitchData)
           localStorage.setItem('sponsorable_twitch_data', JSON.stringify(data.platform.stats))
+        } else {
+          fetchTwitch(true)
         }
       }).catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // After OAuth redirect: fetch live data and create/update Platform record

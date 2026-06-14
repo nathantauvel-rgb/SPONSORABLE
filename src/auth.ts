@@ -36,6 +36,12 @@ if (AUTH_TWITCH_ID && AUTH_TWITCH_SECRET) {
     providers.push(Twitch({
         clientId: AUTH_TWITCH_ID,
         clientSecret: AUTH_TWITCH_SECRET,
+        // Permet de RELIER Twitch à un compte existant quand l'email correspond.
+        // Sans ça, après une déconnexion (Account supprimé), la reconnexion lève
+        // `OAuthAccountNotLinked` car Auth.js retrouve l'utilisateur par email mais
+        // sans compte Twitch lié. Cohérent avec Google. La connexion Twitch reste
+        // déclenchée uniquement depuis le dashboard (utilisateur déjà connecté).
+        allowDangerousEmailAccountLinking: true,
         authorization: {
             params: {
                 scope: "openid user:read:email user:read:follows moderator:read:followers channel:read:subscriptions",
@@ -156,14 +162,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return session
         },
         async redirect({ url, baseUrl }) {
-            // Autoriser les redirects ?connected= (liaison YouTube / Twitch)
-            if (url.includes('connected=')) {
-                return url.startsWith(baseUrl) ? url : `${baseUrl}/dashboard`
+            // Normaliser les URLs relatives (`/dashboard?...`) en absolu. Sans ça, le
+            // test `startsWith(baseUrl)` échouait sur une URL relative et on retombait
+            // sur `/dashboard` nu — en EFFAÇANT le `?connected=` → la liaison plateforme
+            // ne se déclenchait jamais côté client.
+            const target = url.startsWith('/') ? `${baseUrl}${url}` : url
+            // Préserver les retours de liaison plateforme (?connected=youtube|twitch)
+            if (target.startsWith(baseUrl) && target.includes('connected=')) {
+                return target
             }
-            // Toujours atterrir sur /dashboard après login, peu importe le callbackUrl stocké
-            // Ça évite d'atterrir sur /dashboard/mediakit quand la session expire sur cette page
-            if (url.startsWith(baseUrl)) return `${baseUrl}/dashboard`
-            if (url.startsWith('/')) return `${baseUrl}${url.startsWith('/dashboard') ? url : '/dashboard'}`
+            // Sinon, toujours atterrir sur /dashboard après login (évite d'atterrir sur
+            // une page profonde type /dashboard/mediakit quand la session expire).
             return `${baseUrl}/dashboard`
         },
     },

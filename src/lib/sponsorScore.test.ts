@@ -1,191 +1,175 @@
 /**
- * Tests du moteur de score de sponsorabilité.
- * Lancer : npm run test   (utilise le test runner natif de Node via tsx)
+ * Tests du moteur de score UNIVERSEL.
+ * Lancer : npm run test   (test runner natif de Node via tsx)
  */
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { computeSponsorScore, statsToScoreInputs, type ScoreInputs, type RawVideo } from './sponsorScore'
+import {
+  computeUniversalScore,
+  buildScoreInputs,
+  type UniversalScoreInputs,
+  type ProfileInputs,
+  type PlatformInput,
+} from './sponsorScore'
 
-const NOW = Date.UTC(2026, 5, 15) // 15 juin 2026, référence fixe
-const daysAgo = (d: number) => new Date(NOW - d * 24 * 60 * 60 * 1000).toISOString()
+// ─── Fabriques de fixtures ──────────────────────────────────────────────────
 
-function video(views: number, likes: number, comments: number, publishedDaysAgo: number): RawVideo {
-  return { views, likes, comments, publishedAt: daysAgo(publishedDaysAgo) }
-}
-
-/** Profil performant : engagement fort, bonne portée, régulier, en croissance, rétention OK. */
-function strongInputs(over: Partial<ScoreInputs> = {}): ScoreInputs {
-  const recentVideos: RawVideo[] = Array.from({ length: 12 }, (_, i) =>
-    video(15000, 900, 150, i * 7), // ~7 % engagement, 1 vidéo/semaine
-  )
+function fullProfile(over: Partial<ProfileInputs> = {}): ProfileInputs {
   return {
-    recentVideos,
-    subscribers: 100000,
-    subscribers30dAgo: 94000, // +6.4 %
-    avgViewPercentage: 48,
-    profileCompleteness: 1,
-    now: NOW,
+    completeness: 1,
+    availableForCollabs: true,
+    hasCalendly: true,
+    hasPartnerships: true,
+    hasTargetBrands: true,
     ...over,
   }
 }
 
-test('profil performant → score élevé et 5 critères forts', () => {
-  const r = computeSponsorScore(strongInputs())
-  assert.ok(r.globalScore >= 80, `attendu ≥80, reçu ${r.globalScore}`)
-  assert.equal(r.breakdown.length, 5)
-  assert.ok(r.breakdown.every(b => b.status !== 'unavailable'))
-  // Somme des poids effectifs ≈ 1
-  const wsum = r.breakdown.reduce((s, b) => s + b.weight, 0)
-  assert.ok(Math.abs(wsum - 1) < 0.02, `somme des poids = ${wsum}`)
-})
+const strongYouTube: PlatformInput = {
+  kind: 'youtube',
+  stats: { subscriberCount: 90000, engagementRate: 6, recentVideosCount: 6, avgViewsPerVideo: 12000 },
+}
+const strongTwitch: PlatformInput = {
+  kind: 'twitch',
+  stats: { followerCount: 40000, avgVodViews: 900, recentStreamsCount: 6, clipsCount: 5 },
+}
 
-test('complétude profil ne pèse que le bonus (≤ 5 pts)', () => {
-  const full = computeSponsorScore(strongInputs({ profileCompleteness: 1 }))
-  const empty = computeSponsorScore(strongInputs({ profileCompleteness: 0 }))
-  const delta = full.globalScore - empty.globalScore
-  assert.ok(delta >= 0 && delta <= 5, `le bonus profil doit être 0..5, reçu ${delta}`)
-})
+function inputs(over: Partial<UniversalScoreInputs> = {}): UniversalScoreInputs {
+  return { profile: fullProfile(), platforms: [strongYouTube], ...over }
+}
 
-test('rétention absente → poids redistribué sur les 4 autres', () => {
-  const r = computeSponsorScore(strongInputs({ avgViewPercentage: null }))
-  const ret = r.breakdown.find(b => b.criteria === 'retention')!
-  assert.equal(ret.status, 'unavailable')
-  assert.equal(ret.score, null)
-  assert.equal(ret.weight, 0)
-  // Les 4 autres se partagent 100 % du poids
-  const others = r.breakdown.filter(b => b.criteria !== 'retention')
-  const wsum = others.reduce((s, b) => s + b.weight, 0)
-  assert.ok(Math.abs(wsum - 1) < 0.02, `poids redistribué = ${wsum}`)
-})
+// ─── Universalité : mono-plateforme jamais pénalisé ─────────────────────────
 
-test('croissance indisponible (pas de snapshot J-30) → redistribuée, pas pénalisante', () => {
-  const withGrowth = computeSponsorScore(strongInputs())
-  const without = computeSponsorScore(strongInputs({ subscribers30dAgo: null }))
-  const g = without.breakdown.find(b => b.criteria === 'growth')!
-  assert.equal(g.status, 'unavailable')
-  // Sans la croissance, le score ne doit pas s'effondrer (redistribution, pas zéro)
-  assert.ok(without.globalScore >= withGrowth.globalScore - 6, 'la redistribution ne doit pas écrouler le score')
-})
-
-test('croissance négative → 0 pt mais critère disponible', () => {
-  const r = computeSponsorScore(strongInputs({ subscribers: 90000, subscribers30dAgo: 100000 }))
-  const g = r.breakdown.find(b => b.criteria === 'growth')!
-  assert.equal(g.score, 0)
-  assert.equal(g.status, 'weak')
-  assert.match(g.message, /recul/)
-})
-
-test('chaîne sans abonnés → viewsToSubs et growth indisponibles (pas de division par zéro)', () => {
-  const r = computeSponsorScore(strongInputs({ subscribers: 0, subscribers30dAgo: 0 }))
-  assert.equal(r.breakdown.find(b => b.criteria === 'viewsToSubs')!.status, 'unavailable')
-  assert.equal(r.breakdown.find(b => b.criteria === 'growth')!.status, 'unavailable')
-  assert.ok(Number.isFinite(r.globalScore))
-})
-
-test('chaîne récente sans vidéos → engagement/portée/régularité indisponibles', () => {
-  const r = computeSponsorScore(strongInputs({ recentVideos: [] }))
-  for (const k of ['engagement', 'viewsToSubs', 'regularity'] as const) {
-    assert.equal(r.breakdown.find(b => b.criteria === k)!.status, 'unavailable')
+test('Twitch-only : score correct, dimensions plateforme évaluées via Twitch', () => {
+  const r = computeUniversalScore(inputs({ platforms: [strongTwitch] }))
+  assert.ok(r.globalScore >= 60, `attendu ≥60, reçu ${r.globalScore}`)
+  for (const k of ['activite', 'audience', 'engagement'] as const) {
+    const d = r.dimensions.find(d => d.key === k)!
+    assert.notEqual(d.score, null, `${k} devrait être évaluée`)
+    assert.deepEqual(d.sources, ['twitch'])
   }
 })
 
-test('aucune donnée exploitable → score 0 + insights d\'amorçage', () => {
-  const r = computeSponsorScore({
-    recentVideos: [],
-    subscribers: null,
-    subscribers30dAgo: null,
-    avgViewPercentage: null,
-    profileCompleteness: 1, // même profil complet : pas de score sans perf
-    now: NOW,
-  })
-  assert.equal(r.globalScore, 0)
-  assert.match(r.insights, /Connecte ta chaîne/)
+test('YouTube-only et Twitch-only forts obtiennent tous deux un bon score', () => {
+  const yt = computeUniversalScore(inputs({ platforms: [strongYouTube] }))
+  const tw = computeUniversalScore(inputs({ platforms: [strongTwitch] }))
+  assert.ok(yt.globalScore >= 60 && tw.globalScore >= 60)
 })
 
-test('vidéo à 0 vue ignorée dans l\'engagement (pas de division par zéro)', () => {
-  const r = computeSponsorScore(strongInputs({
-    recentVideos: [video(0, 0, 0, 1), video(1000, 80, 20, 8)], // 1re ignorée → 10 %
-  }))
-  const e = r.breakdown.find(b => b.criteria === 'engagement')!
-  assert.notEqual(e.score, null)
-  assert.equal(e.status, 'strong') // 10 % → 100
+test('absence de plateforme : dimensions plateforme non évaluées, jamais zéro', () => {
+  const r = computeUniversalScore(inputs({ platforms: [] }))
+  for (const k of ['activite', 'audience', 'engagement'] as const) {
+    const d = r.dimensions.find(d => d.key === k)!
+    assert.equal(d.status, 'unavailable')
+    assert.equal(d.score, null)
+    assert.equal(d.weight, 0)
+  }
+  // profil + conversion restent évaluées et portent 100 % du poids
+  const evaluated = r.dimensions.filter(d => d.score != null)
+  const wsum = evaluated.reduce((s, d) => s + d.weight, 0)
+  assert.ok(Math.abs(wsum - 1) < 0.02, `poids redistribué = ${wsum}`)
 })
 
-test('normalisation = interpolation linéaire, pas paliers (engagement 3,5 % entre 2 et 5)', () => {
-  // 3,5 % doit donner un sous-score strictement entre les ancres 40 (2 %) et 75 (5 %)
-  const mk = (rate: number): ScoreInputs => ({
-    recentVideos: [video(10000, rate * 100, 0, 5)], // (likes)/views*100 = rate %
-    subscribers: 50000, subscribers30dAgo: 49000, avgViewPercentage: 40,
-    profileCompleteness: 0, now: NOW,
-  })
-  const s35 = computeSponsorScore(mk(3.5)).breakdown.find(b => b.criteria === 'engagement')!.score!
-  assert.ok(s35 > 40 && s35 < 75, `interpolation attendue 40<x<75, reçu ${s35}`)
-  // Monotonie : 4 % > 3,5 %
-  const s4 = computeSponsorScore(mk(4)).breakdown.find(b => b.criteria === 'engagement')!.score!
-  assert.ok(s4 > s35, 'le sous-score doit croître avec la valeur')
+test('poids redistribué : la somme des poids évalués vaut toujours 1', () => {
+  const r = computeUniversalScore(inputs({ platforms: [strongTwitch] }))
+  const wsum = r.dimensions.filter(d => d.score != null).reduce((s, d) => s + d.weight, 0)
+  assert.ok(Math.abs(wsum - 1) < 0.02, `somme des poids = ${wsum}`)
 })
 
-test('régularité : nouvelle chaîne active rapportée au temps écoulé, pas à 90 j fixes', () => {
-  // 4 vidéos en 14 jours sur une chaîne née il y a 14 j → ~2 vidéos/semaine, pas /90j
-  const recentVideos = [video(5000, 300, 50, 1), video(5000, 300, 50, 5), video(5000, 300, 50, 9), video(5000, 300, 50, 13)]
-  const r = computeSponsorScore(strongInputs({ recentVideos }))
-  const reg = r.breakdown.find(b => b.criteria === 'regularity')!
-  assert.ok((reg.score ?? 0) >= 70, `nouvelle chaîne active mal notée: ${reg.score}`)
+// ─── profil / conversion : toujours évaluées (jamais « non évaluées ») ──────
+
+test('profil et conversion toujours évaluées, même sans plateforme', () => {
+  const r = computeUniversalScore(inputs({ platforms: [], profile: fullProfile({ completeness: 0, availableForCollabs: false, hasCalendly: false, hasPartnerships: false, hasTargetBrands: false }) }))
+  const profil = r.dimensions.find(d => d.key === 'profil')!
+  const conv = r.dimensions.find(d => d.key === 'conversion')!
+  assert.notEqual(profil.status, 'unavailable')
+  assert.notEqual(conv.status, 'unavailable')
+  // Vides → faibles, pas « non évaluées »
+  assert.equal(profil.score, 0)
+  assert.equal(conv.score, 0)
 })
 
-test('régularité : comptage explicite videosLast90Days prime sur le tableau', () => {
-  // 26 vidéos sur 90 j (≈ 2/sem) via le comptage exact, chaîne ancienne → score élevé,
-  // même si seules 12 vidéos sont dans recentVideos (limite d'affichage).
-  const r = computeSponsorScore(strongInputs({
-    videosLast90Days: 26,
-    channelPublishedAt: daysAgo(800),
-  }))
-  const reg = r.breakdown.find(b => b.criteria === 'regularity')!
-  assert.ok((reg.score ?? 0) >= 85, `cadence forte attendue, reçu ${reg.score}`)
+// ─── Audience cumulée ───────────────────────────────────────────────────────
+
+test('audience cumulée : 2 plateformes additionnent leurs tailles', () => {
+  const solo = computeUniversalScore(inputs({ platforms: [{ kind: 'youtube', stats: { subscriberCount: 10000, engagementRate: 5, recentVideosCount: 3 } }] }))
+  const duo = computeUniversalScore(inputs({ platforms: [
+    { kind: 'youtube', stats: { subscriberCount: 10000, engagementRate: 5, recentVideosCount: 3 } },
+    { kind: 'twitch', stats: { followerCount: 90000, avgVodViews: 200, recentStreamsCount: 3 } },
+  ] }))
+  const aSolo = solo.dimensions.find(d => d.key === 'audience')!.score!
+  const aDuo = duo.dimensions.find(d => d.key === 'audience')!.score!
+  assert.ok(aDuo > aSolo, `audience cumulée devrait être plus haute (${aDuo} vs ${aSolo})`)
 })
 
-test('régularité : chaîne ancienne sans vidéo sur 90 j → 0 (inactive), pas indispo', () => {
-  const r = computeSponsorScore(strongInputs({
-    videosLast90Days: 0,
-    channelPublishedAt: daysAgo(800),
-  }))
-  const reg = r.breakdown.find(b => b.criteria === 'regularity')!
-  assert.equal(reg.score, 0)
-  assert.equal(reg.status, 'weak')
+// ─── Indice de confiance ────────────────────────────────────────────────────
+
+test('confiance : 0 plateforme = indicatif, 1 = moyen, 2 = élevé', () => {
+  assert.equal(computeUniversalScore(inputs({ platforms: [] })).confidence.level, 'faible')
+  assert.equal(computeUniversalScore(inputs({ platforms: [strongYouTube] })).confidence.level, 'moyen')
+  assert.equal(computeUniversalScore(inputs({ platforms: [strongYouTube, strongTwitch] })).confidence.level, 'eleve')
 })
 
-test('régularité : chaîne neuve sans historique → indisponible (pas pénalisée)', () => {
-  const r = computeSponsorScore(strongInputs({
-    videosLast90Days: 0,
-    channelPublishedAt: daysAgo(5),
-  }))
-  assert.equal(r.breakdown.find(b => b.criteria === 'regularity')!.status, 'unavailable')
+test('sources prises en compte : plateformes seules, profil seulement si unique source', () => {
+  const r = computeUniversalScore(inputs({ platforms: [strongTwitch] }))
+  assert.deepEqual(r.sources, ['Twitch'])
+  const r2 = computeUniversalScore(inputs({ platforms: [strongYouTube, strongTwitch] }))
+  assert.deepEqual(r2.sources, ['YouTube', 'Twitch'])
+  // Sans plateforme : le profil reste l'unique source affichée
+  const r3 = computeUniversalScore(inputs({ platforms: [] }))
+  assert.deepEqual(r3.sources, ['profil'])
 })
 
-test('bonus Twitch : 50k followers → +8 pts', () => {
-  // profileCompleteness: 0 pour rester loin du plafond et isoler l'effet Twitch
-  const base = strongInputs({ profileCompleteness: 0 })
-  const without = computeSponsorScore(base)
-  const withTwitch = computeSponsorScore({ ...base, twitchFollowers: 50000 })
-  assert.equal(withTwitch.globalScore - without.globalScore, 8)
+// ─── Grades ─────────────────────────────────────────────────────────────────
+
+test('grade dérivé du score : faible → 1, fort → 3', () => {
+  const low = computeUniversalScore(inputs({ platforms: [], profile: fullProfile({ completeness: 0, availableForCollabs: false, hasCalendly: false, hasPartnerships: false, hasTargetBrands: false }) }))
+  assert.equal(low.grade.level, 1)
+  const high = computeUniversalScore(inputs({ platforms: [strongYouTube, strongTwitch] }))
+  assert.ok(high.grade.level >= 2)
+  assert.equal(high.grade.total, 3)
 })
 
-test('statsToScoreInputs : champs API string → nombres, snapshot J-30 absent géré', () => {
-  const inputs = statsToScoreInputs(
-    {
-      subscriberCount: '12500',
-      recentVideos: [{ viewCount: '900', likeCount: '40', commentCount: '10', publishedAt: daysAgo(3) }],
-      analytics: { avgViewPercentage: 35 },
-      // subscribers30dAgo absent
-    },
-    0.6,
-    NOW,
+// ─── Cartes plateforme ──────────────────────────────────────────────────────
+
+test('readout plateforme : métrique reine + cible + progression', () => {
+  const r = computeUniversalScore(inputs({ platforms: [strongYouTube] }))
+  const yt = r.platforms.find(p => p.kind === 'youtube')!
+  assert.equal(yt.metricLabel, 'Taux d\'engagement')
+  assert.equal(yt.metricValue, 6)
+  assert.equal(yt.metricTarget, 6)
+  assert.ok(yt.metricProgress > 0 && yt.metricProgress <= 1)
+  assert.equal(yt.audienceCount, 90000)
+})
+
+test('engagement = meilleure plateforme (un créateur fort sur une source n\'est pas tiré vers le bas)', () => {
+  const r = computeUniversalScore(inputs({ platforms: [
+    { kind: 'youtube', stats: { subscriberCount: 50000, engagementRate: 8, recentVideosCount: 4 } }, // fort
+    { kind: 'twitch', stats: { followerCount: 5000, avgVodViews: 10, recentStreamsCount: 1 } },       // faible
+  ] }))
+  const eng = r.dimensions.find(d => d.key === 'engagement')!
+  assert.equal(eng.status, 'strong')
+})
+
+// ─── Adaptateur API ─────────────────────────────────────────────────────────
+
+test('buildScoreInputs : mappe les formes API (string → number, longueurs de tableaux)', () => {
+  const inp = buildScoreInputs(
+    [
+      { type: 'youtube', stats: { subscriberCount: '12500', engagementRate: 4.2, recentVideos: [{}, {}, {}] } },
+      { type: 'twitch', stats: { followerCount: '40500', avgVodViews: '320', recentStreams: [{}, {}], topClips: [{}] } },
+    ],
+    { bio: 'Une bio bien remplie de plus de vingt caractères', niche: 'FPS', formats: ['intégration'], positioningPhrase: 'Le meilleur', availableForCollabs: true, calendlyUrl: 'https://cal.com/x' },
   )
-  assert.equal(inputs.subscribers, 12500)
-  assert.equal(inputs.subscribers30dAgo, null)
-  assert.equal(inputs.recentVideos[0].views, 900)
-  assert.equal(inputs.avgViewPercentage, 35)
+  assert.equal(inp.platforms.length, 2)
+  const yt = inp.platforms.find(p => p.kind === 'youtube')!
+  assert.equal(yt.stats.subscriberCount, 12500)
+  assert.equal(yt.stats.recentVideosCount, 3)
+  // 4 champs sur 5 remplis (pas de pays/langue) → 0.8
+  assert.equal(inp.profile.completeness, 0.8)
+  assert.equal(inp.profile.hasCalendly, true)
   // Et le calcul tourne sans planter
-  const r = computeSponsorScore(inputs)
+  const r = computeUniversalScore(inp)
   assert.ok(Number.isFinite(r.globalScore))
+  assert.equal(r.confidence.level, 'eleve')
 })
