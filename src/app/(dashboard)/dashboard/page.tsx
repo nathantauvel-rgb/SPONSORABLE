@@ -50,7 +50,8 @@ type TikTokData = {
   lastFetched: string
 }
 
-const TIKTOK_ENABLED = process.env.NEXT_PUBLIC_TIKTOK_ENABLED === 'true'
+// Tolérant aux espaces/casse de la variable d'env (build-time, NEXT_PUBLIC).
+const TIKTOK_ENABLED = (process.env.NEXT_PUBLIC_TIKTOK_ENABLED ?? '').trim().toLowerCase() === 'true'
 
 const fmtNum = (n: string | number): string => {
   const num = typeof n === 'string' ? parseInt(n) : n
