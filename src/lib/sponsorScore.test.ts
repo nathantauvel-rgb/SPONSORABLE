@@ -33,6 +33,10 @@ const strongTwitch: PlatformInput = {
   kind: 'twitch',
   stats: { followerCount: 40000, avgVodViews: 900, recentStreamsCount: 6, clipsCount: 5 },
 }
+const strongTiktok: PlatformInput = {
+  kind: 'tiktok',
+  stats: { followerCount: 80000, engagementRate: 11, recentVideosCount: 6, videosLast90Days: 20 },
+}
 
 function inputs(over: Partial<UniversalScoreInputs> = {}): UniversalScoreInputs {
   return { profile: fullProfile(), platforms: [strongYouTube], ...over }
@@ -216,6 +220,33 @@ test('cadence exacte sur 90 j : pilote l\'activité YouTube', () => {
   const r = computeUniversalScore(inputs({ platforms: [{ kind: 'youtube', stats: { subscriberCount: 50000, engagementRate: 5, videosLast90Days: 26 } }] }))
   const act = r.dimensions.find(d => d.key === 'activite')!
   assert.ok((act.score ?? 0) >= 80, `cadence forte attendue, reçu ${act.score}`)
+})
+
+// ─── TikTok ──────────────────────────────────────────────────────────────────
+
+test('TikTok-only : score correct, dimensions évaluées via TikTok', () => {
+  const r = computeUniversalScore(inputs({ platforms: [strongTiktok] }))
+  assert.ok(r.globalScore >= 60, `attendu ≥60, reçu ${r.globalScore}`)
+  for (const k of ['activite', 'audience', 'engagement'] as const) {
+    const d = r.dimensions.find(d => d.key === k)!
+    assert.notEqual(d.score, null, `${k} devrait être évaluée`)
+    assert.deepEqual(d.sources, ['tiktok'])
+  }
+  assert.deepEqual(r.sources, ['TikTok'])
+})
+
+test('engagement TikTok à l\'échelle TikTok : 8 % = moyen, pas excellent comme sur YouTube', () => {
+  const eng = (p: PlatformInput) => computeUniversalScore(inputs({ platforms: [p] })).dimensions.find(d => d.key === 'engagement')!.score!
+  const tt = eng({ kind: 'tiktok', stats: { followerCount: 50000, engagementRate: 8 } })
+  const yt = eng({ kind: 'youtube', stats: { subscriberCount: 50000, engagementRate: 8 } })
+  assert.ok(tt < yt, `8 % doit être jugé plus sévèrement sur TikTok (${tt}) que sur YouTube (${yt})`)
+  assert.ok(tt >= 40 && tt <= 60, `8 % sur TikTok devrait être ~moyen, reçu ${tt}`)
+})
+
+test('multi-plateforme avec TikTok : audience cumulée + diagnostic fiable élevé', () => {
+  const r = computeUniversalScore(inputs({ platforms: [strongYouTube, strongTiktok] }))
+  assert.equal(r.confidence.level, 'eleve')
+  assert.deepEqual(r.sources, ['YouTube', 'TikTok'])
 })
 
 // ─── Adaptateur API ─────────────────────────────────────────────────────────

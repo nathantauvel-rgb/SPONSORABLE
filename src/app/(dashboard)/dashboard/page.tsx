@@ -40,6 +40,18 @@ type TwitchData = {
   lastFetched: string
 }
 
+type TikTokData = {
+  displayName: string | null
+  avatarUrl: string | null
+  followerCount: number
+  likesCount: number
+  videoCount: number
+  engagementRate: number | null
+  lastFetched: string
+}
+
+const TIKTOK_ENABLED = process.env.NEXT_PUBLIC_TIKTOK_ENABLED === 'true'
+
 const fmtNum = (n: string | number): string => {
   const num = typeof n === 'string' ? parseInt(n) : n
   if (isNaN(num)) return String(n)
@@ -58,6 +70,11 @@ const PlatformIcon = ({ id, color }: { id: string; color: string }) => {
   if (id === 'twitch') return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill={color}>
       <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+    </svg>
+  )
+  if (id === 'tiktok') return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill={color}>
+      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
     </svg>
   )
   return null
@@ -90,8 +107,15 @@ function DashboardContent() {
   const [twitchLoading, setTwitchLoading] = useState(false)
   const [twitchError, setTwitchError] = useState('')
 
+  const [tiktokData, setTiktokData] = useState<TikTokData | null>(() => {
+    try { const s = localStorage.getItem('sponsorable_tiktok_data'); return s ? JSON.parse(s) as TikTokData : null } catch { return null }
+  })
+  const [tiktokLoading, setTiktokLoading] = useState(false)
+  const [tiktokError, setTiktokError] = useState('')
+
   const [ytDisconnecting, setYtDisconnecting] = useState(false)
   const [twitchDisconnecting, setTwitchDisconnecting] = useState(false)
+  const [tiktokDisconnecting, setTiktokDisconnecting] = useState(false)
   const [publicPseudo, setPublicPseudo] = useState('')
 
   // silent : auto-réparation au chargement — ne montre ni spinner ni erreur réseau,
@@ -151,9 +175,29 @@ function DashboardContent() {
     }
   }
 
-  const disconnectPlatform = async (type: 'youtube' | 'twitch') => {
+  const fetchTikTok = async (silent = false) => {
+    if (!silent) { setTiktokLoading(true); setTiktokError('') }
+    try {
+      const res = await fetch('/api/tiktok/channel', { cache: 'no-store' })
+      const data = await res.json()
+      if (!res.ok) {
+        if (!silent && res.status !== 404) setTiktokError(data.error ?? 'Erreur inconnue')
+      } else {
+        setTiktokData(data)
+        localStorage.setItem('sponsorable_tiktok_data', JSON.stringify(data))
+        await updateSession()
+      }
+    } catch {
+      if (!silent) setTiktokError('Erreur réseau')
+    } finally {
+      if (!silent) setTiktokLoading(false)
+    }
+  }
+
+  const disconnectPlatform = async (type: 'youtube' | 'twitch' | 'tiktok') => {
     if (type === 'youtube') setYtDisconnecting(true)
-    else setTwitchDisconnecting(true)
+    else if (type === 'twitch') setTwitchDisconnecting(true)
+    else setTiktokDisconnecting(true)
     try {
       const res = await fetch(`/api/platforms/${type}`, { method: 'DELETE' })
       if (!res.ok) {
@@ -163,9 +207,12 @@ function DashboardContent() {
       if (type === 'youtube') {
         setYtData(null)
         localStorage.removeItem('sponsorable_yt_data')
-      } else {
+      } else if (type === 'twitch') {
         setTwitchData(null)
         localStorage.removeItem('sponsorable_twitch_data')
+      } else {
+        setTiktokData(null)
+        localStorage.removeItem('sponsorable_tiktok_data')
       }
       // Rafraîchir la session pour mettre à jour la photo de profil
       await updateSession()
@@ -173,7 +220,8 @@ function DashboardContent() {
       console.error(`[disconnect] ${type} error:`, err)
     } finally {
       if (type === 'youtube') setYtDisconnecting(false)
-      else setTwitchDisconnecting(false)
+      else if (type === 'twitch') setTwitchDisconnecting(false)
+      else setTiktokDisconnecting(false)
     }
   }
 
@@ -209,6 +257,19 @@ function DashboardContent() {
           fetchTwitch(true)
         }
       }).catch(() => {})
+
+    if (TIKTOK_ENABLED) {
+      fetch('/api/platforms/tiktok', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.platform?.stats) {
+            setTiktokData(data.platform.stats as TikTokData)
+            localStorage.setItem('sponsorable_tiktok_data', JSON.stringify(data.platform.stats))
+          } else {
+            fetchTikTok(true)
+          }
+        }).catch(() => {})
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -221,6 +282,9 @@ function DashboardContent() {
       router.replace('/dashboard')
     } else if (connected === 'twitch') {
       fetchTwitch()
+      router.replace('/dashboard')
+    } else if (connected === 'tiktok') {
+      fetchTikTok()
       router.replace('/dashboard')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -421,6 +485,72 @@ function DashboardContent() {
                 )}
               </div>
             </div>
+
+            {/* TikTok (affiché uniquement si configuré) */}
+            {TIKTOK_ENABLED && (
+            <div style={{
+              background: CARD, borderRadius: '16px', overflow: 'hidden',
+              border: `1px solid ${BORDER}`,
+              borderTop: `4px solid ${tiktokData ? ACCENT : BORDER}`,
+              boxShadow: tiktokData ? '0 4px 20px rgba(0,0,0,0.3)' : 'none',
+              transition: 'box-shadow 300ms',
+            }}>
+              <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: tiktokData ? 'rgba(37,244,238,0.12)' : SURFACE, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <PlatformIcon id="tiktok" color={tiktokData ? '#25f4ee' : '#444'} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>TikTok</p>
+                    <p style={{ fontSize: '12px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>
+                      {tiktokLoading ? 'Chargement...' : tiktokData ? (tiktokData.displayName ?? 'Connecté') : 'Non connecté'}
+                    </p>
+                  </div>
+                </div>
+                {tiktokData && (
+                  <span style={{ flexShrink: 0, background: 'rgba(34,197,94,0.12)', color: ACCENT, border: '1px solid rgba(34,197,94,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, display: 'block' }} />
+                    Connecté
+                  </span>
+                )}
+              </div>
+
+              {tiktokData && (
+                <div style={{ padding: '0 18px 14px', display: 'flex', gap: '20px' }}>
+                  <div>
+                    <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{fmtNum(tiktokData.followerCount)}</p>
+                    <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>followers</p>
+                  </div>
+                  {tiktokData.engagementRate != null && (
+                    <div>
+                      <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{tiktokData.engagementRate}%</p>
+                      <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>engagement</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 14px' }}>
+                {tiktokError ? (
+                  <p style={{ fontSize: '12px', color: '#ef4444', fontFamily: SYNE }}>⚠ {tiktokError}</p>
+                ) : tiktokData ? (
+                  <button onClick={() => disconnectPlatform('tiktok')} disabled={tiktokDisconnecting}
+                    style={{ width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '13px', fontWeight: 600, cursor: tiktokDisconnecting ? 'wait' : 'pointer', transition: 'background 150ms', fontFamily: SYNE }}>
+                    {tiktokDisconnecting ? 'Déconnexion...' : 'Déconnecter'}
+                  </button>
+                ) : !tiktokLoading && (
+                  <button
+                    onClick={() => signIn('tiktok', { callbackUrl: '/dashboard?connected=tiktok' })}
+                    style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: '#fe2c55', color: 'white', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', fontFamily: SYNE }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
+                    Connecter TikTok
+                  </button>
+                )}
+              </div>
+            </div>
+            )}
 
           </div>
         </div>

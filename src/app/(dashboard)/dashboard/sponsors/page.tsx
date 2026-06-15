@@ -34,6 +34,7 @@ const NUM = '"Martian Mono", var(--font-num), ui-monospace, monospace'
 const BRAND: Record<PlatformKind, { name: string; color: string; tint: string; icon: string }> = {
   youtube: { name: 'YouTube', color: '#ff4444', tint: 'rgba(255,68,68,0.14)', icon: '▶' },
   twitch: { name: 'Twitch', color: '#a970ff', tint: 'rgba(145,70,255,0.16)', icon: '◈' },
+  tiktok: { name: 'TikTok', color: '#25f4ee', tint: 'rgba(37,244,238,0.14)', icon: '♪' },
 }
 
 // ─── Formatage ───────────────────────────────────────────────────────────────

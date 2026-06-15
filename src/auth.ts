@@ -2,6 +2,7 @@ import NextAuth, { type Session } from "next-auth"
 import type { JWT } from "next-auth/jwt"
 import Google from "next-auth/providers/google"
 import Twitch from "next-auth/providers/twitch"
+import TikTok from "next-auth/providers/tiktok"
 import Credentials from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
@@ -11,6 +12,8 @@ const AUTH_GOOGLE_ID = process.env.AUTH_GOOGLE_ID
 const AUTH_GOOGLE_SECRET = process.env.AUTH_GOOGLE_SECRET
 const AUTH_TWITCH_ID = process.env.AUTH_TWITCH_ID
 const AUTH_TWITCH_SECRET = process.env.AUTH_TWITCH_SECRET
+const AUTH_TIKTOK_ID = process.env.AUTH_TIKTOK_ID
+const AUTH_TIKTOK_SECRET = process.env.AUTH_TIKTOK_SECRET
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const providers: any[] = []
@@ -45,6 +48,23 @@ if (AUTH_TWITCH_ID && AUTH_TWITCH_SECRET) {
         authorization: {
             params: {
                 scope: "openid user:read:email user:read:follows moderator:read:followers channel:read:subscriptions",
+            },
+        },
+    }))
+}
+
+if (AUTH_TIKTOK_ID && AUTH_TIKTOK_SECRET) {
+    providers.push(TikTok({
+        clientId: AUTH_TIKTOK_ID,
+        clientSecret: AUTH_TIKTOK_SECRET,
+        // TikTok ne renvoie pas d'email : la liaison se fait sur la session active
+        // (connexion déclenchée depuis le dashboard, utilisateur déjà connecté).
+        allowDangerousEmailAccountLinking: true,
+        authorization: {
+            params: {
+                // Stats vidéos + nombre de followers (ces scopes nécessitent l'approbation
+                // de ton app dans le TikTok Developer Portal).
+                scope: "user.info.basic,user.info.profile,user.info.stats,video.list",
             },
         },
     }))
@@ -106,7 +126,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     providers,
     callbacks: {
         async signIn({ user, account }) {
-            if (account?.provider === 'google' || account?.provider === 'twitch') {
+            if (account?.provider === 'google' || account?.provider === 'twitch' || account?.provider === 'tiktok') {
                 // C'est un linking si l'utilisateur a déjà au moins un Account en base
                 // (qu'il se soit inscrit avec email/password OU avec un autre OAuth)
                 const existingAccountCount = await prisma.account.count({

@@ -30,7 +30,7 @@ export type DimensionKey = 'profil' | 'activite' | 'audience' | 'engagement' | '
 
 export type DimensionStatus = 'strong' | 'improve' | 'weak' | 'unavailable'
 
-export type PlatformKind = 'youtube' | 'twitch'
+export type PlatformKind = 'youtube' | 'twitch' | 'tiktok'
 
 /** Niveau de confiance du diagnostic — séparé du score (combien on VOIT, pas combien tu vaux). */
 export type ConfidenceLevel = 'faible' | 'moyen' | 'eleve'
@@ -245,6 +245,20 @@ function twRatioProfile(followers: number | null): { anchor: [number, number][];
   return { anchor: [[0, 0], [0.5, 40], [2, 75], [5, 100]], good: 2 }
 }
 
+/**
+ * Engagement TikTok RELATIF À LA TAILLE. Structurellement BIEN plus élevé que
+ * YouTube (likes+commentaires+partages/vues) — benchmarks 2024 : nano 10,3 % ·
+ * micro 8,7 % · mid 7,5 %. Moyenne du palier ≈ 50, bon ≈ 75, excellent ≈ 100.
+ */
+function tiktokEngagementProfile(followers: number | null): { anchor: [number, number][]; good: number } {
+  if (followers == null)   return { anchor: [[0, 0], [8, 50], [11, 75], [15, 100]],   good: 11 }
+  if (followers < 10000)   return { anchor: [[0, 0], [10.5, 50], [14, 75], [18, 100]], good: 14 } // nano
+  if (followers < 100000)  return { anchor: [[0, 0], [8, 50], [11, 75], [15, 100]],   good: 11 } // micro/mid
+  if (followers < 500000)  return { anchor: [[0, 0], [6, 50], [8, 75], [11, 100]],    good: 8 }  // macro
+  if (followers < 1000000) return { anchor: [[0, 0], [4.5, 50], [6, 75], [8, 100]],   good: 6 }  // large
+  return { anchor: [[0, 0], [3.5, 50], [5, 75], [7, 100]], good: 5 }                              // mega
+}
+
 function youtubeProvider(s: RawPlatformStats): PlatformContribution {
   const subs = s.subscriberCount && s.subscriberCount > 0 ? s.subscriberCount : null
 
@@ -356,9 +370,48 @@ function twitchProvider(s: RawPlatformStats): PlatformContribution {
   }
 }
 
+function tiktokProvider(s: RawPlatformStats): PlatformContribution {
+  const followers = s.followerCount && s.followerCount > 0 ? s.followerCount : null
+
+  // Activité : cadence exacte sur 90 j si dispo, sinon comptage des vidéos récentes.
+  let activite: number | null = null
+  if (s.videosLast90Days != null) {
+    const perWeek = (s.videosLast90Days / 90) * 7
+    activite = clamp(interpolate(perWeek, ANCHOR_CADENCE))
+  } else if (s.recentVideosCount != null) {
+    activite = clamp(interpolate(s.recentVideosCount, ANCHOR_ACTIVITY))
+  }
+
+  // Engagement : taux (likes+commentaires+partages/vues), barème TikTok relatif à la taille.
+  const ttEng = tiktokEngagementProfile(followers)
+  let engagement: number | null = null
+  let metricValue: number | null = null
+  const metricTarget = ttEng.good
+  if (s.engagementRate != null && s.engagementRate >= 0) {
+    engagement = clamp(interpolate(s.engagementRate, ttEng.anchor))
+    metricValue = s.engagementRate
+  }
+
+  const progress = metricValue == null ? 0 : clamp(metricValue / metricTarget, 0, 1)
+  const tip = metricValue == null
+    ? 'Publie quelques vidéos pour mesurer ton engagement.'
+    : progress >= 1
+      ? 'Engagement au top — ton meilleur argument de négo.'
+      : 'Poste plus régulièrement pour faire monter ton engagement.'
+
+  return {
+    kind: 'tiktok',
+    audienceCount: followers,
+    activite,
+    engagement,
+    readout: { metricLabel: 'Taux d\'engagement', metricValue, metricUnit: '%', metricTarget, metricProgress: progress, tip },
+  }
+}
+
 const PROVIDERS: Record<PlatformKind, (s: RawPlatformStats) => PlatformContribution> = {
   youtube: youtubeProvider,
   twitch: twitchProvider,
+  tiktok: tiktokProvider,
 }
 
 // ─── Dimensions profil / conversion (toujours évaluées) ─────────────────────
@@ -413,7 +466,7 @@ function messageFor(key: DimensionKey, status: DimensionStatus, sources: ('profi
 }
 
 function sourceLabel(s: 'profil' | PlatformKind): string {
-  return s === 'youtube' ? 'YouTube' : s === 'twitch' ? 'Twitch' : 'profil'
+  return s === 'youtube' ? 'YouTube' : s === 'twitch' ? 'Twitch' : s === 'tiktok' ? 'TikTok' : 'profil'
 }
 
 // ─── Conseil de coaching ────────────────────────────────────────────────────
@@ -622,6 +675,16 @@ export function buildScoreInputs(apiPlatforms: ApiPlatform[], profile: ApiProfil
           recentStreamsCount: lenOf(s.recentStreams),
           clipsCount: lenOf(s.topClips),
           subscriptionCount: toNum(s.subscriptionCount),
+        },
+      })
+    } else if (p.type === 'tiktok') {
+      platforms.push({
+        kind: 'tiktok',
+        stats: {
+          followerCount: toNum(s.followerCount),
+          engagementRate: toNum(s.engagementRate),
+          recentVideosCount: lenOf(s.recentVideos),
+          videosLast90Days: toNum(s.videosLast90Days),
         },
       })
     }
