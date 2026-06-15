@@ -62,6 +62,10 @@ if (AUTH_TIKTOK_ID && AUTH_TIKTOK_SECRET) {
         allowDangerousEmailAccountLinking: true,
         authorization: {
             params: {
+                // TikTok exige `client_key` (et non `client_id`). En surchargeant les
+                // params on doit le réinjecter explicitement, sinon TikTok renvoie
+                // « client_key » manquant.
+                client_key: AUTH_TIKTOK_ID,
                 // Stats vidéos + nombre de followers (ces scopes nécessitent l'approbation
                 // de ton app dans le TikTok Developer Portal).
                 scope: "user.info.basic,user.info.profile,user.info.stats,video.list",
