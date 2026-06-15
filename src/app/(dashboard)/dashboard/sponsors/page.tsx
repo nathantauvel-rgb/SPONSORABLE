@@ -15,6 +15,7 @@ import {
   type PlatformReadout,
   type PlatformKind,
 } from '@/lib/sponsorScore'
+import { computeTrend, readHistory, type Trend } from '@/lib/statsHistory'
 
 // ─── Design system ─────────────────────────────────────────────────────────────
 const BG = '#0d0d0f'
@@ -80,6 +81,23 @@ const ScoreDial = ({ score, color, animate }: { score: number; color: string; an
   )
 }
 
+// ─── Indicateur de variation (tendance) ────────────────────────────────────────
+// Pour toutes nos métriques, une hausse = bon signe (vert ↗), une baisse = ambre ↘.
+
+const TrendDelta = ({ label, value, unit }: { label: string; value: number | null; unit: string }) => {
+  if (value == null) return null
+  const flat = value === 0
+  const color = flat ? MUTED : value > 0 ? ACCENT : '#ef6b6b'
+  const arrow = flat ? '→' : value > 0 ? '↗' : '↘'
+  const sign = value > 0 ? '+' : ''
+  return (
+    <span style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+      <span style={{ fontSize: '11px', color: MUTED, fontFamily: SYNE }}>{label}</span>
+      <span style={{ fontSize: '13px', fontWeight: 700, color, fontFamily: NUM }}>{arrow} {sign}{value}{unit}</span>
+    </span>
+  )
+}
+
 // ─── Pro gate ──────────────────────────────────────────────────────────────────
 
 const ProGate = ({ message }: { message: string }) => (
@@ -140,6 +158,7 @@ export default function SponsorsPage() {
   const [platformCount, setPlatformCount] = useState(0)
   const [animate, setAnimate] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
+  const [trends, setTrends] = useState<{ kind: PlatformKind; trend: Trend | null }[]>([])
 
   const loadData = useCallback(async () => {
     try {
@@ -150,6 +169,12 @@ export default function SponsorsPage() {
       setPro(meData?.isPro ?? false)
       const apiPlatforms: ApiPlatform[] = (meData?.platforms ?? []).map((p: ApiPlatform) => ({ type: p.type, stats: p.stats }))
       setPlatformCount(apiPlatforms.length)
+      // Tendance : calculée depuis l'historique stocké dans les stats de chaque plateforme
+      setTrends(
+        apiPlatforms
+          .filter(p => p.type === 'youtube' || p.type === 'twitch')
+          .map(p => ({ kind: p.type as PlatformKind, trend: computeTrend(readHistory(p.stats)) })),
+      )
       const profile: ApiProfile = profData?.profile ?? {}
       const inputs = buildScoreInputs(apiPlatforms, profile)
       setResult(computeUniversalScore(inputs))
@@ -306,6 +331,37 @@ export default function SponsorsPage() {
                 <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', borderRadius: '8px', background: ACCENT, color: '#000', fontWeight: 600, fontSize: '14px', textDecoration: 'none', fontFamily: SYNE }}>
                   Connecter une plateforme
                 </Link>
+              </div>
+            )}
+
+            {/* ══ TENDANCE (trajectoire dans le temps) ══════════════════════ */}
+            {hasPlatforms && (
+              <div style={block}>
+                <p style={{ fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: DISPLAY, letterSpacing: '-0.01em', marginBottom: '4px' }}>Ta tendance</p>
+                <p style={{ fontSize: '12px', color: MUTED, marginBottom: '18px', fontFamily: SYNE }}>L&apos;évolution de tes signaux dans le temps — la santé de tes réseaux.</p>
+                {trends.every(t => t.trend == null) ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '16px 18px' }}>
+                    <span aria-hidden style={{ fontSize: '16px' }}>⏳</span>
+                    <p style={{ fontSize: '13px', color: MUTED, lineHeight: 1.5, fontFamily: SYNE }}>
+                      Ton historique se construit. Ta tendance apparaîtra après quelques jours de mesures (on enregistre un point par jour).
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {trends.filter(t => t.trend).map(({ kind, trend }) => (
+                      <div key={kind} style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', background: CARD, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '14px 18px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: '120px' }}>
+                          <span aria-hidden style={{ width: '7px', height: '7px', borderRadius: '50%', background: BRAND[kind].color, flexShrink: 0 }} />
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>{BRAND[kind].name}</span>
+                          <span style={{ fontSize: '10px', color: '#555', fontFamily: NUM }}>~{trend!.days}j</span>
+                        </span>
+                        <TrendDelta label="Audience" value={trend!.audiencePct} unit="%" />
+                        <TrendDelta label="Engagement" value={trend!.engagementDelta} unit=" pt" />
+                        {trend!.retentionDelta != null && <TrendDelta label="Rétention" value={trend!.retentionDelta} unit=" pt" />}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

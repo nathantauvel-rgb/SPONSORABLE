@@ -1,6 +1,7 @@
 import { auth } from '@/auth'
 export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
+import { buildSnapshot, pushHistory, readHistory } from '@/lib/statsHistory'
 import { NextResponse } from 'next/server'
 
 async function refreshTwitchToken(account: { id: string; refresh_token: string | null }) {
@@ -148,10 +149,17 @@ export async function GET() {
 
   const twitchAvatar = user.profile_image_url as string | undefined
 
+  // Reprend l'historique existant + ajoute le snapshot du jour (tendance)
+  const prevTw = await prisma.platform.findUnique({
+    where: { userId_type: { userId: session.user.id, type: 'twitch' } },
+    select: { stats: true },
+  })
+  const stored = { ...result, history: pushHistory(readHistory(prevTw?.stats), buildSnapshot(result, 'twitch')) }
+
   // Persist to Platform DB
   await prisma.platform.upsert({
     where: { userId_type: { userId: session.user.id, type: 'twitch' } },
-    update: { stats: JSON.parse(JSON.stringify(result)), lastFetched: new Date(), avatarUrl: twitchAvatar },
+    update: { stats: JSON.parse(JSON.stringify(stored)), lastFetched: new Date(), avatarUrl: twitchAvatar },
     create: {
       userId: session.user.id,
       type: 'twitch',
@@ -159,7 +167,7 @@ export async function GET() {
       username: user.login,
       displayName: user.display_name,
       avatarUrl: twitchAvatar,
-      stats: JSON.parse(JSON.stringify(result)),
+      stats: JSON.parse(JSON.stringify(stored)),
       lastFetched: new Date(),
     },
   }).catch(err => console.error('[twitch/channel] upsert failed', err))

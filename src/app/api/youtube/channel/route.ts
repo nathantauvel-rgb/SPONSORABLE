@@ -2,7 +2,17 @@ import { auth } from '@/auth'
 export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { computeEngagementRate, fetchSubscriberBaseline30d, fetchVideoActivity, type YtVideo } from '@/lib/youtubeStats'
+import { buildSnapshot, pushHistory, readHistory } from '@/lib/statsHistory'
 import { NextResponse } from 'next/server'
+
+/** Reprend l'historique existant et y ajoute le snapshot du jour. */
+async function withYtHistory(userId: string, result: Record<string, unknown>) {
+  const prev = await prisma.platform.findUnique({
+    where: { userId_type: { userId, type: 'youtube' } },
+    select: { stats: true },
+  })
+  return { ...result, history: pushHistory(readHistory(prev?.stats), buildSnapshot(result, 'youtube')) }
+}
 
 async function refreshGoogleToken(account: { id: string; refresh_token: string | null }) {
   if (!account.refresh_token) return null
@@ -141,9 +151,10 @@ export async function GET() {
             fetchSubscriberBaseline30d(token, currentSubs),
           ])
           const result = formatChannel(ch, activity.recentVideos, analytics, activity.videosLast90Days, subscribers30dAgo)
+          const storedRetry = await withYtHistory(session.user.id, result)
           await prisma.platform.upsert({
             where: { userId_type: { userId: session.user.id, type: 'youtube' } },
-            update: { stats: JSON.parse(JSON.stringify(result)), lastFetched: new Date() },
+            update: { stats: JSON.parse(JSON.stringify(storedRetry)), lastFetched: new Date() },
             create: {
               userId: session.user.id,
               type: 'youtube',
@@ -151,7 +162,7 @@ export async function GET() {
               username: (ch.snippet.customUrl || ch.id) as string,
               displayName: ch.snippet.title as string,
               avatarUrl: ch.snippet.thumbnails?.default?.url as string | undefined,
-              stats: JSON.parse(JSON.stringify(result)),
+              stats: JSON.parse(JSON.stringify(storedRetry)),
               lastFetched: new Date(),
             },
           }).catch(err => console.error('[youtube/channel] upsert failed', err))
@@ -181,11 +192,12 @@ export async function GET() {
   const result = formatChannel(ch, activity.recentVideos, analytics, activity.videosLast90Days, subscribers30dAgo)
 
   const ytAvatar = ch.snippet.thumbnails?.default?.url as string | undefined
+  const stored = await withYtHistory(session.user.id, result)
 
   // Persist to Platform DB so the public media kit can display enriched data
   await prisma.platform.upsert({
     where: { userId_type: { userId: session.user.id, type: 'youtube' } },
-    update: { stats: JSON.parse(JSON.stringify(result)), lastFetched: new Date(), avatarUrl: ytAvatar },
+    update: { stats: JSON.parse(JSON.stringify(stored)), lastFetched: new Date(), avatarUrl: ytAvatar },
     create: {
       userId: session.user.id,
       type: 'youtube',
@@ -193,7 +205,7 @@ export async function GET() {
       username: (ch.snippet.customUrl || ch.id) as string,
       displayName: ch.snippet.title as string,
       avatarUrl: ytAvatar,
-      stats: JSON.parse(JSON.stringify(result)),
+      stats: JSON.parse(JSON.stringify(stored)),
       lastFetched: new Date(),
     },
   }).catch(err => console.error('[youtube/channel] upsert failed', err))

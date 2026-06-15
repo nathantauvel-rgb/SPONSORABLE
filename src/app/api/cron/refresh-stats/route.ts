@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { computeEngagementRate, fetchSubscriberBaseline30d, fetchVideoActivity } from '@/lib/youtubeStats'
+import { buildSnapshot, pushHistory, readHistory } from '@/lib/statsHistory'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -124,9 +125,10 @@ export async function GET(req: NextRequest) {
           lastFetched: new Date().toISOString(),
         }
 
+        const ytStats = { ...stats, history: pushHistory(readHistory(platform.stats), buildSnapshot(stats, 'youtube')) }
         await prisma.platform.update({
           where: { id: platform.id },
-          data: { stats: JSON.parse(JSON.stringify(stats)), lastFetched: new Date() },
+          data: { stats: JSON.parse(JSON.stringify(ytStats)), lastFetched: new Date() },
         })
         results[platform.id] = 'ok'
       }
@@ -182,23 +184,22 @@ export async function GET(req: NextRequest) {
           if (subsRes.ok) { subscriptionCount = (await subsRes.json()).total ?? null }
         } catch { /* non-affiliate */ }
 
+        const twStats = {
+          viewCount: user.view_count,
+          followerCount: followerData?.total ?? 0,
+          displayName: user.display_name,
+          subscriptionCount,
+          gameName: channel?.game_name ?? null,
+          broadcasterLanguage: channel?.broadcaster_language ?? null,
+          tags: channel?.tags ?? [],
+          recentStreams,
+          topClips,
+          avgVodViews,
+        }
+        const twWithHistory = { ...twStats, history: pushHistory(readHistory(platform.stats), buildSnapshot(twStats, 'twitch')) }
         await prisma.platform.update({
           where: { id: platform.id },
-          data: {
-            stats: JSON.parse(JSON.stringify({
-              viewCount: user.view_count,
-              followerCount: followerData?.total ?? 0,
-              displayName: user.display_name,
-              subscriptionCount,
-              gameName: channel?.game_name ?? null,
-              broadcasterLanguage: channel?.broadcaster_language ?? null,
-              tags: channel?.tags ?? [],
-              recentStreams,
-              topClips,
-              avgVodViews,
-            })),
-            lastFetched: new Date(),
-          },
+          data: { stats: JSON.parse(JSON.stringify(twWithHistory)), lastFetched: new Date() },
         })
         results[platform.id] = 'ok'
       }
