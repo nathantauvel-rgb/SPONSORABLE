@@ -108,6 +108,72 @@ function ReadinessWidget({ score }: { score: ReturnType<typeof computeReadinessS
   )
 }
 
+// Aperçu live de la page publique — reflète l'état du formulaire en temps réel.
+function MediaKitPreview({ pseudo, niche, positioningPhrase, formats, availableForCollabs, hasCalendly, bannerUrl }: {
+  pseudo: string; niche: string; positioningPhrase: string; formats: string[]; availableForCollabs: boolean; hasCalendly: boolean; bannerUrl: string
+}) {
+  const [stats, setStats] = useState<{ value: string; label: string }[]>([])
+  const [avatar, setAvatar] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fmt = (n: unknown) => {
+      const x = typeof n === 'string' ? parseInt(n) : Number(n)
+      if (!isFinite(x)) return '—'
+      if (x >= 1_000_000) return `${(x / 1_000_000).toFixed(1).replace('.', ',')}M`
+      if (x >= 1_000) return x.toLocaleString('fr-FR')
+      return String(x)
+    }
+    try {
+      const yt = JSON.parse(localStorage.getItem('sponsorable_yt_data') || 'null')
+      const tw = JSON.parse(localStorage.getItem('sponsorable_twitch_data') || 'null')
+      const s: { value: string; label: string }[] = []
+      if (yt?.subscriberCount != null) s.push({ value: fmt(yt.subscriberCount), label: 'abonnés' })
+      if (tw?.followerCount != null) s.push({ value: fmt(tw.followerCount), label: 'followers' })
+      if (yt?.viewCount != null) s.push({ value: fmt(yt.viewCount), label: 'vues' })
+      setStats(s.slice(0, 3))
+      setAvatar(yt?.thumbnail ?? tw?.profileImageUrl ?? null)
+    } catch {}
+  }, [])
+
+  const name = pseudo?.trim() || 'Ton pseudo'
+  const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+
+  return (
+    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+      <div style={{ height: '64px', background: bannerUrl ? `center / cover no-repeat url("${bannerUrl}")` : 'linear-gradient(110deg, #15803d, #16a34a)' }} />
+      <div style={{ padding: '0 16px 16px', marginTop: '-26px' }}>
+        <div style={{ width: '52px', height: '52px', borderRadius: '50%', border: `3px solid ${CARD}`, background: avatar ? `center / cover no-repeat url("${avatar}")` : '#16a34a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '16px', fontFamily: SYNE }}>{avatar ? '' : initials}</div>
+        <p style={{ margin: '8px 0 0', fontSize: '16px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>{name}</p>
+        {niche && <p style={{ margin: '2px 0 0', fontSize: '12px', color: MUTED, fontFamily: SYNE }}>{niche}</p>}
+        {availableForCollabs && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '8px', fontSize: '11px', fontWeight: 600, color: '#16a34a', background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.3)', borderRadius: '9999px', padding: '2px 9px', fontFamily: SYNE }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a' }} />Disponible pour collabs
+          </span>
+        )}
+        {positioningPhrase && <p style={{ margin: '12px 0 0', fontSize: '13px', color: TEXT, lineHeight: 1.5, fontFamily: SYNE }}>{positioningPhrase}</p>}
+        {stats.length > 0 && (
+          <div style={{ display: 'flex', gap: '18px', margin: '14px 0' }}>
+            {stats.map((s, i) => (
+              <div key={i}>
+                <p style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: TEXT, letterSpacing: '-0.02em', fontFamily: SYNE }}>{s.value}</p>
+                <p style={{ margin: '1px 0 0', fontSize: '10px', color: MUTED, fontFamily: SYNE }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        {formats.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', margin: '12px 0 0' }}>
+            {formats.map(f => (
+              <span key={f} style={{ fontSize: '11px', padding: '3px 9px', borderRadius: '7px', background: SURFACE, border: `1px solid ${BORDER}`, color: TEXT, fontFamily: SYNE }}>{f}</span>
+            ))}
+          </div>
+        )}
+        <div style={{ marginTop: '14px', height: '36px', borderRadius: '9px', background: '#16a34a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 600, fontFamily: SYNE }}>{hasCalendly ? 'Réserver un appel' : 'Contacter'}</div>
+      </div>
+    </div>
+  )
+}
+
 export default function MediaKitEditorPage() {
   const [pro, setPro] = useState<boolean | null>(null)
   const [showTemplates, setShowTemplates] = useState(false)
@@ -285,7 +351,8 @@ export default function MediaKitEditorPage() {
           <p style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>Personnalise ce que voient les sponsors.</p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '720px' }}>
+        <div className="mediakit-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '28px', alignItems: 'start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', minWidth: 0 }}>
 
           {/* Score de complétude */}
           <ReadinessWidget score={readiness} />
@@ -642,7 +709,13 @@ export default function MediaKitEditorPage() {
             ) : null}
           </div>
 
-        </div>
+        </div>{/* fin colonne formulaire */}
+
+          <aside className="mediakit-preview-col" style={{ position: 'sticky', top: '92px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: MUTED, marginBottom: '10px', fontFamily: SYNE }}>Aperçu live</p>
+            <MediaKitPreview pseudo={profile.pseudo} niche={profile.niche} positioningPhrase={profile.positioningPhrase} formats={formats} availableForCollabs={availableForCollabs} hasCalendly={!!calendlyUrl} bannerUrl={bannerUrl} />
+          </aside>
+        </div>{/* fin grille 2 colonnes */}
       </main>
 
       {saved && (
