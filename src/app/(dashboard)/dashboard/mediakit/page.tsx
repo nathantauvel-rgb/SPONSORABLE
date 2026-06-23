@@ -272,7 +272,7 @@ export default function MediaKitEditorPage() {
       <Sidebar />
 
       {/* Barre de navigation fixe */}
-      <div className="mediakit-topbar" style={{ position: 'fixed', top: 0, left: '240px', right: 0, zIndex: 40, backdropFilter: 'blur(12px)', background: `rgba(13,13,15,0.92)`, borderBottom: `1px solid ${BORDER}`, padding: '12px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="mediakit-topbar" style={{ position: 'fixed', top: 0, left: '240px', right: 0, zIndex: 40, backdropFilter: 'blur(12px)', background: 'var(--ds-topbar)', borderBottom: `1px solid ${BORDER}`, padding: '12px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>Mon media kit</p>
           <p style={{ fontSize: '12px', color: MUTED, fontFamily: SYNE }}>Personnalise ce que voient les sponsors.</p>

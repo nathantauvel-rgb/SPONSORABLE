@@ -553,6 +553,7 @@
   --ds-link-border: #2c3a30;
   --ds-tt-tint: rgba(255, 255, 255, 0.08);
   --ds-error: #f87171;
+  --ds-topbar: rgba(25, 25, 24, 0.9);
 }
 html[data-dash-theme="light"] {
   --ds-bg: #ffffff;
@@ -577,4 +578,5 @@ html[data-dash-theme="light"] {
   --ds-link-border: #e3eee7;
   --ds-tt-tint: rgba(0, 0, 0, 0.05);
   --ds-error: #b4413a;
+  --ds-topbar: rgba(255, 255, 255, 0.85);
 }
