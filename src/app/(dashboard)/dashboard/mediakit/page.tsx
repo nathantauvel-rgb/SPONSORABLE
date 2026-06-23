@@ -4,7 +4,6 @@ import { ChevronDown, ChevronUp, Lock, Plus, RefreshCw, Trash2, X, Zap } from 'l
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Sidebar from '@/components/layout/Sidebar'
-import Button from '@/components/ui/button'
 import { exampleCreators } from '@/data/mockData'
 import { computeReadinessScore, computeEditorialScore } from '@/lib/profileInference'
 import { generatePositioningPhrase, generateSponsorSummary } from '@/lib/profileCopyGenerator'
@@ -277,7 +276,7 @@ export default function MediaKitEditorPage() {
           <p style={{ fontSize: '15px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>Mon media kit</p>
           <p style={{ fontSize: '12px', color: MUTED, fontFamily: SYNE }}>Personnalise ce que voient les sponsors.</p>
         </div>
-        <Button variant="primary" onClick={handleSave}>Sauvegarder</Button>
+        <button onClick={handleSave} style={{ border: 'none', background: '#16a34a', color: '#ffffff', fontSize: '14px', fontWeight: 600, padding: '9px 18px', borderRadius: '8px', cursor: 'pointer', fontFamily: SYNE, transition: 'opacity 150ms' }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.9' }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>Sauvegarder</button>
       </div>
 
       <main className="dash-main-mediakit" style={{ marginLeft: '240px', padding: '80px 48px 40px' }}>
@@ -401,25 +400,14 @@ export default function MediaKitEditorPage() {
                 const isDisabled = !isSelected && formats.length >= 3
                 return (
                   <button key={tag} disabled={isDisabled} onClick={() => isSelected ? removeFormat(tag) : (formats.length < 3 && setFormats([...formats, tag]))}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, cursor: isDisabled ? 'not-allowed' : 'pointer', border: isSelected ? `1.5px solid rgba(29,170,80,0.25)` : `1.5px solid ${BORDER}`, background: isSelected ? `rgba(29,170,80,0.10)` : CARD, color: isSelected ? ACCENT : isDisabled ? BORDER : MUTED, opacity: isDisabled ? 0.45 : 1, transition: 'all 120ms ease', fontFamily: SYNE }}>
-                    {isSelected && <span style={{ fontSize: '10px' }}>✓</span>}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 500, cursor: isDisabled ? 'not-allowed' : 'pointer', border: isSelected ? '1px solid #16a34a' : `1px solid ${BORDER}`, background: isSelected ? '#16a34a' : CARD, color: isSelected ? '#ffffff' : isDisabled ? BORDER : MUTED, opacity: isDisabled ? 0.45 : 1, transition: 'all 120ms ease', fontFamily: SYNE }}>
                     {tag}
                   </button>
                 )
               })}
             </div>
-            {formats.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: formats.length >= 3 ? `rgba(29,170,80,0.06)` : CARD, borderRadius: '10px', border: `1px solid ${formats.length >= 3 ? 'rgba(29,170,80,0.25)' : BORDER}` }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', flex: 1 }}>
-                  {formats.map(f => (
-                    <span key={f} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: `rgba(29,170,80,0.10)`, color: ACCENT, border: `1px solid rgba(29,170,80,0.25)`, borderRadius: '9999px', padding: '4px 10px', fontSize: '12px', fontWeight: 600, fontFamily: SYNE }}>
-                      {f}
-                      <button onClick={() => removeFormat(f)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: ACCENT, opacity: 0.6 }} onMouseEnter={e => ((e.currentTarget as HTMLElement).style.opacity = '1')} onMouseLeave={e => ((e.currentTarget as HTMLElement).style.opacity = '0.6')}><X size={11} /></button>
-                    </span>
-                  ))}
-                </div>
-                {formats.length >= 3 && <span style={{ fontSize: '11px', color: ACCENT, fontWeight: 600, whiteSpace: 'nowrap', fontFamily: SYNE }}>Limite atteinte</span>}
-              </div>
+            {formats.length >= 3 && (
+              <p style={{ fontSize: '12px', color: MUTED, fontFamily: SYNE, margin: 0 }}>Limite atteinte — clique un format pour le retirer.</p>
             )}
           </div>
 
@@ -442,7 +430,7 @@ export default function MediaKitEditorPage() {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {CONTENT_STYLE_OPTIONS.map(s => (
                     <button key={s} onClick={() => setProfile((p: typeof profile) => ({ ...p, contentStyle: p.contentStyle === s ? '' : s }))}
-                      style={{ padding: '5px 12px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: profile.contentStyle === s ? `1.5px solid rgba(29,170,80,0.25)` : `1.5px solid ${BORDER}`, background: profile.contentStyle === s ? `rgba(29,170,80,0.10)` : CARD, color: profile.contentStyle === s ? ACCENT : MUTED, transition: 'all 100ms', fontFamily: SYNE }}>
+                      style={{ padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: profile.contentStyle === s ? '1px solid #16a34a' : `1px solid ${BORDER}`, background: profile.contentStyle === s ? '#16a34a' : CARD, color: profile.contentStyle === s ? '#ffffff' : MUTED, transition: 'all 100ms', fontFamily: SYNE }}>
                       {s}
                     </button>
                   ))}
@@ -458,8 +446,8 @@ export default function MediaKitEditorPage() {
                   const isSelected = languages.includes(l)
                   return (
                     <button key={l} onClick={() => setLanguages(isSelected ? languages.filter(x => x !== l) : [...languages, l])}
-                      style={{ padding: '5px 14px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: isSelected ? `1.5px solid rgba(29,170,80,0.25)` : `1.5px solid ${BORDER}`, background: isSelected ? `rgba(29,170,80,0.10)` : CARD, color: isSelected ? ACCENT : MUTED, transition: 'all 100ms', fontFamily: SYNE }}>
-                      {isSelected && <span style={{ marginRight: '4px', fontSize: '10px' }}>✓</span>}{l}
+                      style={{ padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: isSelected ? '1px solid #16a34a' : `1px solid ${BORDER}`, background: isSelected ? '#16a34a' : CARD, color: isSelected ? '#ffffff' : MUTED, transition: 'all 100ms', fontFamily: SYNE }}>
+                      {l}
                     </button>
                   )
                 })}

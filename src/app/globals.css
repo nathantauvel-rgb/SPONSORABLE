@@ -534,7 +534,7 @@
   --ds-bg: #1c1c1b;
   --ds-surface: #1f1f1e;
   --ds-card: #242423;
-  --ds-accent: #2ea862;
+  --ds-accent: #16a34a;
   --ds-green-dk: #4cc578;
   --ds-text: #ededec;
   --ds-text2: #9b9a95;
@@ -559,7 +559,7 @@ html[data-dash-theme="light"] {
   --ds-bg: #ffffff;
   --ds-surface: #fbfbfa;
   --ds-card: #ffffff;
-  --ds-accent: #1daa50;
+  --ds-accent: #16a34a;
   --ds-green-dk: #1a8f44;
   --ds-text: #37352f;
   --ds-text2: #5f5e5b;
