@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Sidebar from '@/components/layout/Sidebar'
 import { exampleCreators } from '@/data/mockData'
 import { computeReadinessScore, computeEditorialScore } from '@/lib/profileInference'
-import { generatePositioningPhrase, generateSponsorSummary } from '@/lib/profileCopyGenerator'
+import { generatePositioningPhrase } from '@/lib/profileCopyGenerator'
 import { BG, SURFACE, CARD, ACCENT, TEXT, MUTED, BORDER, SYNE, DISPLAY } from '@/lib/ds'
 
 type Partnership = { name: string; category: string; result: string; date: string }
@@ -18,7 +18,6 @@ const load = <T,>(key: string, fallback: T): T => {
 const EMPTY_PARTNERSHIP: Partnership = { name: '', category: '', result: '', date: '' }
 
 const LANGUAGES_OPTIONS = ['Français', 'Anglais', 'Espagnol', 'Portugais', 'Allemand', 'Italien', 'Arabe']
-const CONTENT_STYLE_OPTIONS = ['Humoristique', 'Informatif', 'Hardcore gamer', 'Variety', 'Lifestyle', 'Éducatif', 'Compétitif']
 
 /* ── Banner uploader ───────────────────────────────────────── */
 function BannerUploader({ onUrl }: { onUrl: (url: string) => void }) {
@@ -269,12 +268,6 @@ export default function MediaKitEditorPage() {
     setProfile((p: typeof profile) => ({ ...p, positioningPhrase: phrase }))
   }
 
-  const handleGenerateSummary = () => {
-    const inferred = { dominantPlatform: null as 'youtube' | 'twitch' | null, dominantFormat: null as 'video' | 'live' | null, mainGameFromTwitch: null }
-    const summary = generateSponsorSummary({ displayName: profile.pseudo, bio: profile.bio, niche: profile.niche, formats, country: profile.country, languages, contentStyle: profile.contentStyle, availableForCollabs }, inferred)
-    setProfile((p: typeof profile) => ({ ...p, sponsorSummary: summary }))
-  }
-
   const handleSave = async () => {
     localStorage.setItem('sponsorable_profile', JSON.stringify(profile))
     localStorage.setItem('sponsorable_formats', JSON.stringify(formats))
@@ -299,11 +292,11 @@ export default function MediaKitEditorPage() {
           niche: profile.niche,
           country: profile.country || null,
           languages: languages.length > 0 ? languages : undefined,
-          contentStyle: profile.contentStyle || null,
-          targetBrands: profile.targetBrands || null,
+          contentStyle: null,
+          targetBrands: null,
           availableForCollabs,
           positioningPhrase: profile.positioningPhrase || null,
-          sponsorSummary: profile.sponsorSummary || null,
+          sponsorSummary: null,
           theme: selectedTemplateId || undefined,
           formats,
           showPartnerships,
@@ -486,26 +479,12 @@ export default function MediaKitEditorPage() {
             </div>
             <p style={{ ...subText, marginBottom: '24px' }}>Ces infos aident les marques à te qualifier. Plus tu renseignes, meilleur est ton positionnement.</p>
 
-            {/* Pays + Langue + Style */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-              <div>
-                <label style={labelStyle}>Pays / Marché principal</label>
-                <input value={profile.country} onChange={e => setProfile({ ...profile, country: e.target.value })} placeholder="France" style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
-              </div>
-              <div>
-                <label style={labelStyle}>Style de contenu</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {CONTENT_STYLE_OPTIONS.map(s => (
-                    <button key={s} onClick={() => setProfile((p: typeof profile) => ({ ...p, contentStyle: p.contentStyle === s ? '' : s }))}
-                      style={{ padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: profile.contentStyle === s ? '1px solid #16a34a' : `1px solid ${BORDER}`, background: profile.contentStyle === s ? '#16a34a' : CARD, color: profile.contentStyle === s ? '#ffffff' : MUTED, transition: 'all 100ms', fontFamily: SYNE }}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {/* Marché : pays + langues */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={labelStyle}>Pays / Marché principal</label>
+              <input value={profile.country} onChange={e => setProfile({ ...profile, country: e.target.value })} placeholder="France" style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
             </div>
 
-            {/* Langues */}
             <div style={{ marginBottom: '20px' }}>
               <label style={labelStyle}>Langue(s) de contenu</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -519,12 +498,6 @@ export default function MediaKitEditorPage() {
                   )
                 })}
               </div>
-            </div>
-
-            {/* Types de marques ciblées */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={labelStyle}>Marques / catégories visées <span style={{ color: BORDER, fontWeight: 400 }}>optionnel</span></label>
-              <input value={profile.targetBrands} onChange={e => setProfile({ ...profile, targetBrands: e.target.value })} placeholder="gaming, tech, énergie, lifestyle, SaaS…" style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
             </div>
 
             {/* Disponibilité */}
@@ -559,28 +532,6 @@ export default function MediaKitEditorPage() {
                 style={inputStyle} onFocus={onFocus} onBlur={onBlur}
               />
               <p style={{ fontSize: '11px', color: MUTED, marginTop: '5px', fontFamily: SYNE }}>1 phrase courte affichée en accroche sur ta page publique.</p>
-            </div>
-
-            {/* Résumé sponsor */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <label style={{ ...labelStyle, marginBottom: 0 }}>Résumé sponsor</label>
-                  <span style={{ fontSize: '10px', fontWeight: 600, color: ACCENT, background: `rgba(29,170,80,0.12)`, borderRadius: '6px', padding: '1px 6px', fontFamily: SYNE }}>✦ Suggéré</span>
-                </div>
-                <button onClick={handleGenerateSummary} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: ACCENT, background: `rgba(29,170,80,0.08)`, border: `1px solid rgba(29,170,80,0.2)`, borderRadius: '7px', padding: '4px 10px', cursor: 'pointer', fontFamily: SYNE }}>
-                  <RefreshCw size={11} /> Générer
-                </button>
-              </div>
-              <textarea
-                value={profile.sponsorSummary}
-                onChange={e => setProfile({ ...profile, sponsorSummary: e.target.value })}
-                rows={3}
-                placeholder="2 phrases max. Décris ta valeur pour une marque : ton audience, ta niche, ta disponibilité…"
-                style={{ ...inputStyle, resize: 'vertical', fontFamily: SYNE, lineHeight: 1.6 }}
-                onFocus={onFocus} onBlur={onBlur}
-              />
-              <p style={{ fontSize: '11px', color: MUTED, marginTop: '5px', fontFamily: SYNE }}>Affiché dans la section En bref de ta page publique. 2 phrases max.</p>
             </div>
           </div>
 
