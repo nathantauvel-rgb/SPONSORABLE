@@ -6,7 +6,7 @@
 export const BG      = '#0d0d0f'
 export const SURFACE = '#111318'
 export const CARD    = '#1c1f26'
-export const ACCENT  = '#22c55e'
+export const ACCENT  = '#1daa50'
 export const TEXT    = '#ffffff'
 export const MUTED   = '#888888'
 export const BORDER  = '#222222'

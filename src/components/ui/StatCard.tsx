@@ -42,7 +42,7 @@ export default function StatCard({ target, suffix = '', prefix = '', label }: St
         overflow: 'hidden',
         /* Halo vert qui pulse en continu dès que le compteur démarre */
         boxShadow: triggered
-          ? '0 0 0 0 rgba(34,197,94,0.27)'
+          ? '0 0 0 0 rgba(29,170,80,0.27)'
           : 'none',
         animation: triggered ? 'haloGlow 2s ease-in-out infinite' : 'none',
       }}

@@ -176,7 +176,7 @@ const Sidebar = () => {
                 padding: '10px 12px', borderRadius: '8px', marginBottom: '2px',
                 textDecoration: 'none', fontFamily: SYNE, fontSize: '14px', fontWeight: 500,
                 transition: 'all 150ms ease',
-                background: active ? `rgba(34,197,94,0.1)` : 'transparent',
+                background: active ? `rgba(29,170,80,0.1)` : 'transparent',
                 color: active ? ACCENT : MUTED,
                 borderLeft: active ? `2px solid ${ACCENT}` : '2px solid transparent',
               }}

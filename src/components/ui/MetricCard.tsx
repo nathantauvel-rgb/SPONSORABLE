@@ -19,7 +19,7 @@ const MetricCard = ({ label, value, change, positive = true }: MetricCardProps) 
     }}
     onMouseEnter={e => {
       const el = e.currentTarget as HTMLDivElement
-      el.style.borderColor = `rgba(34,197,94,0.3)`
+      el.style.borderColor = `rgba(29,170,80,0.3)`
       el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)'
     }}
     onMouseLeave={e => {

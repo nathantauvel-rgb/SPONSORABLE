@@ -275,7 +275,7 @@ export default function SponsorsPage() {
                   </div>
 
                   {/* Conseil */}
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: '10px', padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: 'rgba(29,170,80,0.05)', border: '1px solid rgba(29,170,80,0.25)', borderRadius: '10px', padding: '12px 14px' }}>
                     <Zap size={14} color={ACCENT} style={{ flexShrink: 0, marginTop: '1px' }} />
                     <p style={{ fontSize: '13px', color: '#cbd5cb', lineHeight: 1.5, fontFamily: SYNE }}>
                       <span style={{ color: ACCENT, fontWeight: 600 }}>Conseil : </span>{result.advice}
@@ -290,7 +290,7 @@ export default function SponsorsPage() {
                   const isCurrent = g.level === result.grade.level
                   const isPast = g.level < result.grade.level
                   return (
-                    <div key={g.level} style={{ textAlign: 'center', padding: '10px 6px', borderRadius: '8px', background: isCurrent ? 'rgba(34,197,94,0.07)' : isPast ? 'rgba(255,255,255,0.02)' : 'transparent', border: isCurrent ? '1.5px solid rgba(34,197,94,0.5)' : `1px solid ${BORDER}`, opacity: !isCurrent && !isPast ? 0.6 : 1 }}>
+                    <div key={g.level} style={{ textAlign: 'center', padding: '10px 6px', borderRadius: '8px', background: isCurrent ? 'rgba(29,170,80,0.07)' : isPast ? 'rgba(255,255,255,0.02)' : 'transparent', border: isCurrent ? '1.5px solid rgba(29,170,80,0.5)' : `1px solid ${BORDER}`, opacity: !isCurrent && !isPast ? 0.6 : 1 }}>
                       <div style={{ fontSize: '11px', fontFamily: NUM, color: isCurrent ? ACCENT : isPast ? '#888' : '#666', marginBottom: '3px' }}>
                         {isPast ? '✓' : isCurrent ? '◆' : `0${g.level}`}
                       </div>

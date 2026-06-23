@@ -44,7 +44,7 @@ const SectionCard = ({ children }: { children: React.ReactNode }) => (
 
 const SectionHeader = ({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) => (
   <div style={{ padding: '20px 24px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
-    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(34,197,94,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: ACCENT, flexShrink: 0 }}>
+    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(29,170,80,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: ACCENT, flexShrink: 0 }}>
       {icon}
     </div>
     <div>
@@ -337,7 +337,7 @@ function SettingsContent() {
                   style={{
                     padding: '10px 24px', borderRadius: '10px', border: 'none', cursor: 'pointer',
                     fontSize: '14px', fontWeight: 600,
-                    background: saved ? 'rgba(34,197,94,0.15)' : ACCENT,
+                    background: saved ? 'rgba(29,170,80,0.15)' : ACCENT,
                     color: saved ? ACCENT : BG,
                     transition: 'all 200ms ease',
                   }}
@@ -377,7 +377,7 @@ function SettingsContent() {
                     </p>
                   </div>
                 </div>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: ACCENT, background: 'rgba(34,197,94,0.12)', padding: '4px 10px', borderRadius: '9999px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: ACCENT, background: 'rgba(29,170,80,0.12)', padding: '4px 10px', borderRadius: '9999px' }}>
                   {inTrial ? 'Essai' : currentPlan === 'pro' ? 'Actif' : 'Gratuit'}
                 </span>
               </div>
@@ -404,7 +404,7 @@ function SettingsContent() {
               {!isPaid && (
                 <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: '14px', padding: '24px', color: TEXT }}>
                   {inTrial && (
-                    <div style={{ marginBottom: '16px', padding: '10px 14px', background: 'rgba(34,197,94,0.08)', border: `1px solid ${ACCENT}`, borderRadius: '10px' }}>
+                    <div style={{ marginBottom: '16px', padding: '10px 14px', background: 'rgba(29,170,80,0.08)', border: `1px solid ${ACCENT}`, borderRadius: '10px' }}>
                       <p style={{ fontSize: '12px', color: ACCENT, fontWeight: 600 }}>
                         🎁 Tu profites de l&apos;essai Pro gratuit — {trialDaysLeft} jour{trialDaysLeft > 1 ? 's' : ''} restant{trialDaysLeft > 1 ? 's' : ''}. Abonne-toi pour ne pas perdre l&apos;accès.
                       </p>
@@ -437,7 +437,7 @@ function SettingsContent() {
                   <button
                     onClick={handleCheckout}
                     disabled={checkoutLoading}
-                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', cursor: checkoutLoading ? 'wait' : 'pointer', background: checkoutLoading ? 'rgba(34,197,94,0.7)' : ACCENT, color: BG, fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'background 150ms', opacity: checkoutLoading ? 0.8 : 1 }}
+                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', cursor: checkoutLoading ? 'wait' : 'pointer', background: checkoutLoading ? 'rgba(29,170,80,0.7)' : ACCENT, color: BG, fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'background 150ms', opacity: checkoutLoading ? 0.8 : 1 }}
                   >
                     {checkoutLoading ? (
                       <>
@@ -542,7 +542,7 @@ function SettingsContent() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <p style={{ fontSize: '15px', fontWeight: 600, color: TEXT }}>Changer le mot de passe</p>
                   {pwdSuccess ? (
-                    <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '10px', padding: '14px 16px' }}>
+                    <div style={{ background: 'rgba(29,170,80,0.08)', border: '1px solid rgba(29,170,80,0.2)', borderRadius: '10px', padding: '14px 16px' }}>
                       <p style={{ fontSize: '14px', fontWeight: 600, color: ACCENT }}>✓ Mot de passe modifié avec succès</p>
                     </div>
                   ) : (

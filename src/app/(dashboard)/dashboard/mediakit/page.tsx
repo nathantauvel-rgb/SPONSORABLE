@@ -42,7 +42,7 @@ function BannerUploader({ onUrl }: { onUrl: (url: string) => void }) {
     <div>
       <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '100px', border: '2px dashed #333', borderRadius: '10px', cursor: uploading ? 'wait' : 'pointer', background: CARD, transition: 'all 150ms', opacity: uploading ? 0.7 : 1 }}>
         {uploading ? (
-          <><span style={{ width: '24px', height: '24px', border: `3px solid rgba(34,197,94,0.3)`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} /><span style={{ fontSize: '13px', color: MUTED, fontWeight: 500, fontFamily: SYNE }}>Upload en cours…</span></>
+          <><span style={{ width: '24px', height: '24px', border: `3px solid rgba(29,170,80,0.3)`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} /><span style={{ fontSize: '13px', color: MUTED, fontWeight: 500, fontFamily: SYNE }}>Upload en cours…</span></>
         ) : (
           <><span style={{ fontSize: '24px' }}>🖼️</span><span style={{ fontSize: '13px', color: MUTED, fontWeight: 500, fontFamily: SYNE }}>Clique pour uploader une image</span><span style={{ fontSize: '11px', color: MUTED, fontFamily: SYNE }}>JPG, PNG, WebP · Max 5 Mo</span></>
         )}
@@ -92,7 +92,7 @@ function ReadinessWidget({ score }: { score: ReturnType<typeof computeReadinessS
         <div style={{ padding: '0 20px 16px', borderTop: `1px solid ${BORDER}` }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '14px' }}>
             {score.items.map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '8px 10px', borderRadius: '8px', background: item.done ? `rgba(34,197,94,0.08)` : CARD }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '8px 10px', borderRadius: '8px', background: item.done ? `rgba(29,170,80,0.08)` : CARD }}>
                 <span style={{ flexShrink: 0, width: '18px', height: '18px', borderRadius: '50%', background: item.done ? ACCENT : BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: item.done ? BG : MUTED, fontWeight: 700, marginTop: '1px' }}>
                   {item.done ? '✓' : ''}
                 </span>
@@ -266,7 +266,7 @@ export default function MediaKitEditorPage() {
     <div style={{ background: BG, minHeight: '100vh' }}>
       <style>{`
         @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(16px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
-        @keyframes profileFlash { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } 30% { box-shadow: 0 0 0 6px rgba(34,197,94,0.25); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+        @keyframes profileFlash { 0% { box-shadow: 0 0 0 0 rgba(29,170,80,0); } 30% { box-shadow: 0 0 0 6px rgba(29,170,80,0.25); } 100% { box-shadow: 0 0 0 0 rgba(29,170,80,0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
       <Sidebar />
@@ -300,7 +300,7 @@ export default function MediaKitEditorPage() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <p style={{ fontSize: '15px', fontWeight: 600, color: TEXT, textAlign: 'left', fontFamily: SYNE }}>Partir d&apos;un exemple</p>
-                  {pro === false && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
+                  {pro === false && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(29,170,80,0.12)`, border: `1px solid rgba(29,170,80,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
                 </div>
                 <p style={{ fontSize: '13px', color: MUTED, textAlign: 'left', marginTop: '2px', fontFamily: SYNE }}>Pré-remplis ton media kit à partir d&apos;un profil type.</p>
               </div>
@@ -310,7 +310,7 @@ export default function MediaKitEditorPage() {
             {pro === false && (
               <div style={{ marginTop: '14px', padding: '14px 16px', background: CARD, border: `1px dashed ${BORDER}`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>Les templates de design sont réservés au plan Pro</p>
-                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(34,197,94,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
+                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(29,170,80,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
               </div>
             )}
 
@@ -360,7 +360,7 @@ export default function MediaKitEditorPage() {
                   })}
                 </div>
                 {selectedTemplateId && (
-                  <div style={{ marginTop: '14px', padding: '12px 16px', background: `rgba(34,197,94,0.08)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ marginTop: '14px', padding: '12px 16px', background: `rgba(29,170,80,0.08)`, border: `1px solid rgba(29,170,80,0.25)`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '13px', color: ACCENT, fontWeight: 500, fontFamily: SYNE }}>✓ Template appliqué</span>
                     <button onClick={() => setShowTemplates(false)} style={{ fontSize: '13px', fontWeight: 600, color: ACCENT, background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', fontFamily: SYNE }}>Fermer ×</button>
                   </div>
@@ -401,7 +401,7 @@ export default function MediaKitEditorPage() {
                 const isDisabled = !isSelected && formats.length >= 3
                 return (
                   <button key={tag} disabled={isDisabled} onClick={() => isSelected ? removeFormat(tag) : (formats.length < 3 && setFormats([...formats, tag]))}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, cursor: isDisabled ? 'not-allowed' : 'pointer', border: isSelected ? `1.5px solid rgba(34,197,94,0.25)` : `1.5px solid ${BORDER}`, background: isSelected ? `rgba(34,197,94,0.10)` : CARD, color: isSelected ? ACCENT : isDisabled ? BORDER : MUTED, opacity: isDisabled ? 0.45 : 1, transition: 'all 120ms ease', fontFamily: SYNE }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '9999px', fontSize: '13px', fontWeight: 500, cursor: isDisabled ? 'not-allowed' : 'pointer', border: isSelected ? `1.5px solid rgba(29,170,80,0.25)` : `1.5px solid ${BORDER}`, background: isSelected ? `rgba(29,170,80,0.10)` : CARD, color: isSelected ? ACCENT : isDisabled ? BORDER : MUTED, opacity: isDisabled ? 0.45 : 1, transition: 'all 120ms ease', fontFamily: SYNE }}>
                     {isSelected && <span style={{ fontSize: '10px' }}>✓</span>}
                     {tag}
                   </button>
@@ -409,10 +409,10 @@ export default function MediaKitEditorPage() {
               })}
             </div>
             {formats.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: formats.length >= 3 ? `rgba(34,197,94,0.06)` : CARD, borderRadius: '10px', border: `1px solid ${formats.length >= 3 ? 'rgba(34,197,94,0.25)' : BORDER}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: formats.length >= 3 ? `rgba(29,170,80,0.06)` : CARD, borderRadius: '10px', border: `1px solid ${formats.length >= 3 ? 'rgba(29,170,80,0.25)' : BORDER}` }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', flex: 1 }}>
                   {formats.map(f => (
-                    <span key={f} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: `rgba(34,197,94,0.10)`, color: ACCENT, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '4px 10px', fontSize: '12px', fontWeight: 600, fontFamily: SYNE }}>
+                    <span key={f} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: `rgba(29,170,80,0.10)`, color: ACCENT, border: `1px solid rgba(29,170,80,0.25)`, borderRadius: '9999px', padding: '4px 10px', fontSize: '12px', fontWeight: 600, fontFamily: SYNE }}>
                       {f}
                       <button onClick={() => removeFormat(f)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: ACCENT, opacity: 0.6 }} onMouseEnter={e => ((e.currentTarget as HTMLElement).style.opacity = '1')} onMouseLeave={e => ((e.currentTarget as HTMLElement).style.opacity = '0.6')}><X size={11} /></button>
                     </span>
@@ -427,7 +427,7 @@ export default function MediaKitEditorPage() {
           <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <h3 style={{ ...sectionTitle, marginBottom: 0 }}>Pour les marques</h3>
-              <span style={{ fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}>Nouveau</span>
+              <span style={{ fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(29,170,80,0.12)`, border: `1px solid rgba(29,170,80,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}>Nouveau</span>
             </div>
             <p style={{ ...subText, marginBottom: '24px' }}>Ces infos aident les marques à te qualifier. Plus tu renseignes, meilleur est ton positionnement.</p>
 
@@ -442,7 +442,7 @@ export default function MediaKitEditorPage() {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {CONTENT_STYLE_OPTIONS.map(s => (
                     <button key={s} onClick={() => setProfile((p: typeof profile) => ({ ...p, contentStyle: p.contentStyle === s ? '' : s }))}
-                      style={{ padding: '5px 12px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: profile.contentStyle === s ? `1.5px solid rgba(34,197,94,0.25)` : `1.5px solid ${BORDER}`, background: profile.contentStyle === s ? `rgba(34,197,94,0.10)` : CARD, color: profile.contentStyle === s ? ACCENT : MUTED, transition: 'all 100ms', fontFamily: SYNE }}>
+                      style={{ padding: '5px 12px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: profile.contentStyle === s ? `1.5px solid rgba(29,170,80,0.25)` : `1.5px solid ${BORDER}`, background: profile.contentStyle === s ? `rgba(29,170,80,0.10)` : CARD, color: profile.contentStyle === s ? ACCENT : MUTED, transition: 'all 100ms', fontFamily: SYNE }}>
                       {s}
                     </button>
                   ))}
@@ -458,7 +458,7 @@ export default function MediaKitEditorPage() {
                   const isSelected = languages.includes(l)
                   return (
                     <button key={l} onClick={() => setLanguages(isSelected ? languages.filter(x => x !== l) : [...languages, l])}
-                      style={{ padding: '5px 14px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: isSelected ? `1.5px solid rgba(34,197,94,0.25)` : `1.5px solid ${BORDER}`, background: isSelected ? `rgba(34,197,94,0.10)` : CARD, color: isSelected ? ACCENT : MUTED, transition: 'all 100ms', fontFamily: SYNE }}>
+                      style={{ padding: '5px 14px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', border: isSelected ? `1.5px solid rgba(29,170,80,0.25)` : `1.5px solid ${BORDER}`, background: isSelected ? `rgba(29,170,80,0.10)` : CARD, color: isSelected ? ACCENT : MUTED, transition: 'all 100ms', fontFamily: SYNE }}>
                       {isSelected && <span style={{ marginRight: '4px', fontSize: '10px' }}>✓</span>}{l}
                     </button>
                   )
@@ -491,9 +491,9 @@ export default function MediaKitEditorPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <label style={{ ...labelStyle, marginBottom: 0 }}>Phrase de positionnement</label>
-                  <span style={{ fontSize: '10px', fontWeight: 600, color: ACCENT, background: `rgba(34,197,94,0.12)`, borderRadius: '6px', padding: '1px 6px', fontFamily: SYNE }}>✦ Suggéré</span>
+                  <span style={{ fontSize: '10px', fontWeight: 600, color: ACCENT, background: `rgba(29,170,80,0.12)`, borderRadius: '6px', padding: '1px 6px', fontFamily: SYNE }}>✦ Suggéré</span>
                 </div>
-                <button onClick={handleGeneratePositioning} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: ACCENT, background: `rgba(34,197,94,0.08)`, border: `1px solid rgba(34,197,94,0.2)`, borderRadius: '7px', padding: '4px 10px', cursor: 'pointer', fontFamily: SYNE }}>
+                <button onClick={handleGeneratePositioning} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: ACCENT, background: `rgba(29,170,80,0.08)`, border: `1px solid rgba(29,170,80,0.2)`, borderRadius: '7px', padding: '4px 10px', cursor: 'pointer', fontFamily: SYNE }}>
                   <RefreshCw size={11} /> Générer
                 </button>
               </div>
@@ -511,9 +511,9 @@ export default function MediaKitEditorPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <label style={{ ...labelStyle, marginBottom: 0 }}>Résumé sponsor</label>
-                  <span style={{ fontSize: '10px', fontWeight: 600, color: ACCENT, background: `rgba(34,197,94,0.12)`, borderRadius: '6px', padding: '1px 6px', fontFamily: SYNE }}>✦ Suggéré</span>
+                  <span style={{ fontSize: '10px', fontWeight: 600, color: ACCENT, background: `rgba(29,170,80,0.12)`, borderRadius: '6px', padding: '1px 6px', fontFamily: SYNE }}>✦ Suggéré</span>
                 </div>
-                <button onClick={handleGenerateSummary} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: ACCENT, background: `rgba(34,197,94,0.08)`, border: `1px solid rgba(34,197,94,0.2)`, borderRadius: '7px', padding: '4px 10px', cursor: 'pointer', fontFamily: SYNE }}>
+                <button onClick={handleGenerateSummary} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: ACCENT, background: `rgba(29,170,80,0.08)`, border: `1px solid rgba(29,170,80,0.2)`, borderRadius: '7px', padding: '4px 10px', cursor: 'pointer', fontFamily: SYNE }}>
                   <RefreshCw size={11} /> Générer
                 </button>
               </div>
@@ -538,11 +538,11 @@ export default function MediaKitEditorPage() {
               </div>
               <button
                 onClick={() => { const next = !showPartnerships; setShowPartnerships(next); localStorage.setItem('sponsorable_show_partnerships', String(next)) }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '10px', border: showPartnerships ? `2px solid ${ACCENT}` : `2px solid ${BORDER}`, cursor: 'pointer', transition: 'all 150ms ease', fontWeight: 600, fontSize: '13px', background: showPartnerships ? `rgba(34,197,94,0.08)` : CARD, color: showPartnerships ? ACCENT : MUTED, fontFamily: SYNE }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = showPartnerships ? `rgba(34,197,94,0.14)` : SURFACE }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = showPartnerships ? `rgba(34,197,94,0.08)` : CARD }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '10px', border: showPartnerships ? `2px solid ${ACCENT}` : `2px solid ${BORDER}`, cursor: 'pointer', transition: 'all 150ms ease', fontWeight: 600, fontSize: '13px', background: showPartnerships ? `rgba(29,170,80,0.08)` : CARD, color: showPartnerships ? ACCENT : MUTED, fontFamily: SYNE }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = showPartnerships ? `rgba(29,170,80,0.14)` : SURFACE }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = showPartnerships ? `rgba(29,170,80,0.08)` : CARD }}
               >
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: showPartnerships ? ACCENT : BORDER, boxShadow: showPartnerships ? `0 0 0 3px rgba(34,197,94,0.20)` : 'none', transition: 'all 150ms ease' }} />
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: showPartnerships ? ACCENT : BORDER, boxShadow: showPartnerships ? `0 0 0 3px rgba(29,170,80,0.20)` : 'none', transition: 'all 150ms ease' }} />
                 {showPartnerships ? 'Visible' : 'Masqué'}
               </button>
             </div>
@@ -565,7 +565,7 @@ export default function MediaKitEditorPage() {
             </div>
 
             {addingPartnership ? (
-              <div style={{ padding: '20px', background: `rgba(34,197,94,0.04)`, border: `1.5px solid rgba(34,197,94,0.2)`, borderRadius: '12px' }}>
+              <div style={{ padding: '20px', background: `rgba(29,170,80,0.04)`, border: `1.5px solid rgba(29,170,80,0.2)`, borderRadius: '12px' }}>
                 <p style={{ fontSize: '13px', fontWeight: 600, color: TEXT, marginBottom: '14px', fontFamily: SYNE }}>Nouveau partenariat</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                   {([{ key: 'name', label: 'Marque / Entreprise', placeholder: 'NordVPN' }, { key: 'category', label: 'Catégorie', placeholder: 'Cybersécurité' }, { key: 'date', label: 'Date', placeholder: 'Mars 2025' }] as { key: keyof Partnership; label: string; placeholder: string }[]).map(f => (
@@ -594,7 +594,7 @@ export default function MediaKitEditorPage() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <h3 style={sectionTitle}>Bannière personnalisée</h3>
-                  {pro === false && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
+                  {pro === false && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(29,170,80,0.12)`, border: `1px solid rgba(29,170,80,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
                 </div>
                 <p style={subText}>Image affichée en haut de ta page publique</p>
               </div>
@@ -611,7 +611,7 @@ export default function MediaKitEditorPage() {
             ) : pro === false ? (
               <div style={{ padding: '14px 16px', background: CARD, border: `1px dashed ${BORDER}`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>Disponible avec le plan Pro</p>
-                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(34,197,94,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
+                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(29,170,80,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
               </div>
             ) : null}
           </div>
@@ -637,7 +637,7 @@ export default function MediaKitEditorPage() {
           <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px', opacity: pro === false ? 0.7 : 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <h3 style={sectionTitle}>Lien de réservation</h3>
-              {pro === false && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(34,197,94,0.12)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
+              {pro === false && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: ACCENT, background: `rgba(29,170,80,0.12)`, border: `1px solid rgba(29,170,80,0.25)`, borderRadius: '9999px', padding: '2px 8px', fontFamily: SYNE }}><Lock size={9} /> PRO</span>}
             </div>
             <p style={{ ...subText, marginBottom: '16px' }}>Intègre ton lien Calendly pour que les marques bookent un appel directement</p>
             {pro === true ? (
@@ -649,7 +649,7 @@ export default function MediaKitEditorPage() {
             ) : pro === false ? (
               <div style={{ padding: '14px 16px', background: CARD, border: `1px dashed ${BORDER}`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontSize: '13px', color: MUTED, fontFamily: SYNE }}>Disponible avec le plan Pro</p>
-                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(34,197,94,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
+                <Link href="/dashboard/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, color: ACCENT, textDecoration: 'none', background: `rgba(29,170,80,0.08)`, padding: '6px 12px', borderRadius: '8px', fontFamily: SYNE }}><Zap size={11} /> Upgrader</Link>
               </div>
             ) : null}
           </div>

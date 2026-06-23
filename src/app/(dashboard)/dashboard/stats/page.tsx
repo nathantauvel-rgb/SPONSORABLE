@@ -26,7 +26,7 @@ const COUNTRY_NAMES: Record<string, string> = {
 const ProGate = () => (
   <div style={{ position: 'absolute', inset: 0, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(13,13,15,0.85)', backdropFilter: 'blur(6px)', borderRadius: '16px' }}>
     <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '20px', padding: '40px 48px', textAlign: 'center', boxShadow: '0 8px 40px rgba(0,0,0,0.40)', maxWidth: '380px' }}>
-      <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: `rgba(34,197,94,0.10)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: ACCENT }}>
+      <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: `rgba(29,170,80,0.10)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: ACCENT }}>
         <Lock size={22} />
       </div>
       <p style={{ fontSize: '18px', fontWeight: 700, color: TEXT, marginBottom: '8px', fontFamily: SYNE }}>Statistiques Pro</p>
@@ -114,7 +114,7 @@ export default function StatsPage() {
         {pro === false && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', borderRadius: '14px', padding: '16px 24px', marginBottom: '28px', color: TEXT }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `rgba(34,197,94,0.15)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ACCENT }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `rgba(29,170,80,0.15)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ACCENT }}>
                 <Lock size={15} />
               </div>
               <div>
@@ -168,7 +168,7 @@ export default function StatsPage() {
                     <p style={{ fontSize: '15px', fontWeight: 600, color: TEXT, fontFamily: SYNE }}>Vues du media kit</p>
                     <p style={{ fontSize: '13px', color: MUTED, marginTop: '2px', fontFamily: SYNE }}>30 derniers jours</p>
                   </div>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: ACCENT, background: `rgba(34,197,94,0.10)`, border: `1px solid rgba(34,197,94,0.25)`, borderRadius: '9999px', padding: '4px 12px', fontFamily: SYNE }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: ACCENT, background: `rgba(29,170,80,0.10)`, border: `1px solid rgba(29,170,80,0.25)`, borderRadius: '9999px', padding: '4px 12px', fontFamily: SYNE }}>
                     {last30} ce mois
                   </span>
                 </div>
@@ -188,14 +188,14 @@ export default function StatsPage() {
                             style={{
                               width: '100%',
                               height: `${(v.count / maxViews) * 100}%`,
-                              background: v.count === maxViews ? ACCENT : 'rgba(34,197,94,0.20)',
+                              background: v.count === maxViews ? ACCENT : 'rgba(29,170,80,0.20)',
                               borderRadius: '3px 3px 0 0',
                               transition: 'background 150ms ease',
                               cursor: 'default',
                               minHeight: v.count > 0 ? '4px' : '0',
                             }}
                             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = ACCENT }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = v.count === maxViews ? ACCENT : 'rgba(34,197,94,0.20)' }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = v.count === maxViews ? ACCENT : 'rgba(29,170,80,0.20)' }}
                           />
                         </div>
                       ))}
@@ -250,7 +250,7 @@ export default function StatsPage() {
                               </div>
                             </div>
                             <div style={{ height: '4px', background: BORDER, borderRadius: '9999px', overflow: 'hidden' }}>
-                              <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, rgba(34,197,94,0.6), ${ACCENT})`, borderRadius: '9999px' }} />
+                              <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, rgba(29,170,80,0.6), ${ACCENT})`, borderRadius: '9999px' }} />
                             </div>
                           </div>
                         )

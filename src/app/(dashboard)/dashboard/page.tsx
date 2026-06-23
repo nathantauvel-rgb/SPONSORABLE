@@ -362,7 +362,7 @@ function DashboardContent() {
                   </div>
                 </div>
                 {ytData && (
-                  <span style={{ flexShrink: 0, background: 'rgba(34,197,94,0.12)', color: ACCENT, border: '1px solid rgba(34,197,94,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
+                  <span style={{ flexShrink: 0, background: 'rgba(29,170,80,0.12)', color: ACCENT, border: '1px solid rgba(29,170,80,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, display: 'block' }} />
                     Connecté
                   </span>
@@ -440,7 +440,7 @@ function DashboardContent() {
                   </div>
                 </div>
                 {twitchData && (
-                  <span style={{ flexShrink: 0, background: 'rgba(34,197,94,0.12)', color: ACCENT, border: '1px solid rgba(34,197,94,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
+                  <span style={{ flexShrink: 0, background: 'rgba(29,170,80,0.12)', color: ACCENT, border: '1px solid rgba(29,170,80,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, display: 'block' }} />
                     Connecté
                   </span>
@@ -509,7 +509,7 @@ function DashboardContent() {
                   </div>
                 </div>
                 {tiktokData && (
-                  <span style={{ flexShrink: 0, background: 'rgba(34,197,94,0.12)', color: ACCENT, border: '1px solid rgba(34,197,94,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
+                  <span style={{ flexShrink: 0, background: 'rgba(29,170,80,0.12)', color: ACCENT, border: '1px solid rgba(29,170,80,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, display: 'block' }} />
                     Connecté
                   </span>
