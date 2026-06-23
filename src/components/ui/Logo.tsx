@@ -36,13 +36,15 @@ export default function Logo({
   size = 20,
   showMark = true,
   href = '/' as string | null,
+  color,
 }: {
   tone?: 'light' | 'dark'
   size?: number
   showMark?: boolean
   href?: string | null
+  color?: string
 }) {
-  const textColor = tone === 'dark' ? '#ffffff' : '#0f172a'
+  const textColor = color ?? (tone === 'dark' ? '#ffffff' : '#0f172a')
 
   const inner = (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: size * 0.5, lineHeight: 1 }}>

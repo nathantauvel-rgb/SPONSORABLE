@@ -61,7 +61,15 @@ export default function RootLayout({
       lang="fr"
       className={`${spaceGrotesk.variable} ${inter.variable} ${martianMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full"><Providers>{children}</Providers><CookieBanner /></body>
+      <body className="min-h-full">
+        {/* Applique la préférence de thème dashboard avant le paint (évite le flash). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(localStorage.getItem('sponsorable_theme')==='light')document.documentElement.setAttribute('data-dash-theme','light')}catch(e){}})()`,
+          }}
+        />
+        <Providers>{children}</Providers><CookieBanner />
+      </body>
     </html>
   )
 }
