@@ -16,9 +16,9 @@ export const MOBILE_TOPBAR_H = 56
 /** Palette par thème — `light` = SaaS premium façon Notion (essai sur le dashboard). */
 const PALETTES = {
   dark: {
-    surface: SURFACE, sidebar: SURFACE, border: BORDER, text: TEXT, muted: MUTED, bg: BG,
-    accent: ACCENT, hover: 'rgba(255,255,255,0.04)', activeBg: 'rgba(29,170,80,0.1)',
-    activeText: ACCENT, activeBorder: ACCENT, avatarBg: ACCENT, avatarText: BG, logoTone: 'dark' as const,
+    surface: SURFACE, sidebar: '#191918', border: BORDER, text: TEXT, muted: MUTED, bg: BG,
+    accent: ACCENT, hover: '#222221', activeBg: '#262625',
+    activeText: TEXT, activeBorder: 'transparent', avatarBg: '#33332f', avatarText: TEXT, logoTone: 'dark' as const,
   },
   light: {
     surface: '#ffffff', sidebar: '#fbfbfa', border: '#ebeae8', text: '#37352f', muted: '#6b6a66', bg: '#ffffff',

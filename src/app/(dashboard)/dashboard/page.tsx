@@ -6,16 +6,16 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
 import Sidebar from '@/components/layout/Sidebar'
 
-// Design system — light premium (façon Notion). Essai sur le dashboard d'accueil.
-const BG      = '#ffffff'   // fond de page
-const SURFACE = '#fbfbfa'   // surfaces secondaires (blanc cassé chaud)
-const CARD    = '#ffffff'   // cartes
-const ACCENT  = '#1daa50'   // vert d'action
-const GREEN_DK= '#1a8f44'   // vert texte (contraste sur fond clair)
-const TEXT    = '#37352f'   // texte principal (gris-noir Notion)
-const TEXT2   = '#6b6a66'   // texte secondaire
-const MUTED   = '#9b9a95'   // texte tertiaire / placeholders
-const BORDER  = '#ebeae8'   // bordures fines
+// Design system — dark premium (gris chauds façon Notion/Linear).
+const BG      = '#1c1c1b'   // fond de page
+const SURFACE = '#1f1f1e'   // surfaces secondaires
+const CARD    = '#242423'   // cartes
+const ACCENT  = '#2ea862'   // vert d'action
+const GREEN_DK= '#4cc578'   // vert texte (statut "Relié")
+const TEXT    = '#ededec'   // texte principal
+const TEXT2   = '#9b9a95'   // texte secondaire
+const MUTED   = '#6f6e6a'   // texte tertiaire / placeholders
+const BORDER  = '#2f2f2d'   // bordures fines
 const SYNE    = 'var(--font-syne), system-ui, sans-serif'
 const DISPLAY = 'var(--font-display), system-ui, sans-serif'
 const NUM     = '"Martian Mono", var(--font-num), ui-monospace, monospace'
@@ -112,14 +112,14 @@ function PlatformRow(props: {
   const subtitle = loading ? 'Chargement…' : connected ? (accountName ?? 'Connecté') : 'Non connecté'
   return (
     <div style={{
-      background: connected ? CARD : '#fcfcfb',
-      border: connected ? `1px solid ${BORDER}` : '1px dashed #dcdbd7',
+      background: connected ? CARD : SURFACE,
+      border: connected ? `1px solid ${BORDER}` : '1px dashed #3a3a36',
       borderRadius: '12px', padding: '14px 16px',
       boxShadow: connected ? '0 1px 2px rgba(15,15,15,0.04)' : 'none',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '13px', minWidth: 0 }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '9px', background: connected ? brandTint : '#f1f1ef', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '9px', background: connected ? brandTint : '#2a2a28', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {icon}
           </div>
           <div style={{ minWidth: 0 }}>
@@ -158,7 +158,7 @@ function PlatformRow(props: {
       </div>
       {error && (
         <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '12px', color: '#b4413a', fontFamily: SYNE }}>⚠ {error}</span>
+          <span style={{ fontSize: '12px', color: '#f87171', fontFamily: SYNE }}>⚠ {error}</span>
           {errorAction}
         </div>
       )}
@@ -372,7 +372,7 @@ function DashboardContent() {
 
   return (
     <div style={{ background: BG, minHeight: '100vh' }}>
-      <Sidebar theme="light" />
+      <Sidebar theme="dark" />
       <main className="dash-main" style={{ marginLeft: '240px', padding: '40px 48px', minHeight: '100vh', background: BG }}>
 
         {/* Header */}
@@ -385,9 +385,9 @@ function DashboardContent() {
             )}
           </div>
           {publicPseudo && (
-            <button onClick={() => router.push(`/${publicPseudo}`)} style={{ border: `1px solid ${BORDER}`, background: '#fff', color: TEXT, fontSize: '14px', fontWeight: 500, padding: '9px 16px', borderRadius: '9px', cursor: 'pointer', fontFamily: SYNE, transition: 'background 150ms' }}
+            <button onClick={() => router.push(`/${publicPseudo}`)} style={{ border: `1px solid ${BORDER}`, background: CARD, color: TEXT, fontSize: '14px', fontWeight: 500, padding: '9px 16px', borderRadius: '9px', cursor: 'pointer', fontFamily: SYNE, transition: 'background 150ms' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = SURFACE }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff' }}>
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = CARD }}>
               Voir ma page →
             </button>
           )}
@@ -404,13 +404,13 @@ function DashboardContent() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
             <PlatformRow
-              icon={<PlatformIcon id="youtube" color={ytData ? '#e0322f' : '#a3a29d'} />}
-              name="YouTube" brandTint="#fdeaea" connectColor="#e0322f"
+              icon={<PlatformIcon id="youtube" color={ytData ? '#f0504d' : '#6f6e6a'} />}
+              name="YouTube" brandTint="rgba(240,80,77,0.16)" connectColor="#f0504d"
               connected={!!ytData} loading={ytLoading} accountName={ytData?.title}
               stats={ytData ? [{ value: fmtNum(ytData.subscriberCount), label: 'abonnés' }, { value: fmtNum(ytData.viewCount), label: 'vues totales' }] : []}
               error={ytError || undefined}
               errorAction={ytNeedsReauth ? (
-                <button onClick={handleYouTubeReauth} disabled={ytReauthLoading} style={{ border: 'none', background: '#e0322f', color: '#fff', fontSize: '12px', fontWeight: 600, padding: '7px 12px', borderRadius: '8px', cursor: ytReauthLoading ? 'wait' : 'pointer', fontFamily: SYNE }}>
+                <button onClick={handleYouTubeReauth} disabled={ytReauthLoading} style={{ border: 'none', background: '#f0504d', color: '#fff', fontSize: '12px', fontWeight: 600, padding: '7px 12px', borderRadius: '8px', cursor: ytReauthLoading ? 'wait' : 'pointer', fontFamily: SYNE }}>
                   {ytReauthLoading ? 'Reconnexion…' : 'Reconnecter Google →'}
                 </button>
               ) : undefined}
@@ -420,8 +420,8 @@ function DashboardContent() {
             />
 
             <PlatformRow
-              icon={<PlatformIcon id="twitch" color={twitchData ? '#8a3ffc' : '#a3a29d'} />}
-              name="Twitch" brandTint="#f0ecfb" connectColor="#8a3ffc"
+              icon={<PlatformIcon id="twitch" color={twitchData ? '#a87cff' : '#6f6e6a'} />}
+              name="Twitch" brandTint="rgba(168,124,255,0.16)" connectColor="#a87cff"
               connected={!!twitchData} loading={twitchLoading} accountName={twitchData?.displayName}
               stats={twitchData ? [{ value: fmtNum(twitchData.followerCount), label: 'followers' }, ...(twitchData.viewCount > 0 ? [{ value: fmtNum(twitchData.viewCount), label: 'vues canal' }] : [])] : []}
               error={twitchError || undefined}
@@ -432,8 +432,8 @@ function DashboardContent() {
 
             {TIKTOK_ENABLED && (
               <PlatformRow
-                icon={<PlatformIcon id="tiktok" color={tiktokData ? '#37352f' : '#a3a29d'} />}
-                name="TikTok" brandTint="#f1f1ef" connectColor="#fe2c55"
+                icon={<PlatformIcon id="tiktok" color={tiktokData ? '#ededec' : '#6f6e6a'} />}
+                name="TikTok" brandTint="rgba(255,255,255,0.08)" connectColor="#fe2c55"
                 connected={!!tiktokData} loading={tiktokLoading} accountName={tiktokData?.displayName ?? undefined}
                 stats={tiktokData ? [{ value: fmtNum(tiktokData.followerCount), label: 'followers' }, ...(tiktokData.engagementRate != null ? [{ value: `${tiktokData.engagementRate}%`, label: 'engagement' }] : [])] : []}
                 error={tiktokError || undefined}
@@ -450,15 +450,15 @@ function DashboardContent() {
         <div style={{ maxWidth: '620px' }}>
           <span style={{ fontSize: '13px', fontWeight: 600, color: TEXT2, fontFamily: SYNE }}>Ton lien public</span>
           {publicPseudo ? (
-            <div style={{ marginTop: '12px', background: '#f7f9f7', border: '1px solid #e3eee7', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ marginTop: '12px', background: '#1e2620', border: '1px solid #2c3a30', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '14px', color: TEXT, fontFamily: SYNE }}>sponsorable.fr/<span style={{ fontWeight: 600 }}>{publicPseudo}</span></span>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.fr/${publicPseudo}`)} style={{ border: `1px solid ${BORDER}`, background: '#fff', color: TEXT, fontSize: '13px', padding: '7px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: SYNE }}><Copy size={15} />Copier</button>
-                <button onClick={() => router.push(`/${publicPseudo}`)} style={{ border: `1px solid ${BORDER}`, background: '#fff', color: TEXT, fontSize: '13px', padding: '7px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: SYNE }}><ExternalLink size={15} />Voir</button>
+                <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.fr/${publicPseudo}`)} style={{ border: `1px solid ${BORDER}`, background: CARD, color: TEXT, fontSize: '13px', padding: '7px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: SYNE }}><Copy size={15} />Copier</button>
+                <button onClick={() => router.push(`/${publicPseudo}`)} style={{ border: `1px solid ${BORDER}`, background: CARD, color: TEXT, fontSize: '13px', padding: '7px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: SYNE }}><ExternalLink size={15} />Voir</button>
               </div>
             </div>
           ) : (
-            <div style={{ marginTop: '12px', background: SURFACE, border: '1px dashed #dcdbd7', borderRadius: '12px', padding: '14px 16px' }}>
+            <div style={{ marginTop: '12px', background: SURFACE, border: '1px dashed #3a3a36', borderRadius: '12px', padding: '14px 16px' }}>
               <span style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>Configure ton pseudo dans le media kit pour obtenir ton lien →</span>
             </div>
           )}
@@ -467,11 +467,11 @@ function DashboardContent() {
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.9' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>Voir ma page →</button>
             {publicPseudo ? (
-              <a href={`/${publicPseudo}?print=1`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '9px', border: `1px solid ${BORDER}`, background: '#fff', color: TEXT, fontSize: '14px', fontWeight: 500, textDecoration: 'none', cursor: 'pointer', fontFamily: SYNE }}>
+              <a href={`/${publicPseudo}?print=1`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '9px', border: `1px solid ${BORDER}`, background: CARD, color: TEXT, fontSize: '14px', fontWeight: 500, textDecoration: 'none', cursor: 'pointer', fontFamily: SYNE }}>
                 Télécharger PDF
               </a>
             ) : (
-              <button onClick={() => router.push('/dashboard/mediakit')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '9px', border: `1px solid ${BORDER}`, background: '#fff', color: TEXT2, fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: SYNE }}>
+              <button onClick={() => router.push('/dashboard/mediakit')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '9px', border: `1px solid ${BORDER}`, background: CARD, color: TEXT2, fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: SYNE }}>
                 Télécharger PDF
                 <span style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '9999px', padding: '1px 8px', fontSize: '10px', fontWeight: 600, color: MUTED, fontFamily: SYNE }}>Configurer pseudo d&apos;abord</span>
               </button>

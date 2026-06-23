@@ -3,13 +3,13 @@
  * Toute couleur hardcodée dans une page dashboard doit venir d'ici.
  */
 
-export const BG      = '#0d0d0f'
-export const SURFACE = '#111318'
-export const CARD    = '#1c1f26'
-export const ACCENT  = '#1daa50'
-export const TEXT    = '#ffffff'
-export const MUTED   = '#888888'
-export const BORDER  = '#222222'
+export const BG      = '#1c1c1b'
+export const SURFACE = '#1f1f1e'
+export const CARD    = '#242423'
+export const ACCENT  = '#2ea862'
+export const TEXT    = '#ededec'
+export const MUTED   = '#9b9a95'
+export const BORDER  = '#2f2f2d'
 export const VIOLET  = '#7c5cff'
 export const CORAL   = '#fb7185'
 export const GOLD    = '#f5b544'
