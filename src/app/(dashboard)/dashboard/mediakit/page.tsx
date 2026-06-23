@@ -350,8 +350,8 @@ export default function MediaKitEditorPage() {
           {/* Score de complétude */}
           <ReadinessWidget score={readiness} />
 
-          {/* Templates */}
-          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '20px 28px' }}>
+          {/* Templates — déplacé en bas (Apparence) via order flex */}
+          <div style={{ order: 2, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '20px 28px' }}>
             <button
               onClick={() => pro === true ? setShowTemplates(v => !v) : undefined}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: pro === true ? 'pointer' : 'default', padding: 0 }}
@@ -594,8 +594,8 @@ export default function MediaKitEditorPage() {
             )}
           </div>
 
-          {/* Bannière */}
-          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px', opacity: pro === false ? 0.7 : 1 }}>
+          {/* Bannière — déplacée en bas (Apparence) via order flex */}
+          <div style={{ order: 2, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px', padding: '28px', opacity: pro === false ? 0.7 : 1 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '18px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
