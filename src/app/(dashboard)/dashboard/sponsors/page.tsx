@@ -132,7 +132,7 @@ const PlatformCard = ({ p, animate }: { p: PlatformReadout; animate: boolean }) 
       {hasMetric ? (
         <>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '12px', color: '#999', fontFamily: SYNE }}>{p.metricLabel}</span>
+            <span style={{ fontSize: '12px', color: MUTED, fontFamily: SYNE }}>{p.metricLabel}</span>
             <span style={{ fontSize: '11px', color: MUTED, fontFamily: SYNE }}>cible <span style={{ color: ACCENT, fontFamily: NUM }}>{fmtPct(p.metricTarget)}</span></span>
           </div>
           <div style={{ fontSize: '26px', fontWeight: 600, color: TEXT, fontFamily: NUM, letterSpacing: '-0.02em', marginBottom: '10px' }}>{fmtPct(p.metricValue as number)}</div>
@@ -249,7 +249,7 @@ export default function SponsorsPage() {
                     <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: gradeColor, background: `${gradeColor}1c`, border: `1px solid ${gradeColor}40`, borderRadius: '5px', padding: '4px 11px', fontFamily: SYNE }}>
                       Grade {result.grade.level} · {result.grade.name}
                     </span>
-                    <span style={{ fontSize: '11px', color: '#666', fontFamily: NUM }}>{result.grade.level} / {result.grade.total}</span>
+                    <span style={{ fontSize: '11px', color: MUTED, fontFamily: NUM }}>{result.grade.level} / {result.grade.total}</span>
                   </div>
 
                   <p style={{ fontSize: 'clamp(18px, 2.3vw, 23px)', fontWeight: 700, color: TEXT, lineHeight: 1.35, letterSpacing: '-0.01em', fontFamily: DISPLAY, maxWidth: '540px' }}>
@@ -259,7 +259,7 @@ export default function SponsorsPage() {
                   {/* Diagnostic (confiance) + sources */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '12px', color: '#999', fontFamily: SYNE }}>Diagnostic</span>
+                      <span style={{ fontSize: '12px', color: MUTED, fontFamily: SYNE }}>Diagnostic</span>
                       <span aria-hidden style={{ display: 'flex', gap: '3px' }}>
                         {[1, 2, 3].map(i => (
                           <span key={i} style={{ width: '18px', height: '5px', borderRadius: '9999px', background: i <= confDots ? confColor : '#2a2e36' }} />
@@ -269,7 +269,7 @@ export default function SponsorsPage() {
                     </div>
                     <p style={{ fontSize: '12px', color: MUTED, fontFamily: SYNE }}>
                       Sources prises en compte : {result.sources.map((s, i) => (
-                        <span key={s}>{i > 0 && ' + '}<span style={{ color: s === 'profil' ? '#ccc' : s === 'Twitch' ? '#a970ff' : '#ff6b6b' }}>{s}</span></span>
+                        <span key={s}>{i > 0 && ' + '}<span style={{ color: s === 'profil' ? TEXT : s === 'Twitch' ? '#a970ff' : '#ff6b6b' }}>{s}</span></span>
                       ))}
                     </p>
                   </div>
@@ -291,10 +291,10 @@ export default function SponsorsPage() {
                   const isPast = g.level < result.grade.level
                   return (
                     <div key={g.level} style={{ textAlign: 'center', padding: '10px 6px', borderRadius: '8px', background: isCurrent ? 'rgba(29,170,80,0.07)' : isPast ? 'rgba(255,255,255,0.02)' : 'transparent', border: isCurrent ? '1.5px solid rgba(29,170,80,0.5)' : `1px solid ${BORDER}`, opacity: !isCurrent && !isPast ? 0.6 : 1 }}>
-                      <div style={{ fontSize: '11px', fontFamily: NUM, color: isCurrent ? ACCENT : isPast ? '#888' : '#666', marginBottom: '3px' }}>
+                      <div style={{ fontSize: '11px', fontFamily: NUM, color: isCurrent ? ACCENT : isPast ? MUTED : MUTED, marginBottom: '3px' }}>
                         {isPast ? '✓' : isCurrent ? '◆' : `0${g.level}`}
                       </div>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: isCurrent ? TEXT : isPast ? '#aaa' : '#888', fontFamily: SYNE }}>{g.name}</div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: isCurrent ? TEXT : isPast ? MUTED : MUTED, fontFamily: SYNE }}>{g.name}</div>
                     </div>
                   )
                 })}
@@ -414,13 +414,13 @@ const DimensionRow = ({ d, animate }: { d: DimensionResult; animate: boolean }) 
   const barColor = d.status === 'strong' ? ACCENT : d.status === 'improve' ? '#0284c7' : AMBER
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', opacity: unavailable ? 0.5 : 1 }}>
-      <span style={{ width: '150px', fontSize: '13px', fontWeight: 500, color: unavailable ? '#aaa' : TEXT, flexShrink: 0, fontFamily: SYNE }}>{d.label}</span>
+      <span style={{ width: '150px', fontSize: '13px', fontWeight: 500, color: unavailable ? MUTED : TEXT, flexShrink: 0, fontFamily: SYNE }}>{d.label}</span>
       <div style={{ flex: 1, height: '6px', background: BG, borderRadius: '9999px', position: 'relative', border: unavailable ? `1px dashed #333` : 'none' }}>
         {!unavailable && (
           <div className="sponso-bar" style={{ position: 'absolute', inset: 0, width: animate ? `${d.score}%` : '0%', background: barColor, borderRadius: '9999px' }} />
         )}
       </div>
-      <span style={{ width: '70px', textAlign: 'right', fontSize: '10px', color: unavailable ? '#666' : MUTED, fontFamily: NUM, flexShrink: 0 }}>
+      <span style={{ width: '70px', textAlign: 'right', fontSize: '10px', color: unavailable ? MUTED : MUTED, fontFamily: NUM, flexShrink: 0 }}>
         {unavailable ? 'non évalué' : d.sources.map(s => SOURCE_NAME[s] ?? s).join(' + ')}
       </span>
     </div>
