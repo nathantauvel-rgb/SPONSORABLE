@@ -5,17 +5,17 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
 import Sidebar from '@/components/layout/Sidebar'
-import Button from '@/components/ui/button'
-import MetricCard from '@/components/ui/MetricCard'
 
-// Design system — dark palette
-const BG      = '#0d0d0f'
-const SURFACE = '#111318'
-const CARD    = '#1c1f26'
-const ACCENT  = '#22c55e'
-const TEXT    = '#ffffff'
-const MUTED   = '#888888'
-const BORDER  = '#222222'
+// Design system — light premium (façon Notion). Essai sur le dashboard d'accueil.
+const BG      = '#ffffff'   // fond de page
+const SURFACE = '#fbfbfa'   // surfaces secondaires (blanc cassé chaud)
+const CARD    = '#ffffff'   // cartes
+const ACCENT  = '#1daa50'   // vert d'action
+const GREEN_DK= '#1a8f44'   // vert texte (contraste sur fond clair)
+const TEXT    = '#37352f'   // texte principal (gris-noir Notion)
+const TEXT2   = '#6b6a66'   // texte secondaire
+const MUTED   = '#9b9a95'   // texte tertiaire / placeholders
+const BORDER  = '#ebeae8'   // bordures fines
 const SYNE    = 'var(--font-syne), system-ui, sans-serif'
 const DISPLAY = 'var(--font-display), system-ui, sans-serif'
 const NUM     = '"Martian Mono", var(--font-num), ui-monospace, monospace'
@@ -87,6 +87,83 @@ const YOUTUBE_AUTH_PARAMS = {
   scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
   access_type: 'offline',
   prompt: 'consent',
+}
+
+// Ligne plateforme — style light premium (logo teinté marque, stats alignées, statut discret).
+type RowStat = { value: string; label: string }
+
+function PlatformRow(props: {
+  icon: React.ReactNode
+  name: string
+  brandTint: string
+  connectColor: string
+  accountName?: string | null
+  connected: boolean
+  loading?: boolean
+  stats?: RowStat[]
+  error?: string
+  errorAction?: React.ReactNode
+  onConnect?: () => void
+  onDisconnect?: () => void
+  disconnecting?: boolean
+  connectLabel: string
+}) {
+  const { icon, name, brandTint, connectColor, accountName, connected, loading, stats = [], error, errorAction, onConnect, onDisconnect, disconnecting, connectLabel } = props
+  const subtitle = loading ? 'Chargement…' : connected ? (accountName ?? 'Connecté') : 'Non connecté'
+  return (
+    <div style={{
+      background: connected ? CARD : '#fcfcfb',
+      border: connected ? `1px solid ${BORDER}` : '1px dashed #dcdbd7',
+      borderRadius: '12px', padding: '14px 16px',
+      boxShadow: connected ? '0 1px 2px rgba(15,15,15,0.04)' : 'none',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '13px', minWidth: 0 }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '9px', background: connected ? brandTint : '#f1f1ef', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {icon}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: connected ? TEXT : TEXT2, fontFamily: SYNE }}>{name}</p>
+            <p style={{ margin: '2px 0 0', fontSize: '12px', color: MUTED, fontFamily: SYNE, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{subtitle}</p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '22px', flexShrink: 0 }}>
+          {connected && stats.map((s, i) => (
+            <div key={i} style={{ textAlign: 'right' }}>
+              <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: TEXT, fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{s.value}</p>
+              <p style={{ margin: '1px 0 0', fontSize: '11px', color: MUTED, fontFamily: SYNE }}>{s.label}</p>
+            </div>
+          ))}
+          {connected ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: GREEN_DK, fontWeight: 600, fontFamily: SYNE }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: ACCENT }} />Relié
+              </span>
+              {onDisconnect && (
+                <button onClick={onDisconnect} disabled={disconnecting} style={{ background: 'none', border: 'none', cursor: disconnecting ? 'wait' : 'pointer', color: MUTED, fontSize: '12px', fontFamily: SYNE, padding: 0 }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ef4444' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = MUTED }}>
+                  {disconnecting ? '…' : 'Déconnecter'}
+                </button>
+              )}
+            </div>
+          ) : !loading && !error && onConnect ? (
+            <button onClick={onConnect} style={{ border: `1px solid ${connectColor}`, background: connectColor, color: '#fff', fontSize: '13px', fontWeight: 600, padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontFamily: SYNE, transition: 'opacity 150ms' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
+              {connectLabel}
+            </button>
+          ) : null}
+        </div>
+      </div>
+      {error && (
+        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '12px', color: '#b4413a', fontFamily: SYNE }}>⚠ {error}</span>
+          {errorAction}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function DashboardContent() {
@@ -295,301 +372,109 @@ function DashboardContent() {
 
   return (
     <div style={{ background: BG, minHeight: '100vh' }}>
-      <Sidebar />
-      <main className="dash-main" style={{ marginLeft: '240px', padding: '40px 48px', minHeight: '100vh' }}>
+      <Sidebar theme="light" />
+      <main className="dash-main" style={{ marginLeft: '240px', padding: '40px 48px', minHeight: '100vh', background: BG }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h1 style={{ fontSize: '26px', fontWeight: 700, color: TEXT, marginBottom: '6px', letterSpacing: '-0.02em', fontFamily: DISPLAY }}>
-              Bonjour {displayName} 👋
-            </h1>
-            {!ytData && (
-              <p style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>
-                Connecte tes plateformes pour voir tes stats
-              </p>
+            <p style={{ fontSize: '13px', color: MUTED, marginBottom: '4px', fontFamily: SYNE }}>Bon retour, {displayName} 👋</p>
+            <h1 style={{ fontSize: '26px', fontWeight: 700, color: TEXT, letterSpacing: '-0.02em', fontFamily: DISPLAY, margin: 0 }}>Tableau de bord</h1>
+            {!ytData && !twitchData && (
+              <p style={{ fontSize: '14px', color: TEXT2, fontFamily: SYNE, marginTop: '8px' }}>Connecte tes plateformes pour voir tes stats</p>
             )}
           </div>
           {publicPseudo && (
-            <Button variant="outline" arrow onClick={() => router.push(`/${publicPseudo}`)}>
-              Voir ma page
-            </Button>
+            <button onClick={() => router.push(`/${publicPseudo}`)} style={{ border: `1px solid ${BORDER}`, background: '#fff', color: TEXT, fontSize: '14px', fontWeight: 500, padding: '9px 16px', borderRadius: '9px', cursor: 'pointer', fontFamily: SYNE, transition: 'background 150ms' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = SURFACE }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff' }}>
+              Voir ma page →
+            </button>
           )}
         </div>
 
-        {/* Metrics — uniquement données réelles */}
-        {(ytData || twitchData) && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '40px' }}>
-            {ytData && (
-              <MetricCard label="Abonnés YouTube" value={fmtNum(ytData.subscriberCount)} change="YouTube" positive />
-            )}
-            {ytData && (
-              <MetricCard label="Vues totales" value={fmtNum(ytData.viewCount)} change={`${fmtNum(ytData.videoCount)} vidéos`} positive />
-            )}
-            {twitchData && (
-              <MetricCard label="Followers Twitch" value={fmtNum(twitchData.followerCount)} change="Twitch" positive />
-            )}
-            {twitchData && twitchData.viewCount > 0 && (
-              <MetricCard label="Vues canal Twitch" value={fmtNum(twitchData.viewCount)} change="Twitch" positive />
-            )}
+        {/* Plateformes */}
+        <div style={{ marginBottom: '36px', maxWidth: '620px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: TEXT2, fontFamily: SYNE }}>Plateformes connectées</span>
+            <span style={{ fontSize: '12px', color: MUTED, fontFamily: SYNE }}>
+              {[ytData, twitchData, TIKTOK_ENABLED ? tiktokData : null].filter(Boolean).length} / {TIKTOK_ENABLED ? 3 : 2} reliées
+            </span>
           </div>
-        )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
-        {/* Platforms */}
-        <div style={{ marginBottom: '40px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 600, color: TEXT, marginBottom: '16px', fontFamily: SYNE }}>Tes plateformes connectées</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', maxWidth: '560px' }}>
+            <PlatformRow
+              icon={<PlatformIcon id="youtube" color={ytData ? '#e0322f' : '#a3a29d'} />}
+              name="YouTube" brandTint="#fdeaea" connectColor="#e0322f"
+              connected={!!ytData} loading={ytLoading} accountName={ytData?.title}
+              stats={ytData ? [{ value: fmtNum(ytData.subscriberCount), label: 'abonnés' }, { value: fmtNum(ytData.viewCount), label: 'vues totales' }] : []}
+              error={ytError || undefined}
+              errorAction={ytNeedsReauth ? (
+                <button onClick={handleYouTubeReauth} disabled={ytReauthLoading} style={{ border: 'none', background: '#e0322f', color: '#fff', fontSize: '12px', fontWeight: 600, padding: '7px 12px', borderRadius: '8px', cursor: ytReauthLoading ? 'wait' : 'pointer', fontFamily: SYNE }}>
+                  {ytReauthLoading ? 'Reconnexion…' : 'Reconnecter Google →'}
+                </button>
+              ) : undefined}
+              onDisconnect={() => disconnectPlatform('youtube')} disconnecting={ytDisconnecting}
+              onConnect={async () => { await fetch('/api/platforms/google-reauth', { method: 'DELETE' }).catch(() => {}); signIn('google', { callbackUrl: '/dashboard?connected=youtube' }, YOUTUBE_AUTH_PARAMS) }}
+              connectLabel="Connecter"
+            />
 
-            {/* YouTube */}
-            <div style={{
-              background: CARD, borderRadius: '16px', overflow: 'hidden',
-              border: `1px solid ${BORDER}`,
-              borderTop: `4px solid ${ytData ? ACCENT : BORDER}`,
-              boxShadow: ytData ? '0 4px 20px rgba(0,0,0,0.3)' : 'none',
-              transition: 'box-shadow 300ms',
-            }}>
-              {/* Header */}
-              <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: ytData ? 'rgba(239,68,68,0.12)' : SURFACE, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <PlatformIcon id="youtube" color={ytData ? '#ef4444' : '#444'} />
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>YouTube</p>
-                    <p style={{ fontSize: '12px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>
-                      {ytLoading ? 'Chargement...' : ytData ? ytData.title : 'Non connecté'}
-                    </p>
-                  </div>
-                </div>
-                {ytData && (
-                  <span style={{ flexShrink: 0, background: 'rgba(29,170,80,0.12)', color: ACCENT, border: '1px solid rgba(29,170,80,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, display: 'block' }} />
-                    Connecté
-                  </span>
-                )}
-              </div>
+            <PlatformRow
+              icon={<PlatformIcon id="twitch" color={twitchData ? '#8a3ffc' : '#a3a29d'} />}
+              name="Twitch" brandTint="#f0ecfb" connectColor="#8a3ffc"
+              connected={!!twitchData} loading={twitchLoading} accountName={twitchData?.displayName}
+              stats={twitchData ? [{ value: fmtNum(twitchData.followerCount), label: 'followers' }, ...(twitchData.viewCount > 0 ? [{ value: fmtNum(twitchData.viewCount), label: 'vues canal' }] : [])] : []}
+              error={twitchError || undefined}
+              onDisconnect={() => disconnectPlatform('twitch')} disconnecting={twitchDisconnecting}
+              onConnect={() => signIn('twitch', { callbackUrl: '/dashboard?connected=twitch' })}
+              connectLabel="Connecter"
+            />
 
-              {/* Mini stats */}
-              {ytData && (
-                <div style={{ padding: '0 18px 14px', display: 'flex', gap: '20px' }}>
-                  <div>
-                    <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{fmtNum(ytData.subscriberCount)}</p>
-                    <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>abonnés</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{fmtNum(ytData.viewCount)}</p>
-                    <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>vues totales</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Action */}
-              <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 14px' }}>
-                {ytError ? (
-                  <div style={{ marginBottom: '8px' }}>
-                    <p style={{ fontSize: '12px', color: '#ef4444', marginBottom: ytNeedsReauth ? '8px' : '0', fontFamily: SYNE }}>⚠ {ytError}</p>
-                    {ytNeedsReauth && (
-                      <button onClick={handleYouTubeReauth} disabled={ytReauthLoading}
-                        style={{ width: '100%', padding: '9px', borderRadius: '10px', border: 'none', background: '#ef4444', color: 'white', fontSize: '13px', fontWeight: 700, cursor: ytReauthLoading ? 'wait' : 'pointer', opacity: ytReauthLoading ? 0.7 : 1, fontFamily: SYNE }}>
-                        {ytReauthLoading ? 'Reconnexion...' : 'Reconnecter Google →'}
-                      </button>
-                    )}
-                  </div>
-                ) : ytData ? (
-                  <button onClick={() => disconnectPlatform('youtube')} disabled={ytDisconnecting}
-                    style={{ width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '13px', fontWeight: 600, cursor: ytDisconnecting ? 'wait' : 'pointer', transition: 'background 150ms', fontFamily: SYNE }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.18)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.1)' }}>
-                    {ytDisconnecting ? 'Déconnexion...' : 'Déconnecter'}
-                  </button>
-                ) : !ytLoading && (
-                  <button
-                    onClick={async () => {
-                      await fetch('/api/platforms/google-reauth', { method: 'DELETE' }).catch(() => {})
-                      signIn('google', { callbackUrl: '/dashboard?connected=youtube' }, YOUTUBE_AUTH_PARAMS)
-                    }}
-                    style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: '#ef4444', color: 'white', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', fontFamily: SYNE }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
-                    Connecter YouTube
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Twitch */}
-            <div style={{
-              background: CARD, borderRadius: '16px', overflow: 'hidden',
-              border: `1px solid ${BORDER}`,
-              borderTop: `4px solid ${twitchData ? ACCENT : BORDER}`,
-              boxShadow: twitchData ? '0 4px 20px rgba(0,0,0,0.3)' : 'none',
-              transition: 'box-shadow 300ms',
-            }}>
-              {/* Header */}
-              <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: twitchData ? 'rgba(145,70,255,0.12)' : SURFACE, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <PlatformIcon id="twitch" color={twitchData ? '#9146ff' : '#444'} />
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>Twitch</p>
-                    <p style={{ fontSize: '12px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>
-                      {twitchLoading ? 'Chargement...' : twitchData ? twitchData.displayName : 'Non connecté'}
-                    </p>
-                  </div>
-                </div>
-                {twitchData && (
-                  <span style={{ flexShrink: 0, background: 'rgba(29,170,80,0.12)', color: ACCENT, border: '1px solid rgba(29,170,80,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, display: 'block' }} />
-                    Connecté
-                  </span>
-                )}
-              </div>
-
-              {/* Mini stats */}
-              {twitchData && (
-                <div style={{ padding: '0 18px 14px', display: 'flex', gap: '20px' }}>
-                  <div>
-                    <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{fmtNum(twitchData.followerCount)}</p>
-                    <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>followers</p>
-                  </div>
-                  {twitchData.viewCount > 0 && (
-                    <div>
-                      <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{fmtNum(twitchData.viewCount)}</p>
-                      <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>vues canal</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Action */}
-              <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 14px' }}>
-                {twitchError ? (
-                  <p style={{ fontSize: '12px', color: '#ef4444', fontFamily: SYNE }}>⚠ {twitchError}</p>
-                ) : twitchData ? (
-                  <button onClick={() => disconnectPlatform('twitch')} disabled={twitchDisconnecting}
-                    style={{ width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '13px', fontWeight: 600, cursor: twitchDisconnecting ? 'wait' : 'pointer', transition: 'background 150ms', fontFamily: SYNE }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.18)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.1)' }}>
-                    {twitchDisconnecting ? 'Déconnexion...' : 'Déconnecter'}
-                  </button>
-                ) : !twitchLoading && (
-                  <button
-                    onClick={() => signIn('twitch', { callbackUrl: '/dashboard?connected=twitch' })}
-                    style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: '#9146ff', color: 'white', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', fontFamily: SYNE }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
-                    Connecter Twitch
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* TikTok (affiché uniquement si configuré) */}
             {TIKTOK_ENABLED && (
-            <div style={{
-              background: CARD, borderRadius: '16px', overflow: 'hidden',
-              border: `1px solid ${BORDER}`,
-              borderTop: `4px solid ${tiktokData ? ACCENT : BORDER}`,
-              boxShadow: tiktokData ? '0 4px 20px rgba(0,0,0,0.3)' : 'none',
-              transition: 'box-shadow 300ms',
-            }}>
-              <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: tiktokData ? 'rgba(37,244,238,0.12)' : SURFACE, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <PlatformIcon id="tiktok" color={tiktokData ? '#25f4ee' : '#444'} />
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '14px', fontWeight: 700, color: TEXT, fontFamily: SYNE }}>TikTok</p>
-                    <p style={{ fontSize: '12px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>
-                      {tiktokLoading ? 'Chargement...' : tiktokData ? (tiktokData.displayName ?? 'Connecté') : 'Non connecté'}
-                    </p>
-                  </div>
-                </div>
-                {tiktokData && (
-                  <span style={{ flexShrink: 0, background: 'rgba(29,170,80,0.12)', color: ACCENT, border: '1px solid rgba(29,170,80,0.25)', borderRadius: '9999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontFamily: SYNE }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ACCENT, display: 'block' }} />
-                    Connecté
-                  </span>
-                )}
-              </div>
-
-              {tiktokData && (
-                <div style={{ padding: '0 18px 14px', display: 'flex', gap: '20px' }}>
-                  <div>
-                    <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{fmtNum(tiktokData.followerCount)}</p>
-                    <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>followers</p>
-                  </div>
-                  {tiktokData.engagementRate != null && (
-                    <div>
-                      <p style={{ fontSize: '17px', fontWeight: 600, color: TEXT, letterSpacing: '-0.02em', fontFamily: NUM, fontVariantNumeric: 'tabular-nums' }}>{tiktokData.engagementRate}%</p>
-                      <p style={{ fontSize: '11px', color: MUTED, marginTop: '1px', fontFamily: SYNE }}>engagement</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 14px' }}>
-                {tiktokError ? (
-                  <p style={{ fontSize: '12px', color: '#ef4444', fontFamily: SYNE }}>⚠ {tiktokError}</p>
-                ) : tiktokData ? (
-                  <button onClick={() => disconnectPlatform('tiktok')} disabled={tiktokDisconnecting}
-                    style={{ width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '13px', fontWeight: 600, cursor: tiktokDisconnecting ? 'wait' : 'pointer', transition: 'background 150ms', fontFamily: SYNE }}>
-                    {tiktokDisconnecting ? 'Déconnexion...' : 'Déconnecter'}
-                  </button>
-                ) : !tiktokLoading && (
-                  <button
-                    onClick={() => signIn('tiktok', { callbackUrl: '/dashboard?connected=tiktok' })}
-                    style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: '#fe2c55', color: 'white', fontSize: '13px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 150ms', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', fontFamily: SYNE }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>
-                    Connecter TikTok
-                  </button>
-                )}
-              </div>
-            </div>
+              <PlatformRow
+                icon={<PlatformIcon id="tiktok" color={tiktokData ? '#37352f' : '#a3a29d'} />}
+                name="TikTok" brandTint="#f1f1ef" connectColor="#fe2c55"
+                connected={!!tiktokData} loading={tiktokLoading} accountName={tiktokData?.displayName ?? undefined}
+                stats={tiktokData ? [{ value: fmtNum(tiktokData.followerCount), label: 'followers' }, ...(tiktokData.engagementRate != null ? [{ value: `${tiktokData.engagementRate}%`, label: 'engagement' }] : [])] : []}
+                error={tiktokError || undefined}
+                onDisconnect={() => disconnectPlatform('tiktok')} disconnecting={tiktokDisconnecting}
+                onConnect={() => signIn('tiktok', { callbackUrl: '/dashboard?connected=tiktok' })}
+                connectLabel="Connecter"
+              />
             )}
 
           </div>
         </div>
 
-        {/* Public link */}
-        <div style={{ maxWidth: '560px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 600, color: TEXT, marginBottom: '16px', fontFamily: SYNE }}>Ton lien public</h3>
+        {/* Lien public */}
+        <div style={{ maxWidth: '620px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: TEXT2, fontFamily: SYNE }}>Ton lien public</span>
           {publicPseudo ? (
-            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <span style={{ fontSize: '14px', color: TEXT, fontWeight: 500, fontFamily: SYNE }}>sponsorable.fr/{publicPseudo}</span>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.fr/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED }} title="Copier"><Copy size={15} /></button>
-                <button onClick={() => router.push(`/${publicPseudo}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED }} title="Ouvrir"><ExternalLink size={15} /></button>
+            <div style={{ marginTop: '12px', background: '#f7f9f7', border: '1px solid #e3eee7', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '14px', color: TEXT, fontFamily: SYNE }}>sponsorable.fr/<span style={{ fontWeight: 600 }}>{publicPseudo}</span></span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => navigator.clipboard.writeText(`https://sponsorable.fr/${publicPseudo}`)} style={{ border: `1px solid ${BORDER}`, background: '#fff', color: TEXT, fontSize: '13px', padding: '7px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: SYNE }}><Copy size={15} />Copier</button>
+                <button onClick={() => router.push(`/${publicPseudo}`)} style={{ border: `1px solid ${BORDER}`, background: '#fff', color: TEXT, fontSize: '13px', padding: '7px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: SYNE }}><ExternalLink size={15} />Voir</button>
               </div>
             </div>
           ) : (
-            <div style={{ background: SURFACE, border: `1px dashed ${BORDER}`, borderRadius: '10px', padding: '14px 16px', marginBottom: '16px' }}>
+            <div style={{ marginTop: '12px', background: SURFACE, border: '1px dashed #dcdbd7', borderRadius: '12px', padding: '14px 16px' }}>
               <span style={{ fontSize: '14px', color: MUTED, fontFamily: SYNE }}>Configure ton pseudo dans le media kit pour obtenir ton lien →</span>
             </div>
           )}
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <Button variant="primary" arrow onClick={() => publicPseudo ? router.push(`/${publicPseudo}`) : router.push('/dashboard/mediakit')}>Voir ma page</Button>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginTop: '16px' }}>
+            <button onClick={() => publicPseudo ? router.push(`/${publicPseudo}`) : router.push('/dashboard/mediakit')} style={{ border: 'none', background: ACCENT, color: '#fff', fontSize: '14px', fontWeight: 600, padding: '10px 18px', borderRadius: '9px', cursor: 'pointer', fontFamily: SYNE, transition: 'opacity 150ms' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.9' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>Voir ma page →</button>
             {publicPseudo ? (
-              <a
-                href={`/${publicPseudo}?print=1`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: `1px solid ${BORDER}`, background: CARD, color: TEXT, fontSize: '14px', fontWeight: 600, textDecoration: 'none', cursor: 'pointer', transition: 'background 150ms', fontFamily: SYNE }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = SURFACE }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = CARD }}
-              >
+              <a href={`/${publicPseudo}?print=1`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '9px', border: `1px solid ${BORDER}`, background: '#fff', color: TEXT, fontSize: '14px', fontWeight: 500, textDecoration: 'none', cursor: 'pointer', fontFamily: SYNE }}>
                 Télécharger PDF
               </a>
             ) : (
-              <Button variant="outline" onClick={() => router.push('/dashboard/mediakit')}>
+              <button onClick={() => router.push('/dashboard/mediakit')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '9px', border: `1px solid ${BORDER}`, background: '#fff', color: TEXT2, fontSize: '14px', fontWeight: 500, cursor: 'pointer', fontFamily: SYNE }}>
                 Télécharger PDF
-                <span style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '9999px', padding: '1px 8px', fontSize: '10px', fontWeight: 600, color: MUTED, marginLeft: '4px', fontFamily: SYNE }}>Configurer pseudo d&apos;abord</span>
-              </Button>
+                <span style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '9999px', padding: '1px 8px', fontSize: '10px', fontWeight: 600, color: MUTED, fontFamily: SYNE }}>Configurer pseudo d&apos;abord</span>
+              </button>
             )}
           </div>
         </div>

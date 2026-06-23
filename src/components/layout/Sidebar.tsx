@@ -13,6 +13,20 @@ import Logo from '@/components/ui/Logo'
 /** Hauteur de la barre supérieure mobile — exportée pour le padding des pages. */
 export const MOBILE_TOPBAR_H = 56
 
+/** Palette par thème — `light` = SaaS premium façon Notion (essai sur le dashboard). */
+const PALETTES = {
+  dark: {
+    surface: SURFACE, sidebar: SURFACE, border: BORDER, text: TEXT, muted: MUTED, bg: BG,
+    accent: ACCENT, hover: 'rgba(255,255,255,0.04)', activeBg: 'rgba(29,170,80,0.1)',
+    activeText: ACCENT, activeBorder: ACCENT, avatarBg: ACCENT, avatarText: BG, logoTone: 'dark' as const,
+  },
+  light: {
+    surface: '#ffffff', sidebar: '#fbfbfa', border: '#ebeae8', text: '#37352f', muted: '#6b6a66', bg: '#ffffff',
+    accent: '#1daa50', hover: '#f1f1ef', activeBg: '#efeeec',
+    activeText: '#37352f', activeBorder: 'transparent', avatarBg: '#1daa50', avatarText: '#ffffff', logoTone: 'light' as const,
+  },
+}
+
 const navItems = [
   { label: 'Tableau de bord', icon: LayoutDashboard, to: '/dashboard' },
   { label: 'Mon media kit',   icon: FileText,         to: '/dashboard/mediakit' },
@@ -27,7 +41,7 @@ const getInitials = (name: string | null | undefined) => {
   return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
-const Avatar = ({ name, image, size }: { name: string | null | undefined; image: string | null | undefined; size: number }) => {
+const Avatar = ({ name, image, size, bg, fg }: { name: string | null | undefined; image: string | null | undefined; size: number; bg: string; fg: string }) => {
   if (image) {
     return (
       <Image
@@ -42,7 +56,7 @@ const Avatar = ({ name, image, size }: { name: string | null | undefined; image:
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
-      background: ACCENT, color: BG,
+      background: bg, color: fg,
       fontSize: size * 0.38, fontWeight: 700,
       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     }}>
@@ -51,7 +65,7 @@ const Avatar = ({ name, image, size }: { name: string | null | undefined; image:
   )
 }
 
-const Sidebar = () => {
+const Sidebar = ({ theme = 'dark' }: { theme?: 'dark' | 'light' }) => {
   const pathname = usePathname()
   const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
@@ -59,6 +73,7 @@ const Sidebar = () => {
   const [platformImage, setPlatformImage] = useState<string | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
   const { data: session } = useSession()
+  const C = PALETTES[theme]
 
   // Ferme le menu mobile à chaque changement de page.
   useEffect(() => { setOpen(false) }, [pathname])
@@ -106,7 +121,7 @@ const Sidebar = () => {
   const asideStyle: React.CSSProperties = isMobile
     ? {
         width: '260px', position: 'fixed', top: 0, left: 0, bottom: 0,
-        background: SURFACE, borderRight: `1px solid ${BORDER}`,
+        background: C.sidebar, borderRight: `1px solid ${C.border}`,
         display: 'flex', flexDirection: 'column', zIndex: 60,
         transform: open ? 'translateX(0)' : 'translateX(-110%)',
         transition: 'transform 220ms ease',
@@ -114,7 +129,7 @@ const Sidebar = () => {
       }
     : {
         width: '240px', position: 'fixed', top: 0, left: 0, bottom: 0,
-        background: SURFACE, borderRight: `1px solid ${BORDER}`,
+        background: C.sidebar, borderRight: `1px solid ${C.border}`,
         display: 'flex', flexDirection: 'column', zIndex: 40,
       }
 
@@ -124,19 +139,19 @@ const Sidebar = () => {
       {isMobile && (
         <header style={{
           position: 'fixed', top: 0, left: 0, right: 0, height: MOBILE_TOPBAR_H,
-          background: SURFACE, borderBottom: `1px solid ${BORDER}`,
+          background: C.sidebar, borderBottom: `1px solid ${C.border}`,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0 16px', zIndex: 50,
         }}>
-          <Logo tone="dark" size={18} />
+          <Logo tone={C.logoTone} size={18} />
           <button
             onClick={() => setOpen(true)}
             aria-label="Ouvrir le menu"
-            style={{ background: 'none', border: 'none', color: TEXT, cursor: 'pointer', padding: '6px', display: 'flex', position: 'relative' }}
+            style={{ background: 'none', border: 'none', color: C.text, cursor: 'pointer', padding: '6px', display: 'flex', position: 'relative' }}
           >
             <Menu size={24} />
             {unreadCount > 0 && (
-              <span style={{ position: 'absolute', top: 2, right: 2, width: 8, height: 8, borderRadius: '50%', background: ACCENT }} />
+              <span style={{ position: 'absolute', top: 2, right: 2, width: 8, height: 8, borderRadius: '50%', background: C.accent }} />
             )}
           </button>
         </header>
@@ -152,10 +167,10 @@ const Sidebar = () => {
 
       <aside style={asideStyle}>
       {/* Logo */}
-      <div style={{ padding: '24px 20px 20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Logo tone="dark" size={18} />
+      <div style={{ padding: '24px 20px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Logo tone={C.logoTone} size={18} />
         {isMobile && (
-          <button onClick={() => setOpen(false)} aria-label="Fermer le menu" style={{ background: 'none', border: 'none', color: MUTED, cursor: 'pointer', padding: '4px', display: 'flex' }}>
+          <button onClick={() => setOpen(false)} aria-label="Fermer le menu" style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', padding: '4px', display: 'flex' }}>
             <X size={20} />
           </button>
         )}
@@ -176,22 +191,22 @@ const Sidebar = () => {
                 padding: '10px 12px', borderRadius: '8px', marginBottom: '2px',
                 textDecoration: 'none', fontFamily: SYNE, fontSize: '14px', fontWeight: 500,
                 transition: 'all 150ms ease',
-                background: active ? `rgba(29,170,80,0.1)` : 'transparent',
-                color: active ? ACCENT : MUTED,
-                borderLeft: active ? `2px solid ${ACCENT}` : '2px solid transparent',
+                background: active ? C.activeBg : 'transparent',
+                color: active ? C.activeText : C.muted,
+                borderLeft: active ? `2px solid ${C.activeBorder}` : '2px solid transparent',
               }}
               onMouseEnter={e => {
                 if (!active) {
                   const el = e.currentTarget as HTMLElement
-                  el.style.background = `rgba(255,255,255,0.04)`
-                  el.style.color = TEXT
+                  el.style.background = C.hover
+                  el.style.color = C.text
                 }
               }}
               onMouseLeave={e => {
                 if (!active) {
                   const el = e.currentTarget as HTMLElement
                   el.style.background = 'transparent'
-                  el.style.color = MUTED
+                  el.style.color = C.muted
                 }
               }}
             >
@@ -199,7 +214,7 @@ const Sidebar = () => {
               <span style={{ flex: 1 }}>{item.label}</span>
               {isMessages && unreadCount > 0 && (
                 <span style={{
-                  background: ACCENT, color: BG,
+                  background: C.accent, color: C.avatarText,
                   fontSize: '10px', fontWeight: 700,
                   borderRadius: '9999px', padding: '1px 6px',
                   lineHeight: '16px', minWidth: '16px', textAlign: 'center',
@@ -214,19 +229,19 @@ const Sidebar = () => {
       </nav>
 
       {/* Footer */}
-      <div style={{ padding: '16px 12px', borderTop: `1px solid ${BORDER}` }}>
+      <div style={{ padding: '16px 12px', borderTop: `1px solid ${C.border}` }}>
         {!isPro && (
           <Link
             href="/dashboard/settings#plan"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
               marginBottom: '12px', padding: '9px 12px', borderRadius: '8px',
-              background: ACCENT, color: BG,
+              background: C.accent, color: C.avatarText,
               fontFamily: SYNE, fontSize: '13px', fontWeight: 700,
-              textDecoration: 'none', transition: 'background 150ms',
+              textDecoration: 'none', transition: 'opacity 150ms',
             }}
-            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = '#1daa50')}
-            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = ACCENT)}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.opacity = '0.88')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.opacity = '1')}
           >
             <Zap size={13} />
             Passer au Pro
@@ -235,12 +250,12 @@ const Sidebar = () => {
 
         {/* Profil utilisateur */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-          <Avatar name={userName} image={userImage} size={32} />
+          <Avatar name={userName} image={userImage} size={32} bg={C.avatarBg} fg={C.avatarText} />
           <div style={{ overflow: 'hidden', flex: 1 }}>
-            <p style={{ fontFamily: SYNE, fontSize: '13px', fontWeight: 600, color: TEXT, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <p style={{ fontFamily: SYNE, fontSize: '13px', fontWeight: 600, color: C.text, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {userName ?? 'Utilisateur'}
             </p>
-            <p style={{ fontFamily: SYNE, fontSize: '11px', color: MUTED, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <p style={{ fontFamily: SYNE, fontSize: '11px', color: C.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {userEmail ?? ''}
             </p>
           </div>
