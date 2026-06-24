@@ -6,7 +6,6 @@ export const metadata: Metadata = {
   description: 'Comment Sponsorable collecte et traite tes données personnelles.',
 }
 
-// ⚠️ À COMPLÉTER / faire relire avant le lancement. Base rédigée selon le RGPD.
 const wrap: React.CSSProperties = {
   maxWidth: '760px', margin: '0 auto', padding: '64px 24px',
   fontFamily: 'system-ui, sans-serif', color: '#1e293b', lineHeight: 1.7,
@@ -19,12 +18,12 @@ export default function ConfidentialitePage() {
     <main style={wrap}>
       <Link href="/" style={{ color: '#16a34a', fontWeight: 600, fontSize: '14px' }}>← Retour</Link>
       <h1 style={h1}>Politique de confidentialité</h1>
-      <p style={{ color: '#64748b', fontSize: '14px' }}>Dernière mise à jour : à compléter</p>
+      <p style={{ color: '#64748b', fontSize: '14px' }}>Dernière mise à jour : 24 juin 2026</p>
 
       <h2 style={h2}>Responsable du traitement</h2>
       <p>
-        Le responsable du traitement est <strong>[Nom / Raison sociale]</strong>, joignable à{' '}
-        <strong>[email de contact]</strong>.
+        Le responsable du traitement est <strong>Nathan Tauvel</strong> (entrepreneur individuel,
+        SIREN 913&nbsp;584&nbsp;520), joignable à <strong>nathan@sponsorable.fr</strong>.
       </p>
 
       <h2 style={h2}>Données collectées</h2>
@@ -71,7 +70,7 @@ export default function ConfidentialitePage() {
       <h2 style={h2}>Tes droits</h2>
       <p>
         Conformément au RGPD, tu disposes d'un droit d'accès, de rectification, d'effacement,
-        d'opposition et de portabilité. Pour les exercer, contacte-nous à <strong>[email de contact]</strong>.
+        d'opposition et de portabilité. Pour les exercer, contacte-nous à <strong>nathan@sponsorable.fr</strong>.
         Tu peux aussi introduire une réclamation auprès de la CNIL (www.cnil.fr).
       </p>
 

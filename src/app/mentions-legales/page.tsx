@@ -6,7 +6,6 @@ export const metadata: Metadata = {
   description: 'Mentions légales du site Sponsorable.',
 }
 
-// ⚠️ À COMPLÉTER avec tes vraies informations légales avant le lancement.
 const wrap: React.CSSProperties = {
   maxWidth: '760px', margin: '0 auto', padding: '64px 24px',
   fontFamily: 'system-ui, sans-serif', color: '#1e293b', lineHeight: 1.7,
@@ -19,17 +18,18 @@ export default function MentionsLegalesPage() {
     <main style={wrap}>
       <Link href="/" style={{ color: '#16a34a', fontWeight: 600, fontSize: '14px' }}>← Retour</Link>
       <h1 style={h1}>Mentions légales</h1>
-      <p style={{ color: '#64748b', fontSize: '14px' }}>Dernière mise à jour : à compléter</p>
+      <p style={{ color: '#64748b', fontSize: '14px' }}>Dernière mise à jour : 24 juin 2026</p>
 
       <h2 style={h2}>Éditeur du site</h2>
       <p>
         Le site Sponsorable est édité par&nbsp;:<br />
-        <strong>[Nom / Raison sociale]</strong><br />
-        [Statut juridique — ex. entrepreneur individuel / SAS]<br />
-        [Adresse postale]<br />
-        SIRET&nbsp;: [numéro SIRET]<br />
-        Email&nbsp;: [email de contact]<br />
-        Directeur de la publication&nbsp;: [Nom]
+        <strong>Nathan Tauvel</strong><br />
+        Entrepreneur individuel (micro-entreprise)<br />
+        1685 chemin du Tucaut, 31600 Eaunes, France<br />
+        SIREN&nbsp;: 913 584 520<br />
+        TVA non applicable, article 293 B du CGI<br />
+        Email&nbsp;: nathan@sponsorable.fr<br />
+        Directeur de la publication&nbsp;: Nathan Tauvel
       </p>
 
       <h2 style={h2}>Hébergement</h2>
