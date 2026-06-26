@@ -71,7 +71,13 @@ function LoginForm() {
             setShowResend(false)
           }
         } else {
-          router.push('/dashboard')
+          // Aiguillage selon le type de compte : les marques vont sur leur espace.
+          let dest = '/dashboard'
+          try {
+            const me = await fetch('/api/me', { cache: 'no-store' })
+            if (me.ok && (await me.json()).accountType === 'company') dest = '/marque'
+          } catch { /* défaut créateur */ }
+          router.push(dest)
         }
       }
     } catch {
@@ -159,6 +165,10 @@ function LoginForm() {
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#16a34a', fontWeight: 600, fontSize: '14px', padding: 0 }}>
                 {mode === 'login' ? "S'inscrire →" : "Se connecter →"}
               </button>
+            </p>
+            <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '8px' }}>
+              Tu es une marque ?{' '}
+              <Link href="/inscription-marque" style={{ color: '#64748b', fontWeight: 600, textDecoration: 'none' }}>Créer un compte marque →</Link>
             </p>
           </div>
 

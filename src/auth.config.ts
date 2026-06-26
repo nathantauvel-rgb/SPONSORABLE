@@ -10,8 +10,9 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user
-      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard')
-      if (isOnDashboard) return isLoggedIn
+      // Zones protégées : dashboard créateur ET espace marque.
+      const isProtected = nextUrl.pathname.startsWith('/dashboard') || nextUrl.pathname.startsWith('/marque')
+      if (isProtected) return isLoggedIn
       return true
     },
   },

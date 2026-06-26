@@ -17,7 +17,9 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File | null
     // Whitelist : empêche une valeur arbitraire (ex. "../") d'être injectée dans le chemin du blob.
     const rawType = (formData.get('type') as string) ?? 'banner'
-    const type = (['banner', 'avatar'] as const).includes(rawType as 'banner' | 'avatar') ? rawType : 'banner'
+    const ALLOWED_FOLDERS = ['banner', 'avatar', 'logo'] as const
+    type UploadFolder = (typeof ALLOWED_FOLDERS)[number]
+    const type: UploadFolder = ALLOWED_FOLDERS.includes(rawType as UploadFolder) ? (rawType as UploadFolder) : 'banner'
 
     if (!file) {
       return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 })

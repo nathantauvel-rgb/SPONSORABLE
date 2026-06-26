@@ -19,6 +19,8 @@ const RegisterSchema = z.object({
     .refine(p => /[a-z]/.test(p), { message: "Doit contenir une minuscule" })
     .refine(p => /[0-9]/.test(p), { message: "Doit contenir un chiffre" })
     .refine(p => /[^A-Za-z0-9]/.test(p), { message: "Doit contenir un caractère spécial" }),
+  // Type de compte choisi à l'inscription : créateur (défaut) ou marque (marketplace).
+  accountType: z.enum(['creator', 'company']).optional().default('creator'),
 })
 
 function getAppUrl(reqUrl: string) {
@@ -102,7 +104,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { name, email, password } = parsed.data
+    const { name, email, password, accountType } = parsed.data
     const hashedPassword = await bcrypt.hash(password, 10)
     const token = crypto.randomBytes(32).toString("hex")
     const expires = new Date(Date.now() + 24 * 3600 * 1000)
@@ -122,6 +124,7 @@ export async function POST(req: NextRequest) {
             name,
             email,
             password: hashedPassword,
+            accountType,
             emailVerified: autoVerify ? new Date() : null,
           },
         })

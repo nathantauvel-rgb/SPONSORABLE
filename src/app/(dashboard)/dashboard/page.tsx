@@ -303,6 +303,15 @@ function DashboardContent() {
     }
   }
 
+  // Garde de type de compte : une marque n'a rien à faire sur le dashboard créateur.
+  useEffect(() => {
+    fetch('/api/me', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(me => { if (me?.accountType === 'company') router.replace('/marque') })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // On mount: load slug + only show platforms that have a Platform record in DB
   useEffect(() => {
     fetch('/api/profile')

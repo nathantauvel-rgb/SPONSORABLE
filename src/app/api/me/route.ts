@@ -53,6 +53,7 @@ export async function GET() {
       stripeSubscriptionStatus: true,
       createdAt: true,
       password: true,
+      accountType: true,
       platforms: {
         select: { type: true, stats: true },
       },
@@ -69,6 +70,7 @@ export async function GET() {
   const hasPassword = !!user.password
 
   return NextResponse.json({
+    accountType: user.accountType,           // 'creator' | 'company' — pour le routing client
     isPro,                                   // accès Pro effectif (abonnement OU essai)
     isPaid,                                  // a un vrai abonnement payant
     inTrial,                                 // est en période d'essai gratuit
