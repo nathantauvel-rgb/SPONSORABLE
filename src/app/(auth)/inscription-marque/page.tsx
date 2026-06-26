@@ -31,6 +31,9 @@ export default function BrandSignupPage() {
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || 'Une erreur est survenue.')
+      } else if (data.autoVerified) {
+        // Dev sans service email : compte déjà vérifié, connexion directe possible.
+        setSuccess('Compte marque créé ! Tu peux te connecter directement.')
       } else {
         setSuccess('Compte marque créé ! Vérifie ta boîte mail pour confirmer ton adresse, puis connecte-toi.')
         if (data.devVerifyUrl) setDevVerifyUrl(data.devVerifyUrl)
