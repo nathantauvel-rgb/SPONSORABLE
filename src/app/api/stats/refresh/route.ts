@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { recomputeProfileDenormalization } from '@/lib/profileDenormalize'
 
 export async function POST() {
   const session = await auth()
@@ -81,6 +82,9 @@ export async function POST() {
       results[platform.type] = 'error'
     }
   }))
+
+  // Met à jour les champs dénormalisés du profil (score/audience) pour l'annuaire.
+  await recomputeProfileDenormalization(userId)
 
   return NextResponse.json({ refreshed: results })
 }

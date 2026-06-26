@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { computeEngagementRate, fetchSubscriberBaseline30d, fetchVideoActivity } from '@/lib/youtubeStats'
 import { buildSnapshot, pushHistory, readHistory } from '@/lib/statsHistory'
+import { recomputeProfileDenormalization } from '@/lib/profileDenormalize'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -208,6 +209,11 @@ export async function GET(req: NextRequest) {
       results[platform.id] = 'exception'
     }
   }))
+
+  // Recalcule les champs dénormalisés (score/audience) pour chaque créateur dont
+  // au moins une plateforme a été rafraîchie — alimente l'annuaire marketplace.
+  const userIds = [...new Set(platforms.map((p) => p.userId))]
+  await Promise.allSettled(userIds.map((userId) => recomputeProfileDenormalization(userId)))
 
   return NextResponse.json({ refreshed: results, ts: new Date().toISOString() })
 }

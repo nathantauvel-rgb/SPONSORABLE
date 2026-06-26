@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { recomputeProfileDenormalization } from '@/lib/profileDenormalize'
 import { z } from 'zod'
 
 const ProfileSchema = z.object({
@@ -70,6 +71,10 @@ export async function PUT(req: NextRequest) {
     create: { userId: session.user.id, slug, ...rest },
     update: { slug, ...rest },
   })
+
+  // Recalcule les champs dénormalisés (score/audience) pour l'annuaire : la
+  // complétude éditoriale et la dispo collab font partie du score.
+  await recomputeProfileDenormalization(session.user.id)
 
   return NextResponse.json({ profile })
 }
