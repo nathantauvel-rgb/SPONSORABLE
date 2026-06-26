@@ -12,6 +12,8 @@ const ProfileSchema = z.object({
   niche: z.string().max(200).optional(),
   theme: z.string().max(64).optional(),
   formats: z.array(z.string()).max(10).optional(),
+  // Jeux structurés (référentiel partagé) — alimente le filtre de l'annuaire marque.
+  games: z.array(z.string().max(60)).max(30).optional(),
   showPartnerships: z.boolean().optional(),
   partnerships: z.array(z.object({
     name: z.string(),

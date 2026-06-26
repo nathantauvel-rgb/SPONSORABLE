@@ -1,9 +1,10 @@
 'use client'
 
 import { Loader2, Upload, X, Check } from 'lucide-react'
-import { signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import GamePicker from '@/components/ui/GamePicker'
+import BrandNav from '@/components/layout/BrandNav'
 
 // Tokens design system (dark/light premium, pilotés par variables CSS — cf. globals.css)
 const BG = 'var(--ds-bg)'
@@ -174,16 +175,7 @@ export default function BrandProfilePage() {
 
   return (
     <div style={{ background: BG, minHeight: '100vh' }}>
-      {/* Top bar minimal (le vrai nav marque arrive au Lot C avec l'annuaire) */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: `1px solid ${BORDER}`, background: CARD }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '28px', height: '28px', background: '#16a34a', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </div>
-          <span style={{ fontWeight: 700, fontSize: '15px', color: TEXT, fontFamily: DISPLAY }}>Sponsorable <span style={{ color: MUTED, fontWeight: 500 }}>· Marque</span></span>
-        </div>
-        <button onClick={() => signOut({ callbackUrl: '/' })} style={{ background: 'none', border: `1px solid ${BORDER}`, color: TEXT2, fontSize: '13px', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontFamily: SYNE }}>Déconnexion</button>
-      </header>
+      <BrandNav />
 
       <main style={{ maxWidth: '720px', margin: '0 auto', padding: '40px 24px 80px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: TEXT, letterSpacing: '-0.02em', fontFamily: DISPLAY, margin: '0 0 6px' }}>Profil de ta marque</h1>
@@ -260,9 +252,12 @@ export default function BrandProfilePage() {
               </div>
             </div>
 
-            {/* Jeux ciblés */}
-            <ChipInput label="Jeux ciblés" hint="Entrée ou virgule pour ajouter. Ex : Valorant, League of Legends…"
-              values={form.preferredGames} onChange={v => set('preferredGames', v)} placeholder="Ajouter un jeu…" />
+            {/* Jeux ciblés — référentiel partagé avec l'annuaire */}
+            <div>
+              <label style={labelStyle}>Jeux ciblés</label>
+              <GamePicker values={form.preferredGames} onChange={v => set('preferredGames', v)} />
+              <p style={{ fontSize: '12px', color: MUTED, marginTop: '6px', fontFamily: SYNE }}>Sert à cibler les créateurs qui jouent à ces jeux dans l&apos;annuaire.</p>
+            </div>
 
             {/* Langues */}
             <ChipInput label="Langues visées" hint="Ex : fr, en"

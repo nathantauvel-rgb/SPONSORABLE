@@ -7,6 +7,7 @@ import Sidebar from '@/components/layout/Sidebar'
 import { exampleCreators } from '@/data/mockData'
 import { computeReadinessScore, computeEditorialScore } from '@/lib/profileInference'
 import { generatePositioningPhrase } from '@/lib/profileCopyGenerator'
+import GamePicker from '@/components/ui/GamePicker'
 import { BG, SURFACE, CARD, ACCENT, TEXT, MUTED, BORDER, SYNE, DISPLAY } from '@/lib/ds'
 
 type Partnership = { name: string; category: string; result: string; date: string }
@@ -189,6 +190,7 @@ export default function MediaKitEditorPage() {
     }
   })
   const [formats, setFormats] = useState<string[]>(() => load('sponsorable_formats', []))
+  const [games, setGames] = useState<string[]>(() => load('sponsorable_games', []))
   const [languages, setLanguages] = useState<string[]>(() => load('sponsorable_languages', []))
   const [availableForCollabs, setAvailableForCollabs] = useState<boolean>(() => load('sponsorable_available', true))
   const [showPartnerships, setShowPartnerships] = useState<boolean>(() => load('sponsorable_show_partnerships', true))
@@ -221,6 +223,7 @@ export default function MediaKitEditorPage() {
       if (p.bannerUrl) { setBannerUrl(p.bannerUrl); localStorage.setItem('sponsorable_banner', JSON.stringify(p.bannerUrl)) }
       if (p.calendlyUrl != null) { setCalendlyUrl(p.calendlyUrl); localStorage.setItem('sponsorable_calendly', JSON.stringify(p.calendlyUrl)) }
       if (Array.isArray(p.formats)) { setFormats(p.formats); localStorage.setItem('sponsorable_formats', JSON.stringify(p.formats)) }
+      if (Array.isArray(p.games)) { setGames(p.games); localStorage.setItem('sponsorable_games', JSON.stringify(p.games)) }
       if (Array.isArray(p.partnerships)) { setPartnerships(p.partnerships); localStorage.setItem('sponsorable_partnerships', JSON.stringify(p.partnerships)) }
       if (typeof p.showPartnerships === 'boolean') { setShowPartnerships(p.showPartnerships); localStorage.setItem('sponsorable_show_partnerships', String(p.showPartnerships)) }
       if (Array.isArray(p.languages)) { setLanguages(p.languages); localStorage.setItem('sponsorable_languages', JSON.stringify(p.languages)) }
@@ -271,6 +274,7 @@ export default function MediaKitEditorPage() {
   const handleSave = async () => {
     localStorage.setItem('sponsorable_profile', JSON.stringify(profile))
     localStorage.setItem('sponsorable_formats', JSON.stringify(formats))
+    localStorage.setItem('sponsorable_games', JSON.stringify(games))
     localStorage.setItem('sponsorable_languages', JSON.stringify(languages))
     localStorage.setItem('sponsorable_available', JSON.stringify(availableForCollabs))
     localStorage.setItem('sponsorable_show_partnerships', String(showPartnerships))
@@ -299,6 +303,7 @@ export default function MediaKitEditorPage() {
           sponsorSummary: null,
           theme: selectedTemplateId || undefined,
           formats,
+          games,
           showPartnerships,
           partnerships,
           bannerUrl: bannerUrl || undefined,
@@ -498,6 +503,13 @@ export default function MediaKitEditorPage() {
                   )
                 })}
               </div>
+            </div>
+
+            {/* Jeux — référentiel partagé avec l'annuaire marque */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={labelStyle}>Jeux principaux</label>
+              <GamePicker values={games} onChange={setGames} />
+              <p style={{ fontSize: '11px', color: MUTED, marginTop: '6px', fontFamily: SYNE }}>Ce que tu joues le plus — sert aux marques pour te trouver dans l&apos;annuaire.</p>
             </div>
 
             {/* Disponibilité */}
